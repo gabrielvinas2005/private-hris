@@ -1,0 +1,33 @@
+-- Applications
+truncate table  loan_applications
+truncate table  payroll_incomes
+truncate table  payroll_deductions
+truncate table  payroll_summaries
+truncate table  pending_deductions
+truncate table  leave_headers
+truncate table  leave_details
+truncate table  leave_attachments
+truncate table  overtime_applications
+truncate table  overtime_attachments
+truncate table  official_business_applications
+truncate table  ob_attachments
+truncate table  time_data
+truncate table  time_data_request
+truncate table  salary_adjustments
+truncate table  step_increments
+
+-- Payroll
+truncate table rata_payroll_headers
+truncate table rata_payroll_details
+truncate table monetization_payroll_headers
+truncate table monetization_payroll_details
+truncate table loyalty_award_header
+truncate table loyalty_award_details
+truncate table yearend_bonus_header
+truncate table yearend_bonus
+truncate table midyear_bonus_header
+truncate table midyear_bonus
+truncate table uniform_clothing_header
+truncate table uniform_clothing_details
+truncate table overtime_payroll_headers
+truncate table overtime_payroll_details

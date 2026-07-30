@@ -1,0 +1,21 @@
+INSERT INTO employee_references(
+[employee_id]
+,[ref_name]
+,[ref_address]
+,[ref_occupation]
+,[ref_contact_no]
+,[created_at]
+,[updated_at]
+,[ref_email]
+)
+SELECT 
+b.id as [employee_id]
+,a.[ref_name]
+,a.[ref_address]
+,a.[ref_occupation]
+,a.[ref_contact_no]
+,GETDATE() as [created_at]
+,null as [updated_at]
+,a.[ref_email]
+FROM mig_employee_references as a
+INNER JOIN employees as b on a.employee_no = b.employee_no

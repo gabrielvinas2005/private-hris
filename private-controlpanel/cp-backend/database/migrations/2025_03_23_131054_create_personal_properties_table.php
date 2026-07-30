@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+
+class CreatePersonalPropertiesTable extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('saln_personal_properties', function (Blueprint $table) {
+            $table->bigIncrements('id'); // Auto-incrementing primary key
+            $table->unsignedBigInteger('user_id'); // If linked to a user
+            $table->string('description')->nullable();
+            $table->year('year_acquired')->nullable();
+            $table->decimal('acquisition_cost', 15, 2)->nullable();
+            $table->timestamps();
+
+            // Foreign key to users table
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('saln_personal_properties');
+    }
+};

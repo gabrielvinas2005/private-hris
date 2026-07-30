@@ -1,0 +1,89 @@
+.benefit-table-card {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.benefit-table-container {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.benefit-table {
+  border-radius: 12px;
+}
+
+.benefit-table :deep(.el-table__header th) {
+  background: #f8fafc !important;
+  border-bottom: 2px solid #e5e7eb;
+  color: #374151;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 14px 12px;
+}
+
+.benefit-table :deep(.el-table__body td) {
+  padding: 14px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.benefit-table :deep(.el-table__body tr) {
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.benefit-table :deep(.el-table__body tr:hover) {
+  background-color: #f9fafb !important;
+}
+
+.benefit-table-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.benefit-table-actions .el-button {
+  min-width: 80px;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  transition: all 0.2s ease;
+}
+
+.benefit-table-actions .el-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.benefit-table-empty {
+  padding: 40px 16px;
+}
+
+.posted-row {
+  background-color: #f0f9ff;
+}
+
+.draft-row {
+  background-color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .benefit-table-actions {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .benefit-table-actions .el-button {
+    width: 100%;
+    min-width: auto;
+  }
+}
+

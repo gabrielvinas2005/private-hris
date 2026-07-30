@@ -1,0 +1,14 @@
+INSERT INTO [dbo].[eligibilities]
+           (
+		   [name]
+           ,[active]
+           ,[created_at]
+           ,[updated_at]
+		   )
+select distinct 
+UPPER(Name),
+1,
+GETDATE(),
+null
+from mig_eligibility a inner join
+employees b on a.[Employee No] = b.employee_no  order by Upper(a.[Name]) asc

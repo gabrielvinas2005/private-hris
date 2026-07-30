@@ -1,0 +1,41 @@
+INSERT INTO plantillas(
+[code]
+,[position_id]
+,[salary_step_id]
+,[salary_grade_id]
+,[employee_id]
+,[active]
+,[created_at]
+,[updated_at]
+,[department_id]
+,[eligibility]
+,[experience]
+,[training]
+,[education]
+,[unit]
+,[publication_from]
+,[publication_to]
+,[status]
+)
+SELECT 
+a.[code]
+,b.id as [position_id]
+,a.[salary_step_id]
+,a.[salary_grade_id]
+,c.id as [employee_id]
+,CAST(1 AS BIT) as [active]
+,GETDATE() as [created_at]
+,null as [updated_at]
+,e.id as [department_id]
+,a.[eligibility]
+,a.[experience]
+,a.[training]
+,a.[education]
+,a.[unit]
+,a.[publication_from]
+,a.[publication_to]
+,a.[status]
+FROM mig_plantillas as a
+INNER JOIN positions as b ON a.position_id = b.id
+INNER JOIN employees as c ON a.employee_no = c.employee_no
+INNER JOIN departments as d ON a.department_id = e.id

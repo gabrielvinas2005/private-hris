@@ -1,0 +1,565 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Auth;
+use App\Audit;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Env;
+use Illuminate\Support\Facades\DB;
+
+class ShiftScheduleController extends Controller
+{
+    use ApiResponse;
+
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
+     * Get all shift schedules
+     */
+    public function index()
+    {
+        try {
+            $data = DB::table('shift_schedules_headers')->orderBy('date_from', 'desc')->get();
+
+            return $this->successResponse($data, 'Shift schedules retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to retrieve shift schedules: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get shift schedule form data
+     */
+    public function add($id)
+    {
+        try {
+            $app_key = env("APP_KEY", "");
+            if ($id == 0) {
+
+                $dummy_shift_schedules = array(
+                    'id' => 0,
+                    'name' => null,
+                    'date_from' => null,
+                    'date_to' => null
+                );
+
+                $shift_schedules = (object) $dummy_shift_schedules;
+                $shift_schedules = collect([$shift_schedules]);
+
+                $dummy_shift_schedules_details = array(
+                    'id' => 0,
+                    'shift_date' => null,
+                    'am_in' => null,
+                    'am_out' => null,
+                    'break_in' => null,
+                    'break_out' => null,
+                    'pm_in' => null,
+                    'pm_out' => null,
+                    'with_nd' => null,
+                    'nd_start' => null,
+                    'nd_end' => null,
+                    'nd_rate' => null,
+                    'grace_period' => null,
+                    'flexi_hours' => null,
+                    'work_hours' => null
+                );
+                $shift_schedules_details = (object) $dummy_shift_schedules_details;
+                $shift_schedules_details = collect([$shift_schedules_details]);
+            } else {
+
+                $shift_schedules = DB::table('shift_schedules_headers')
+                    ->where('id', $id)
+                    ->get();
+
+                if ($shift_schedules->isEmpty()) {
+                    return $this->notFoundResponse('Shift schedule not found');
+                }
+
+                $shift_schedules_details = DB::table('shift_schedules_details')->where('shift_schedule_id', $id)
+                    ->orderBy('shift_date', 'asc')
+                    ->get();
+            }
+
+            if (Auth::user()->access_all_branches) {
+                // load employeess to assign to shift schedule
+                $employees = DB::table('employees as a')
+                    ->leftJoin('positions as b', 'a.position_id', '=', 'b.id')
+                    ->leftJoin('departments as c', 'a.department_id', '=', 'c.id')
+                    ->select('a.id', 'a.photo', DB::raw("CASE WHEN ISNULL(a.is_encrypted,0) = 0 THEN
+                    CONCAT(a.first_name,' ',a.last_name)
+                 ELSE
+                     RTRIM([dbo].[ufn_DecryptString](a.first_name,'$app_key'))+' '+RTRIM([dbo].[ufn_DecryptString](a.last_name,'$app_key'))
+                 END as name"), 'c.name as department', 'b.name as position')
+                    ->selectRaw('case when a.work_schedule_id = 0 then 0 else 1 end as assign')
+                    ->where([
+                        'a.is_employee' => true,
+                        'a.active' => true,
+                        'a.is_shifting' => true,
+                        'a.work_schedule_id' => $id
+                    ])
+                    ->orderBy('name', 'asc')
+                    ->get();
+            } else {
+                $user_branch_id = DB::table('users as a')
+                    ->join('employees as b', 'a.employee_no', '=', 'b.employee_no')
+                    ->select('b.branch_id')
+                    ->where('a.id', Auth::user()->id)
+                    ->get();
+
+                // load employeess to assign to shift schedule
+                $employees = DB::table('employees as a')
+                    ->leftJoin('positions as b', 'a.position_id', '=', 'b.id')
+                    ->leftJoin('departments as c', 'a.department_id', '=', 'c.id')
+                    ->select('a.id', 'a.photo', DB::raw("CASE WHEN ISNULL(a.is_encrypted,0) = 0 THEN
+                    CONCAT(a.first_name,' ',a.last_name)
+                 ELSE
+                     RTRIM([dbo].[ufn_DecryptString](a.first_name,'$app_key'))+' '+RTRIM([dbo].[ufn_DecryptString](a.last_name,'$app_key'))
+                 END as name"), 'c.name as department', 'b.name as position')
+                    ->selectRaw('case when a.work_schedule_id = 0 then 0 else 1 end as assign')
+                    ->where(['a.is_employee' => true, 'a.active' => true, 'a.is_shifting' => true, 'a.work_schedule_id' => $id, 'a.branch_id' => $user_branch_id[0]->branch_id])
+                    ->orderBy('name', 'asc')
+                    ->get();
+            }
+
+            return $this->successResponse([
+                'shift_schedules' => $shift_schedules,
+                'shift_schedules_details' => $shift_schedules_details,
+                'employees' => $employees
+            ], 'Shift schedule form data loaded successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to load shift schedule form data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Store shift schedule
+     */
+    public function store(Request $request, $id)
+    {
+        try {
+            $validator = validator($request->all(), [
+                'name' => 'required|unique:shift_schedules_headers,name' . ($id ? ",$id" : ''),
+                'date_from' => 'required',
+                'date_to' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $data = array(
+                'name' => $request->name,
+                'date_from' => $request->date_from,
+                'date_to' => $request->date_to
+            );
+
+            if ($id == 0) {
+
+                DB::table('shift_schedules_headers')->insert($data);
+                $id = DB::table('shift_schedules_headers')->max('id') + 1;
+
+                // iterate date range for shift schedule details
+                $date_from = date("Y-m-d", strtotime($request->date_from));
+                $date_to = date("Y-m-d", strtotime($request->date_to));
+                $date = date("Y-m-d", strtotime($request->date_from));
+
+                $shift_details = [];
+
+                for ($date = $date_from; $date <= $date_to; $date = date("Y-m-d", strtotime("$date +1 day"))) {
+                    $shift_details = [
+                        'shift_schedule_id' => $id,
+                        'shift_date' => $date,
+                        'am_in' => null,
+                        'am_out' => null,
+                        'break_in' => null,
+                        'break_out' => null,
+                        'pm_in' => null,
+                        'pm_out' => null,
+                        'with_nd' => null,
+                        'nd_start' => null,
+                        'nd_end' => null,
+                        'nd_rate' => null,
+                        'grace_period' => null,
+                        'flexi_hours' => null,
+                        'work_hours' => null
+                    ];
+
+                    DB::table('shift_schedules_details')->insert($shift_details);
+                }
+            } else {
+                DB::unprepared('SET IDENTITY_INSERT shift_schedules_headers ON');
+                DB::table('shift_schedules_headers')->updateOrInsert(['id' => $id], $data);
+                DB::unprepared('SET IDENTITY_INSERT shift_schedules_headers OFF');
+
+                $data_details = $request->all();
+                $shift_details = [];
+
+                for ($i = 0; $i < count($data_details['shift_date']); $i++) {
+                    if ($data_details['shift_date'][$i] != null) {
+
+                        if ($data_details['id'][$i] == 0) {
+                            $dtl_id = DB::table('fix_schedules_details')->max('id') + 1;
+                        } else {
+                            $dtl_id = $data_details['id'][$i];
+                        }
+
+                        $flexiHours = $data_details['flexi_hours'][$i];
+                        $gracePeriod = $data_details['grace_period'][$i];
+
+                        // Adjust grace period based on flexi hours and vice versa
+                        if ($flexiHours > 0) {
+                            $gracePeriod = 0;
+                        } elseif ($gracePeriod > 0) {
+                            $flexiHours = 0;
+                        }
+                        $shift_details = [
+                            'shift_schedule_id' => $id,
+                            'shift_date' => $data_details['shift_date'][$i],
+                            'am_in' => $data_details['am_in'][$i],
+                            'am_out' => $data_details['am_out'][$i],
+                            'break_in' => $data_details['break_in'][$i],
+                            'break_out' => $data_details['break_out'][$i],
+                            'pm_in' => $data_details['pm_in'][$i],
+                            'pm_out' => $data_details['pm_out'][$i],
+                            'nd_start' => $data_details['nd_start'][$i],
+                            'nd_end' => $data_details['nd_end'][$i],
+                            'nd_rate' => $data_details['nd_rate'][$i],
+                            'grace_period' => $data_details['grace_period'][$i],
+                            'flexi_hours' => $data_details['flexi_hours'][$i],
+                            'work_hours' => $data_details['work_hours'][$i]
+                        ];
+
+                        DB::unprepared('SET IDENTITY_INSERT shift_schedules_details ON');
+                        DB::table('shift_schedules_details')->updateOrInsert(['id' => $data_details['id'][$i]], $shift_details);
+                        DB::unprepared('SET IDENTITY_INSERT shift_schedules_details OFF');
+                    }
+                }
+
+                // incase the user change date-to to add additional work schedule
+                $last_date = DB::table('shift_schedules_details')->select('shift_date')->where('shift_schedule_id', $id)->orderBy('shift_date', 'desc')->first();
+
+                $date_from = date("Y-m-d", strtotime("$last_date->shift_date +1 day"));
+                $date_to = date("Y-m-d", strtotime($request->date_to));
+                $date = date("Y-m-d", strtotime($request->date_from));
+
+                if ($date_to > $date_from) {
+                    // add additional dates
+                    for ($date = $date_from; $date <= $date_to; $date = date("Y-m-d", strtotime("$date +1 day"))) {
+                        $shift_details = [
+                            'shift_schedule_id' => $id,
+                            'shift_date' => $date,
+                            'am_in' => null,
+                            'am_out' => null,
+                            'break_in' => null,
+                            'break_out' => null,
+                            'pm_in' => null,
+                            'pm_out' => null,
+                            'with_nd' => null,
+                            'nd_start' => null,
+                            'nd_end' => null,
+                            'nd_rate' => null,
+                            'grace_period' => null,
+                            'flexi_hours' => null,
+                            'work_hours' => null
+                        ];
+
+                        DB::table('shift_schedules_details')->insert($shift_details);
+                    }
+                }
+            }
+
+            //Save audit trail
+            $data_audit = array(
+                'user_id' => Auth::user()->id,
+                'module' => 'Timekeeping Module',
+                'menu' => 'Shifting Schedule',
+                'activity' => 'Create',
+                'description' => 'Created shifting schedule information',
+            );
+
+            Audit::create($data_audit);
+
+            return $this->successResponse(['id' => $id], 'Shift schedule saved successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to save shift schedule: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Load unassigned employees
+     */
+    public function loadUnassignedEmployees()
+    {
+        try {
+            $app_key = env("APP_KEY", "");
+
+            if (Auth::user()->access_all_branches) {
+
+                // load employeess to assign to shift schedule
+                $employees = DB::table('employees as a')
+                    ->leftJoin('positions as b', 'a.position_id', '=', 'b.id')
+                    ->leftJoin('departments as c', 'a.department_id', '=', 'c.id')
+                    ->select(
+                        'a.id',
+                        'a.photo',
+                        DB::raw("CASE WHEN ISNULL(a.is_encrypted,0) = 0 THEN
+                                   CONCAT(a.first_name,' ',a.last_name)
+                                ELSE
+                                    RTRIM([dbo].[ufn_DecryptString](a.first_name,'$app_key'))+' '+RTRIM([dbo].[ufn_DecryptString](a.last_name,'$app_key'))
+                                END as name"),
+                        'c.name as department',
+                        'b.name as position'
+                    )
+                    ->selectRaw('case when a.work_schedule_id = 0 then 0 else 1 end as assign')
+                    ->where([
+                        'a.is_employee' => true,
+                        'a.active' => true,
+                        'a.is_shifting' => false,
+                        'a.work_schedule_id' => 0
+                    ])
+                    ->orderBy('name', 'asc')
+                    ->get();
+            } else {
+                $user_branch_id = DB::table('users as a')
+                    ->join('employees as b', 'a.employee_no', '=', 'b.employee_no')
+                    ->select('b.branch_id')
+                    ->where('a.id', Auth::user()->id)
+                    ->get();
+
+                // load employeess to assign to shift schedule
+                $employees = DB::table('employees as a')
+                    ->leftJoin('positions as b', 'a.position_id', '=', 'b.id')
+                    ->leftJoin('departments as c', 'a.department_id', '=', 'c.id')
+                    ->select(
+                        'a.id',
+                        'a.photo',
+                        DB::raw("CASE WHEN ISNULL(a.is_encrypted,0) = 0 THEN
+                                   CONCAT(a.first_name,' ',a.last_name)
+                                ELSE
+                                    RTRIM([dbo].[ufn_DecryptString](a.first_name,'$app_key'))+' '+RTRIM([dbo].[ufn_DecryptString](a.last_name,'$app_key'))
+                                END as name"),
+                        'c.name as department',
+                        'b.name as position'
+                    )
+                    ->selectRaw('case when a.work_schedule_id = 0 then 0 else 1 end as assign')
+                    ->where([
+                        'a.is_employee' => true,
+                        'a.active' => true,
+                        'a.is_shifting' => false,
+                        'a.work_schedule_id' => 0,
+                        'a.branch_id' => $user_branch_id[0]->branch_id
+                    ])
+                    ->orderBy('name', 'asc')
+                    ->get();
+            }
+
+            return $this->successResponse($employees, 'Unassigned employees loaded successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to load unassigned employees: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Add employees to shift schedule
+     */
+    public function addEmployees(Request $request, $id)
+    {
+        try {
+            $employee_data = $request->all();
+
+            if (isset($employee_data['employee_id'])) {
+                $arr_len = count($employee_data['employee_id']);
+
+                for ($i = 0; $i < $arr_len; $i++) {
+                    if ($employee_data['employee_id'][$i] != NULL) {
+                        DB::table('employees')->where('id', $employee_data['employee_id'][$i])->update(['work_schedule_id' => $id, 'is_shifting' => true]);
+                    }
+                }
+            }
+
+            return $this->successResponse(null, 'Employees added to shift schedule successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to add employees to shift schedule: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove employee from shift schedule
+     */
+    public function removeEmployees($id, $employee_id)
+    {
+        try {
+            // update employees assigned to shift schedule
+            DB::table('employees')->where(['work_schedule_id' => $id, 'is_shifting' => true, 'id' => $employee_id])->update(['work_schedule_id' => 0, 'is_shifting' => false]);
+
+            return $this->successResponse(null, 'Employee removed from shift schedule successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to remove employee from shift schedule: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Show specific shift schedule
+     */
+    public function show($id)
+    {
+        try {
+            $data = DB::table('shift_schedules_headers')->where('id', $id)->first();
+
+            if (!$data) {
+                return $this->notFoundResponse('Shift schedule not found');
+            }
+
+            $details = DB::table('shift_schedules_details')
+                ->where('shift_schedule_id', $id)
+                ->orderBy('shift_date', 'asc')
+                ->get();
+
+            return $this->successResponse([
+                'shift_schedule' => $data,
+                'details' => $details
+            ], 'Shift schedule retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to retrieve shift schedule: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete shift schedule
+     */
+    public function destroy($id)
+    {
+        try {
+            $shift_schedule = DB::table('shift_schedules_headers')->where('id', $id)->first();
+
+            if (!$shift_schedule) {
+                return $this->notFoundResponse('Shift schedule not found');
+            }
+
+            // Remove employees from this schedule
+            DB::table('employees')->where('work_schedule_id', $id)->update(['work_schedule_id' => 0, 'is_shifting' => false]);
+
+            // Delete schedule details
+            DB::table('shift_schedules_details')->where('shift_schedule_id', $id)->delete();
+
+            // Delete schedule header
+            DB::table('shift_schedules_headers')->where('id', $id)->delete();
+
+            //Save audit trail
+            $data_audit = array(
+                'user_id' => Auth::user()->id,
+                'module' => 'Timekeeping Module',
+                'menu' => 'Shifting Schedule',
+                'activity' => 'Delete',
+                'description' => 'Deleted shifting schedule: ' . $shift_schedule->name,
+            );
+
+            Audit::create($data_audit);
+
+            return $this->successResponse(null, 'Shift schedule deleted successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to delete shift schedule: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Create new shift schedule form data
+     */
+    public function create()
+    {
+        try {
+            return $this->successResponse([
+                'fields' => [
+                    'name' => ['type' => 'text', 'required' => true],
+                    'date_from' => ['type' => 'date', 'required' => true],
+                    'date_to' => ['type' => 'date', 'required' => true]
+                ]
+            ], 'Create shift schedule form structure');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to load create form: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Edit shift schedule form data
+     */
+    public function edit($id)
+    {
+        try {
+            $shift_schedule = DB::table('shift_schedules_headers')->where('id', $id)->first();
+
+            if (!$shift_schedule) {
+                return $this->notFoundResponse('Shift schedule not found');
+            }
+
+            $details = DB::table('shift_schedules_details')
+                ->where('shift_schedule_id', $id)
+                ->orderBy('shift_date', 'asc')
+                ->get();
+
+            return $this->successResponse([
+                'shift_schedule' => $shift_schedule,
+                'details' => $details
+            ], 'Shift schedule retrieved for editing');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to retrieve shift schedule: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Update shift schedule
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            $validator = validator($request->all(), [
+                'name' => 'required|unique:shift_schedules_headers,name,' . $id,
+                'date_from' => 'required',
+                'date_to' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $shift_schedule = DB::table('shift_schedules_headers')->where('id', $id)->first();
+
+            if (!$shift_schedule) {
+                return $this->notFoundResponse('Shift schedule not found');
+            }
+
+            $data = array(
+                'name' => $request->name,
+                'date_from' => $request->date_from,
+                'date_to' => $request->date_to
+            );
+
+            DB::table('shift_schedules_headers')->where('id', $id)->update($data);
+
+            //Save audit trail
+            $data_audit = array(
+                'user_id' => Auth::user()->id,
+                'module' => 'Timekeeping Module',
+                'menu' => 'Shifting Schedule',
+                'activity' => 'Update',
+                'description' => 'Updated shifting schedule: ' . $request->name,
+            );
+
+            Audit::create($data_audit);
+
+            return $this->successResponse(null, 'Shift schedule updated successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to update shift schedule: ' . $e->getMessage());
+        }
+    }
+}

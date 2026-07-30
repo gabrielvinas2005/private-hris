@@ -1,0 +1,306 @@
+{
+    "tin_1": {
+        "x": 45,
+        "y": 138,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "tin_2": {
+        "x": 101,
+        "y": 138,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "tin_3": {
+        "x": 156,
+        "y": 138,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "rdo_code": {
+        "x": 369,
+        "y": 139,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "last_name": {
+        "x": 70,
+        "y": 166,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "first_name": {
+        "x": 140,
+        "y": 166,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "middle_name": {
+        "x": 250,
+        "y": 166,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "date_of_birth_month": {
+        "x": 492,
+        "y": 165,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 13
+    },
+    "date_of_birth_day": {
+        "x": 515,
+        "y": 165,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 13
+    },
+    "date_of_birth_year": {
+        "x": 536,
+        "y": 165,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 13
+    },
+    "residence_address": {
+        "x": 70,
+        "y": 196,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "residence_zip": {
+        "x": 510,
+        "y": 196,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "business_address": {
+        "x": 70,
+        "y": 226,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "business_zip": {
+        "x": 510,
+        "y": 226,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "sex_male": {
+        "x": 458,
+        "y": 137,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "sex_female": {
+        "x": 514,
+        "y": 137,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "civil_status_single": {
+        "x": 60,
+        "y": 308,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "civil_status_married": {
+        "x": 197,
+        "y": 316,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "civil_status_legally_separated": {
+        "x": 60,
+        "y": 316,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "civil_status_widow": {
+        "x": 197,
+        "y": 308,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "spouse_tin": {
+        "x": 60,
+        "y": 392,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "spouse_last_name": {
+        "x": 105,
+        "y": 418,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "spouse_first_name": {
+        "x": 240,
+        "y": 418,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "spouse_middle_name": {
+        "x": 430,
+        "y": 418,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "employer_tin_1": {
+        "x": 56,
+        "y": 447,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "employer_tin_2": {
+        "x": 110,
+        "y": 447,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "employer_tin_3": {
+        "x": 166,
+        "y": 447,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "employer_rdo": {
+        "x": 230,
+        "y": 447,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "employer_name": {
+        "x": 350,
+        "y": 447,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "dependent_1_last_name": {
+        "x": 45,
+        "y": 531,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "dependent_1_first_name": {
+        "x": 170,
+        "y": 531,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "dependent_1_middle_name": {
+        "x": 300,
+        "y": 531,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "dependent_1_birthdate": {
+        "x": 405,
+        "y": 531,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 8
+    },
+    "effective_date": {
+        "x": 500,
+        "y": 103,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 8
+    },
+    "certification_date": {
+        "x": 164,
+        "y": 859,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 10
+    },
+    "filer_employee": {
+        "x": 82,
+        "y": 101,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "signatory_name": {
+        "x": 90,
+        "y": 900,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "signatory_title": {
+        "x": 300,
+        "y": 900,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    }
+}

@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class AddOvertimeIdToOvertimePayrollDetailsTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::table('overtime_payroll_details', function (Blueprint $table) {
+            $table->integer('overtime_id')->unsigned()->default(0);
+            $table->integer('overtime_type_id')->unsigned()->default(0);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::table('overtime_payroll_details', function (Blueprint $table) {
+            $table->dropColumn('overtime_id');
+        });
+    }
+}

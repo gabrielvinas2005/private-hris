@@ -1,0 +1,16 @@
+INSERT INTO incomes(
+[name]
+,[is_taxable]
+,[active]
+,[created_at]
+,[updated_at]
+,[is_time_related]
+)
+SELECT 
+a.[name]
+,a.[is_taxable]
+,CAST(1 AS BIT) as [active]
+,GETDATE() as [created_at]
+,null as [updated_at]
+,a.[is_time_related]
+FROM mig_incomes as a

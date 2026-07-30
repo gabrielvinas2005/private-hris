@@ -1,0 +1,260 @@
+{
+    "member_last_name": {
+        "x": 110,
+        "y": 212,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "member_first_name": {
+        "x": 240,
+        "y": 212,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "member_middle_name": {
+        "x": 420,
+        "y": 212,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "date_of_birth_month": {
+        "x": 22,
+        "y": 295,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "date_of_birth_day": {
+        "x": 55,
+        "y": 295,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "date_of_birth_year": {
+        "x": 90,
+        "y": 295,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "place_of_birth": {
+        "x": 260,
+        "y": 295,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "philhealth_no": {
+        "x": 380,
+        "y": 78,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "tin_no": {
+        "x": 380,
+        "y": 340,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "member_name_extension": {
+        "x": 360,
+        "y": 212,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "mobile_number": {
+        "x": 450,
+        "y": 440,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "email": {
+        "x": 403,
+        "y": 495,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "permanent_address": {
+        "x": 67,
+        "y": 405,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "permanent_zip": {
+        "x": 360,
+        "y": 430,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "mailing_address": {
+        "x": 67,
+        "y": 470,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "mailing_zip": {
+        "x": 360,
+        "y": 495,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "sex_female": {
+        "x": 23,
+        "y": 347,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "sex_male": {
+        "x": 23,
+        "y": 337,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "civil_status_single": {
+        "x": 67,
+        "y": 335,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "civil_status_married": {
+        "x": 68,
+        "y": 343,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "purpose_updating": {
+        "x": 445,
+        "y": 124,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "purpose_registration": {
+        "x": 355,
+        "y": 124,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "citizenship_filipino": {
+        "x": 179,
+        "y": 336,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "citizenship_dual": {
+        "x": 179,
+        "y": 351,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "citizenship_foreign": {
+        "x": 267,
+        "y": 336,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "mother_last_name": {
+        "x": 110,
+        "y": 235,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "mother_first_name": {
+        "x": 240,
+        "y": 235,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "mother_middle_name": {
+        "x": 420,
+        "y": 235,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "spouse_last_name": {
+        "x": 110,
+        "y": 257,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "spouse_first_name": {
+        "x": 240,
+        "y": 257,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "spouse_middle_name": {
+        "x": 420,
+        "y": 257,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "child_name": {
+        "x": 165,
+        "y": 567,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "child_lastname": {
+        "x": 50,
+        "y": 567,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "child_middlename": {
+        "x": 300,
+        "y": 567,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "child_birthdate": {
+        "x": 417,
+        "y": 567,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1
+    },
+    "signatory_name": {
+        "x": 70,
+        "y": 345,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 2,
+        "charSpacing": 16
+    }
+}

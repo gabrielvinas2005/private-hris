@@ -1,0 +1,16 @@
+INSERT INTO branches(
+[name]
+,[active]
+,[created_at]
+,[updated_at]
+,[is_main_branch]
+,[branch_head_id]
+)
+SELECT 
+a.[name]
+,CAST(1 AS BIT) as [active]
+,GETDATE() as [created_at]
+,null as [updated_at]
+,a.[is_main_branch]
+,a.[branch_head_id]
+FROM mig_branches as a

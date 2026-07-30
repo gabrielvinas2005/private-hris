@@ -1,0 +1,15 @@
+
+INSERT INTO [dbo].[employee_skills]
+([employee_id]
+,[skill]
+,[created_at]
+,[updated_at])
+select distinct 
+b.id as [employee_id]
+,isnull(dbo.ToProperCase(a.Skills),'')[skill]
+,getdate() as [created_at]
+,null as [updated_at]
+from mig_skills a inner join
+employees b on a.[Employee No] = b.employee_no  order by b.id asc
+
+

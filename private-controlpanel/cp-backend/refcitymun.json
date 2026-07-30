@@ -1,0 +1,629 @@
+{
+    "RECORDS": [
+        {
+            "citymunCode": "012801",
+            "citymunDesc": "ADAMS",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012802",
+            "citymunDesc": "BACARRA",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012803",
+            "citymunDesc": "BADOC",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012804",
+            "citymunDesc": "BANGUI",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012805",
+            "citymunDesc": "CITY OF BATAC",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012806",
+            "citymunDesc": "BURGOS",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012807",
+            "citymunDesc": "CARASI",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012808",
+            "citymunDesc": "CURRIMAO",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012809",
+            "citymunDesc": "DINGRAS",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012810",
+            "citymunDesc": "DUMALNEG",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012811",
+            "citymunDesc": "BANNA (ESPIRITU)",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012812",
+            "citymunDesc": "LAOAG CITY (Capital)",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012813",
+            "citymunDesc": "MARCOS",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012814",
+            "citymunDesc": "NUEVA ERA",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012815",
+            "citymunDesc": "PAGUDPUD",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012816",
+            "citymunDesc": "PAOAY",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012817",
+            "citymunDesc": "PASUQUIN",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012818",
+            "citymunDesc": "PIDDIG",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012819",
+            "citymunDesc": "PINILI",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012820",
+            "citymunDesc": "SAN NICOLAS",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012821",
+            "citymunDesc": "SARRAT",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012822",
+            "citymunDesc": "SOLSONA",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012823",
+            "citymunDesc": "VINTAR",
+            "provCode": "0128"
+        },
+        {
+            "citymunCode": "012901",
+            "citymunDesc": "ALILEM",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012902",
+            "citymunDesc": "BANAYOYO",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012903",
+            "citymunDesc": "BANTAY",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012904",
+            "citymunDesc": "BURGOS",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012905",
+            "citymunDesc": "CABUGAO",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012906",
+            "citymunDesc": "CITY OF CANDON",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012907",
+            "citymunDesc": "CAOAYAN",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012908",
+            "citymunDesc": "CERVANTES",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012909",
+            "citymunDesc": "GALIMUYOD",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012910",
+            "citymunDesc": "GREGORIO DEL PILAR (CONCEPCION)",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012911",
+            "citymunDesc": "LIDLIDDA",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012912",
+            "citymunDesc": "MAGSINGAL",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012913",
+            "citymunDesc": "NAGBUKEL",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012914",
+            "citymunDesc": "NARVACAN",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012915",
+            "citymunDesc": "QUIRINO (ANGKAKI)",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012916",
+            "citymunDesc": "SALCEDO (BAUGEN)",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012917",
+            "citymunDesc": "SAN EMILIO",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012918",
+            "citymunDesc": "SAN ESTEBAN",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012919",
+            "citymunDesc": "SAN ILDEFONSO",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012920",
+            "citymunDesc": "SAN JUAN (LAPOG)",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012921",
+            "citymunDesc": "SAN VICENTE",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012922",
+            "citymunDesc": "SANTA",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012923",
+            "citymunDesc": "SANTA CATALINA",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012924",
+            "citymunDesc": "SANTA CRUZ",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012925",
+            "citymunDesc": "SANTA LUCIA",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012926",
+            "citymunDesc": "SANTA MARIA",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012927",
+            "citymunDesc": "SANTIAGO",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012928",
+            "citymunDesc": "SANTO DOMINGO",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012929",
+            "citymunDesc": "SIGAY",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012930",
+            "citymunDesc": "SINAIT",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012931",
+            "citymunDesc": "SUGPON",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012932",
+            "citymunDesc": "SUYO",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012933",
+            "citymunDesc": "TAGUDIN",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "012934",
+            "citymunDesc": "CITY OF VIGAN (Capital)",
+            "provCode": "0129"
+        },
+        {
+            "citymunCode": "013301",
+            "citymunDesc": "AGOO",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013302",
+            "citymunDesc": "ARINGAY",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013303",
+            "citymunDesc": "BACNOTAN",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013304",
+            "citymunDesc": "BAGULIN",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013305",
+            "citymunDesc": "BALAOAN",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013306",
+            "citymunDesc": "BANGAR",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013307",
+            "citymunDesc": "BAUANG",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013308",
+            "citymunDesc": "BURGOS",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013309",
+            "citymunDesc": "CABA",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013310",
+            "citymunDesc": "LUNA",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013311",
+            "citymunDesc": "NAGUILIAN",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013312",
+            "citymunDesc": "PUGO",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013313",
+            "citymunDesc": "ROSARIO",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013314",
+            "citymunDesc": "CITY OF SAN FERNANDO (Capital)",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013315",
+            "citymunDesc": "SAN GABRIEL",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013316",
+            "citymunDesc": "SAN JUAN",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013317",
+            "citymunDesc": "SANTO TOMAS",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013318",
+            "citymunDesc": "SANTOL",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013319",
+            "citymunDesc": "SUDIPEN",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "013320",
+            "citymunDesc": "TUBAO",
+            "provCode": "0133"
+        },
+        {
+            "citymunCode": "015501",
+            "citymunDesc": "AGNO",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015502",
+            "citymunDesc": "AGUILAR",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015503",
+            "citymunDesc": "CITY OF ALAMINOS",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015504",
+            "citymunDesc": "ALCALA",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015505",
+            "citymunDesc": "ANDA",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015506",
+            "citymunDesc": "ASINGAN",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015507",
+            "citymunDesc": "BALUNGAO",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015508",
+            "citymunDesc": "BANI",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015509",
+            "citymunDesc": "BASISTA",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015510",
+            "citymunDesc": "BAUTISTA",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015511",
+            "citymunDesc": "BAYAMBANG",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015512",
+            "citymunDesc": "BINALONAN",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015513",
+            "citymunDesc": "BINMALEY",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015514",
+            "citymunDesc": "BOLINAO",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015515",
+            "citymunDesc": "BUGALLON",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015516",
+            "citymunDesc": "BURGOS",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015517",
+            "citymunDesc": "CALASIAO",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015518",
+            "citymunDesc": "DAGUPAN CITY",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015519",
+            "citymunDesc": "DASOL",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015520",
+            "citymunDesc": "INFANTA",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015521",
+            "citymunDesc": "LABRADOR",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015522",
+            "citymunDesc": "LINGAYEN (Capital)",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015523",
+            "citymunDesc": "MABINI",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015524",
+            "citymunDesc": "MALASIQUI",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015525",
+            "citymunDesc": "MANAOAG",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015526",
+            "citymunDesc": "MANGALDAN",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015527",
+            "citymunDesc": "MANGATAREM",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015528",
+            "citymunDesc": "MAPANDAN",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015529",
+            "citymunDesc": "NATIVIDAD",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015530",
+            "citymunDesc": "POZORRUBIO",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015531",
+            "citymunDesc": "ROSALES",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015532",
+            "citymunDesc": "SAN CARLOS CITY",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015533",
+            "citymunDesc": "SAN FABIAN",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015534",
+            "citymunDesc": "SAN JACINTO",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015535",
+            "citymunDesc": "SAN MANUEL",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015536",
+            "citymunDesc": "SAN NICOLAS",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015537",
+            "citymunDesc": "SAN QUINTIN",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015538",
+            "citymunDesc": "SANTA BARBARA",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015539",
+            "citymunDesc": "SANTA MARIA",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015540",
+            "citymunDesc": "SANTO TOMAS",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015541",
+            "citymunDesc": "SISON",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015542",
+            "citymunDesc": "SUAL",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015543",
+            "citymunDesc": "TAYUG",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015544",
+            "citymunDesc": "UMINGAN",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015545",
+            "citymunDesc": "URBIZTONDO",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015546",
+            "citymunDesc": "CITY OF URDANETA",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015547",
+            "citymunDesc": "VILLASIS",
+            "provCode": "0155"
+        },
+        {
+            "citymunCode": "015548",
+            "citymunDesc": "LAOAC",
+            "provCode": "0155"
+        }
+    ]
+}

@@ -1,0 +1,324 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use App\Traits\ApiResponse;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\EmailUserVerificationNotification;
+
+class AuthController extends Controller
+{
+    use ApiResponse;
+
+    /**
+     * Login user and return token
+     */
+    public function login(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email',
+                'password' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $credentials = $request->only('email', 'password');
+
+            if (Auth::attempt($credentials)) {
+                $user = Auth::user();
+
+                // Check if user is active (treat null as active)
+                if (isset($user->active) && (int) $user->active === 0) {
+                    return $this->errorResponse('Account is inactive', 401);
+                }
+
+                // Check if user is locked
+                if ($user->locked) {
+                    return $this->errorResponse('Account is locked', 401);
+                }
+
+                // Check if user has expired
+                if ($user->with_expiration && $user->expiration_date <= now()) {
+                    return $this->errorResponse('Account has expired', 401);
+                }
+
+                // For API testing, we'll create a simple token
+                // In production, you should use Laravel Sanctum
+                $token = $user->createToken('api-token')->plainTextToken ??
+                    hash('sha256', $user->id . time() . config('app.key'));
+
+                // Build base response payload
+                $payload = [
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'employee_no' => $user->employee_no,
+                        'is_applicant' => (bool) ($user->is_applicant ?? false),
+                        'has_change_password' => (bool) ($user->has_change_password ?? false),
+                    ],
+                    'token' => $token,
+                    'token_type' => 'Bearer',
+                    'requires_otp' => false,
+                    'next' => '/dashboard'
+                ];
+
+                // If user has not changed password yet, issue OTP and direct client to verification
+                if (!(bool) ($user->has_change_password ?? false)) {
+                    $otp = rand(100000, 999999);
+                    $otpHash = Hash::make($otp);
+                    User::where('id', $user->id)->update(['otp_code' => $otpHash]);
+
+                    // Send OTP via email
+                    $userAccount = User::where('id', $user->id)->get();
+                    Notification::send($userAccount, new EmailUserVerificationNotification($userAccount, $otp));
+
+                    $payload['requires_otp'] = true;
+                    $payload['next'] = '/verify-otp';
+                } else {
+                    // Optional: route applicants differently
+                    if ((bool) ($user->is_applicant ?? false)) {
+                        $payload['next'] = '/dashboard';
+                    } else {
+                        $payload['next'] = '/dashboard';
+                    }
+                }
+
+                return $this->successResponse($payload, 'Login successful');
+            } else {
+                // Fallback: manually verify user credentials in case default guard prevents attempt()
+                $user = User::where('email', $request->email)->first();
+                if ($user && Hash::check($request->password, $user->password)) {
+                    Auth::login($user);
+                    // Re-run the same success branch as above
+
+                    // Check if user is active (treat null as active)
+                    if (isset($user->active) && (int) $user->active === 0) {
+                        return $this->errorResponse('Account is inactive', 401);
+                    }
+
+                    // Check if user is locked
+                    if ($user->locked) {
+                        return $this->errorResponse('Account is locked', 401);
+                    }
+
+                    // Check if user has expired
+                    if ($user->with_expiration && $user->expiration_date <= now()) {
+                        return $this->errorResponse('Account has expired', 401);
+                    }
+
+                    $token = $user->createToken('api-token')->plainTextToken ??
+                        hash('sha256', $user->id . time() . config('app.key'));
+
+                    $payload = [
+                        'user' => [
+                            'id' => $user->id,
+                            'name' => $user->name,
+                            'email' => $user->email,
+                            'employee_no' => $user->employee_no,
+                            'is_applicant' => (bool) ($user->is_applicant ?? false),
+                            'has_change_password' => (bool) ($user->has_change_password ?? false),
+                        ],
+                        'token' => $token,
+                        'token_type' => 'Bearer',
+                        'requires_otp' => false,
+                        'next' => '/dashboard'
+                    ];
+                    // if ($user->is_applicant) {
+                    //     $payload['next'] = '/applicant-page';
+                    // }
+
+                    if (!(bool) ($user->has_change_password ?? false)) {
+                        $otp = rand(100000, 999999);
+                        $otpHash = Hash::make($otp);
+                        User::where('id', $user->id)->update(['otp_code' => $otpHash]);
+
+                        $userAccount = User::where('id', $user->id)->get();
+                        Notification::send($userAccount, new EmailUserVerificationNotification($userAccount, $otp));
+
+                        $payload['requires_otp'] = true;
+                        $payload['next'] = '/verify-otp';
+                    }
+
+                    return $this->successResponse($payload, 'Login successful');
+                }
+
+                return $this->errorResponse('Invalid credentials', 401);
+            }
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Login failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Logout user and invalidate token
+     */
+    public function logout(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            if ($user) {
+                // Revoke token if using Sanctum
+                if (method_exists($user, 'tokens')) {
+                    $user->tokens()->delete();
+                }
+
+                Auth::logout();
+            }
+
+            return $this->successResponse([], 'Logout successful');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Logout failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get authenticated user profile
+     */
+    public function profile(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            if (!$user) {
+                return $this->errorResponse('User not authenticated', 401);
+            }
+
+            return $this->successResponse([
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'employee_no' => $user->employee_no,
+                    'is_applicant' => $user->is_applicant,
+                    'active' => $user->active,
+                ]
+            ], 'Profile retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to retrieve profile: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Refresh token
+     */
+    public function refresh(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            if (!$user) {
+                return $this->errorResponse('User not authenticated', 401);
+            }
+
+            // Create new token
+            $token = $user->createToken('api-token')->plainTextToken ??
+                hash('sha256', $user->id . time() . config('app.key'));
+
+            return $this->successResponse([
+                'token' => $token,
+                'token_type' => 'Bearer'
+            ], 'Token refreshed successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Token refresh failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Dev authentication endpoint - manual admin login for development
+     */
+    public function devLogin(Request $request)
+    {
+        try {
+            // Only allow in development environment
+            if (!app()->environment('local', 'development', 'dev')) {
+                return $this->errorResponse('Dev authentication not available in production', 403);
+            }
+
+            // Check if dev mode is enabled via configuration
+            if (!config('auth.dev_auth_enabled', false)) {
+                return $this->errorResponse('Dev authentication is disabled', 403);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|email',
+                'password' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $credentials = $request->only('email', 'password');
+
+            // Find user by email
+            $user = User::where('email', $credentials['email'])->first();
+
+            if (!$user) {
+                return $this->errorResponse('Invalid credentials', 401);
+            }
+
+            // // Check if user is admin
+            // if (!$user->is_admin = 0) {
+            //     return $this->errorResponse('Access denied. Admin privileges required.', 403);
+            // }
+
+            // Verify password
+            if (!Hash::check($credentials['password'], $user->password)) {
+                return $this->errorResponse('Invalid credentials', 401);
+            }
+
+            // Check if user is active and not locked
+            if (isset($user->active) && (int) $user->active === 0) {
+                return $this->errorResponse('Account is inactive', 401);
+            }
+
+            if ($user->locked) {
+                return $this->errorResponse('Account is locked', 401);
+            }
+
+            // Check if user has expired
+            if ($user->with_expiration && $user->expiration_date <= now()) {
+                return $this->errorResponse('Account has expired', 401);
+            }
+
+            // Log in the admin user
+            Auth::login($user);
+
+            // Create token
+            $token = $user->createToken('dev-api-token')->plainTextToken ??
+                hash('sha256', $user->id . time() . config('app.key'));
+
+            // Build response payload
+            $payload = [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'employee_no' => $user->employee_no,
+                    // 'is_admin' => 0,
+                    'is_applicant' => (bool) ($user->is_applicant ?? false),
+                    'has_change_password' => (bool) ($user->has_change_password ?? false),
+                ],
+                'token' => $token,
+                'token_type' => 'Bearer',
+                'requires_otp' => false,
+                'next' => '/dashboard'
+            ];
+
+            return $this->successResponse($payload, 'Dev authentication successful');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Dev authentication failed: ' . $e->getMessage());
+        }
+    }
+}

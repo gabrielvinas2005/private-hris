@@ -1,0 +1,30 @@
+
+INSERT INTO [dbo].[employee_educations]
+([employee_id]
+,[academic_level_id]
+,[school_name]
+,[program]
+,[from]
+,[to]
+,[graduated_year]
+,[units_earned]
+,[honors]
+,[created_at]
+,[updated_at])
+select distinct 
+b.id as [employee_id]
+,0 as [academic_level_id]
+,isnull(ltrim(a.[School Name]),'') as [school_name]
+,isnull(ltrim(a.Course),'') as [program]
+,null as [from]
+,null as [to]
+,null as [graduated_year]
+,null as [units_earned]
+,null as [honors]
+,getdate() as [created_at]
+,null as [updated_at]
+from mig_educations a inner join
+employees b on a.[Employee No] = b.employee_no  order by b.id asc
+     
+
+

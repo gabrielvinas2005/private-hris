@@ -1,0 +1,24 @@
+INSERT INTO leave_types(
+[name]
+,[active]
+,[created_at]
+,[updated_at]
+,[service_credit]
+,[accrued_id]
+,[accrual_amount]
+,[accrual_frequency_id]
+,[leave_balance_policy_id]
+,[is_editable_id]
+)
+SELECT 
+a.[name]
+,CAST(1 AS BIT) as [active]
+,GETDATE() as [created_at]
+,null as [updated_at]
+,a.[service_credit]
+,a.[accrued_id]
+,a.[accrual_amount]
+,a.[accrual_frequency_id]
+,a.[leave_balance_policy_id]
+,a.[is_editable_id]
+FROM mig_leave_types as a

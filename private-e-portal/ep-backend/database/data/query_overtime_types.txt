@@ -1,0 +1,24 @@
+INSERT INTO overtime_types(
+[name]
+,[rate]
+,[active]
+,[created_at]
+,[updated_at]
+,[nd_from]
+,[nd_to]
+,[nd_rating]
+,[min_ot]
+,[max_ot]
+)
+SELECT 
+a.[name]
+,a.[rate]
+,CAST(1 AS BIT) as [active]
+,GETDATE() as [created_at]
+,null as [updated_at]
+,a.[nd_from]
+,a.[nd_to]
+,a.[nd_rating]
+,a.[min_ot]
+,a.[max_ot]
+FROM mig_overtime_types as a

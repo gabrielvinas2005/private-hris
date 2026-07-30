@@ -1,0 +1,64 @@
+-- =============================================================================
+-- Fix: SP_ProcessTimeData STEP 1c INSERT - Create time_data for leave days
+--
+-- Problem 1: INSERT used (approved OR approved_2 OR approved_3). Should require
+--            approved_1=1, approved_2=1, approved_3=1 so "Leave Taken" is correct.
+--
+-- Problem 2: INSERT does not set payroll_period_id. New rows have NULL, so the
+--            view query (WHERE payroll_period_id = @id) never finds them and
+--            "Leave Taken" does not show. STEP 3 updates by date, but setting
+--            payroll_period_id in the INSERT ensures the row is in the right
+--            period from the start.
+--
+-- In SP_ProcessTimeData, find the INSERT under "STEP 1c: HANDLE LEAVES" and
+-- apply BOTH changes below.
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- CHANGE 1: Approval condition (WHERE clause)
+-- -----------------------------------------------------------------------------
+-- REPLACE:
+--   AND (lr.approved = 1 OR lr.approved_2 = 1 OR lr.approved_3 = 1)
+--
+-- WITH:
+--   AND (lr.approved = 1 AND lr.approved_2 = 1 AND lr.approved_3 = 1)
+
+-- -----------------------------------------------------------------------------
+-- CHANGE 2: Set payroll_period_id on insert (so row is in the period you set)
+-- -----------------------------------------------------------------------------
+-- In the INSERT, add payroll_period_id to the column list and @SelectedPeriodId
+-- to the SELECT (so the new row is assigned to the current payroll period).
+--
+-- REPLACE the INSERT from:
+--
+--   INSERT INTO dbo.time_data (
+--       employee_id, work_schedule_id, date,
+--       am_in, pm_out,
+--       work_hours, late, undertime, absent, leave, is_shifting,
+--       created_at, updated_at
+--   )
+--   SELECT 
+--       lr.employee_id, e.work_schedule_id, @DateToProcess,
+--       NULL, NULL,
+--       CAST(0.0000 AS DECIMAL(8,4)), 0.00, 0.00, 0.00, 1, 0,
+--       GETDATE(), GETDATE()
+--   FROM ...
+--
+-- WITH:
+--
+--   INSERT INTO dbo.time_data (
+--       employee_id, work_schedule_id, date,
+--       am_in, pm_out,
+--       work_hours, late, undertime, absent, leave, is_shifting,
+--       payroll_period_id,
+--       created_at, updated_at
+--   )
+--   SELECT 
+--       lr.employee_id, e.work_schedule_id, @DateToProcess,
+--       NULL, NULL,
+--       CAST(0.0000 AS DECIMAL(8,4)), 0.00, 0.00, 0.00, 1, 0,
+--       @SelectedPeriodId,
+--       GETDATE(), GETDATE()
+--   FROM ...
+--
+-- (Add payroll_period_id to the column list and @SelectedPeriodId to the SELECT.)

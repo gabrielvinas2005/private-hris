@@ -1,0 +1,1328 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Auth;
+use Notification;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use App\Notifications\EmailInterviewSchedules;
+use App\User;
+use App\Traits\ApiResponse;
+
+class InterviewController extends Controller
+{
+    use ApiResponse;
+
+    public function index()
+    {
+        try {
+            $inteview_schedules = DB::table('applicant_interview_headers as a')
+                ->join('interview_levels as b', 'a.panel_group_level', '=', 'b.id')
+                ->select(
+                    'a.*',
+                    'b.interview_level as level'
+                )
+                ->get();
+
+            return $this->successResponse([
+                'inteview_schedules' => $inteview_schedules
+            ], 'Interview schedules loaded successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to retrieve interview schedules: ' . $e->getMessage());
+        }
+    }
+
+    public function add($id)
+    {
+        try {
+            $app_key = env("APP_KEY", "");
+
+            $interview_data = DB::table('applicant_interview_headers')->where('id', $id)->get();
+            $interview_levels = DB::table('interview_levels')->where('active', true)->orderBy('id', 'asc')->get();
+
+            if ($interview_data->isEmpty()) {
+
+                $interview_data = [
+                    'id' => 0,
+                    'panel_group' => null,
+                    'interview_location' => null,
+                    'description' => null,
+                    'panel_group_level' => 0,
+                    'start_date' => null,
+                    'end_date' => null,
+                    'start_time' => null,
+                    'end_time' => null,
+                    'posted' => null,
+                    'posted_by' => null,
+                    'posted_date' => null
+                ];
+
+                $interview_data = (object)$interview_data;
+                $interview_data = collect([$interview_data]);
+            }
+
+            $interview_panels = DB::table('employees as a')
+                ->join('positions as b', 'a.position_id', '=', 'b.id')
+                ->join('interview_panels as c', 'a.id', '=', 'c.employee_id')
+                ->select(
+                    'c.id',
+                    'a.id as employee_id',
+                    'a.employee_no',
+                    DB::raw("CASE WHEN ISNULL(a.is_encrypted,0) = 0 THEN
+                            CONCAT(a.first_name,' ',a.last_name)
+                        ELSE
+                            RTRIM([dbo].[ufn_DecryptString](a.first_name,'$app_key'))+' '+RTRIM([dbo].[ufn_DecryptString](a.last_name,'$app_key')) 
+                        END as name"),
+                    'b.name as position'
+                )
+                ->where([
+                    'a.active' => true,
+                    'a.is_employee' => true,
+                    'c.interview_id' => $id
+                ])
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $interview_applicants = DB::table('applicant_examination_headers as a')
+                ->join('applicant_headers as b', 'a.applicant_id', '=', 'b.id')
+                ->join('interview_applicants as c', 'a.applicant_id', '=', 'c.applicant_id')
+                ->select(
+                    'c.id',
+                    'b.id as applicant_id',
+                    'b.applicant_no',
+                    DB::raw("UPPER(CONCAT(b.first_name,' ',b.last_name)) as name")
+                )
+                ->where([
+                    'a.is_complete' => true,
+                    'c.interview_id' => $id
+                ])
+                ->distinct()
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $panel_select = DB::table('employees as a')
+                ->join('positions as b', 'a.position_id', '=', 'b.id')
+                ->select(
+                    'a.id as employee_id',
+                    'a.employee_no',
+                    DB::raw("CASE WHEN ISNULL(a.is_encrypted,0) = 0 THEN
+                            CONCAT(a.first_name,' ',a.last_name)
+                        ELSE
+                            RTRIM([dbo].[ufn_DecryptString](a.first_name,'$app_key'))+' '+RTRIM([dbo].[ufn_DecryptString](a.last_name,'$app_key')) 
+                        END as name"),
+                    'b.name as position'
+                )
+                ->where([
+                    'a.active' => true,
+                    'a.is_employee' => true
+                ])
+                ->whereNotIn('a.id', function ($query) use ($id) {
+                    $query->select('employee_id')->from('interview_panels')->where('interview_id', $id);
+                })
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $applicant_select = DB::table('applicant_examination_headers as a')
+                ->join('applicant_headers as b', 'a.applicant_id', '=', 'b.id')
+                ->select(
+                    'b.id as applicant_id',
+                    'b.applicant_no',
+                    DB::raw("UPPER(CONCAT(b.first_name,' ',b.last_name)) as name")
+                )
+                ->where('a.is_complete', true)
+                ->whereNotIn('a.applicant_id', function ($query) use ($id) {
+                    $query->select('applicant_id')->from('interview_applicants')->where('interview_id', $id);
+                })
+                ->distinct()
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $applicant_positions = DB::table('applicant_examination_headers as a')
+                ->join('applicant_headers as b', 'a.applicant_id', '=', 'b.id')
+                ->join('applicant_details as c', 'b.id', '=', 'c.applicant_id')
+                ->join('plantillas as d', 'c.position_applied_id', '=', 'd.id')
+                ->join('positions as e', 'd.position_id', '=', 'e.id')
+                ->select(
+                    'c.applicant_id',
+                    'e.name as position'
+                )
+                ->where('a.is_complete', true)
+                ->get();
+
+            return $this->successResponse([
+                'interview_levels' => $interview_levels,
+                'interview_data' => $interview_data,
+                'interview_panels' => $interview_panels,
+                'interview_applicants' => $interview_applicants,
+                'panel_select' => $panel_select,
+                'applicant_select' => $applicant_select,
+                'applicant_positions' => $applicant_positions
+            ], 'Interview add data loaded successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to load interview form: ' . $e->getMessage());
+        }
+    }
+
+    public function panel_interview()
+    {
+        try {
+            // Determine panelist employee_id reliably via users -> employees mapping
+            $userId = Auth::id();
+            $employee_id = (int) (DB::table('users as u')
+                ->join('employees as e', 'e.employee_no', '=', 'u.employee_no')
+                ->where('u.id', $userId)
+                ->value('e.id') ?? 0);
+
+            // Any row here means HR tagged this user as a panelist (used for nav visibility).
+            $is_panel_member = $employee_id > 0 && DB::table('interview_panels')
+                ->where('employee_id', $employee_id)
+                ->exists();
+
+            // List interviews this employee is assigned to. Do not require `posted` here so
+            // panelists can open the module before HR publishes the schedule.
+            $interviews = DB::table('applicant_interview_headers as a')
+                ->join('interview_applicants as b', 'a.id', '=', 'b.interview_id')
+                ->join('interview_levels as c', 'a.panel_group_level', '=', 'c.id')
+                ->join('interview_panels as d', 'd.interview_id', '=', 'a.id')
+                ->join('applicant_headers as e', 'e.id', '=', 'b.applicant_id')
+                ->select(
+                    'a.*',
+                    'c.interview_level as level',
+                    DB::raw("case 
+                              when (b.is_cancelled_interview = 1) then 'Cancelled'
+                              when (b.is_complete_interview = 1) then 'Completed'
+                              when (b.is_complete_interview = 0 and b.is_cancelled_interview = 0 and 
+                                    CAST(CAST(a.start_date AS varchar(10)) + ' ' + CAST(a.start_time AS varchar(8)) AS datetime) <= getdate() and 
+                                    CAST(CAST(a.end_date AS varchar(10)) + ' ' + CAST(a.end_time AS varchar(8)) AS datetime) >= getdate()) then 'Active'
+                              when (b.is_complete_interview = 0 and b.is_cancelled_interview = 0 and 
+                                    CAST(CAST(a.end_date AS varchar(10)) + ' ' + CAST(a.end_time AS varchar(8)) AS datetime) < getdate()) then 'Expired'
+                              when (b.is_complete_interview = 0 and b.is_cancelled_interview = 0 and 
+                                    CAST(CAST(a.start_date AS varchar(10)) + ' ' + CAST(a.start_time AS varchar(8)) AS datetime) > getdate()) then 'Pending'
+                         else '' end as status"),
+                    'b.applicant_id',
+                    DB::raw("UPPER(CONCAT(e.first_name,' ',e.last_name)) as name"),
+                    'e.applicant_no',
+                    'd.employee_id'
+                )
+                ->where([
+                    'd.employee_id' => $employee_id,
+                ])
+                ->orderBy('a.start_date', 'desc')
+                ->get();
+
+            $applicant_positions = DB::table('applicant_examination_headers as a')
+                ->join('applicant_headers as b', 'a.applicant_id', '=', 'b.id')
+                ->join('applicant_details as c', 'b.id', '=', 'c.applicant_id')
+                ->join('plantillas as d', 'c.position_applied_id', '=', 'd.id')
+                ->join('positions as e', 'd.position_id', '=', 'e.id')
+                ->select(
+                    'c.applicant_id',
+                    'e.name as position'
+                )
+                ->where('a.is_complete', true)
+                ->get();
+
+            return $this->successResponse([
+                'interviews' => $interviews,
+                'applicant_positions' => $applicant_positions,
+                'is_panel_member' => $is_panel_member,
+            ], 'Panel interview data retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to retrieve panel interview data: ' . $e->getMessage());
+        }
+    }
+
+    public function store(Request $request, $id)
+    {
+        try {
+            $validator = validator($request->all(), [
+                'panel_group' => 'required|string',
+                'interview_location' => 'required|string',
+                'description' => 'nullable|string',
+                'panel_group_level' => 'required|string',
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
+                'start_time' => 'required|date_format:H:i',
+                'end_time' => 'required|date_format:H:i|after:start_time'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $interview_data = [
+                'panel_group' => $request->panel_group,
+                'interview_location' => $request->interview_location,
+                'description' => $request->description,
+                'panel_group_level' => $request->panel_group_level,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time
+            ];
+
+            if ($id == 0) {
+                $id = DB::table('applicant_interview_headers')->insertGetId($interview_data);
+            } else {
+                DB::table('applicant_interview_headers')->where('id', $id)->update($interview_data);
+            }
+
+            return $this->successResponse(['interview_id' => $id], 'Successfully Saved.');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to save interview: ' . $e->getMessage());
+        }
+    }
+
+    public function addPanel(Request $request, $id)
+    {
+        try {
+            $validator = validator($request->all(), [
+                'select' => 'required|array|min:1',
+                'id' => 'required|array'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $panel_data = $request->all();
+            $data = [];
+
+            for ($i = 0; $i < count($panel_data['id']); $i++) {
+                if (in_array($panel_data['id'][$i], $panel_data['select'])) {
+                    $data = [
+                        'interview_id' => $id,
+                        'employee_id' => $panel_data['id'][$i]
+                    ];
+
+                    DB::table('interview_panels')->insert($data);
+                }
+            }
+
+            return $this->successResponse(null, 'Successfully Added Panel.');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to add panel: ' . $e->getMessage());
+        }
+    }
+
+    public function addApplicant(Request $request, $id)
+    {
+        try {
+            $validator = validator($request->all(), [
+                'select' => 'required|array|min:1',
+                'id' => 'required|array'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $applicant_data = $request->all();
+            $data = [];
+
+            for ($i = 0; $i < count($applicant_data['id']); $i++) {
+                if (in_array($applicant_data['id'][$i], $applicant_data['select'])) {
+                    $data = [
+                        'interview_id' => $id,
+                        'applicant_id' => $applicant_data['id'][$i]
+                    ];
+
+                    DB::table('interview_applicants')->insert($data);
+                }
+            }
+
+            return $this->successResponse(null, 'Successfully Added Applicant.');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to add applicant: ' . $e->getMessage());
+        }
+    }
+
+    public function deletePanel($id)
+    {
+        try {
+            DB::table('interview_panels')->where('id', $id)->delete();
+            return $this->successResponse(null, 'Panel deleted successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to delete panel: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteApplicant($id)
+    {
+        try {
+            DB::table('interview_applicants')->where('id', $id)->delete();
+            return $this->successResponse(null, 'Applicant deleted successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to delete applicant: ' . $e->getMessage());
+        }
+    }
+
+    public function process($id, $type_id)
+    {
+        try {
+            $app_key = env("APP_KEY", "");
+
+            if ($type_id == 1) {
+            $data = [
+                'posted' => true,
+                'posted_by' => Auth::user()->id,
+                'posted_date' => now()
+            ];
+
+            // email panelist and applicant.
+            $interview_applicants = DB::table('applicant_interview_headers as a')
+                ->join('interview_applicants as b', 'a.id', '=', 'b.interview_id')
+                ->join('applicant_headers as c', 'b.applicant_id', '=', 'c.id')
+                ->select(
+                    'a.id',
+                    'c.id as applicant_id',
+                    'c.applicant_no',
+                    DB::raw("UPPER(CONCAT(c.first_name,' ',c.last_name)) as name")
+                )
+                ->where([
+                    'a.id' => $id
+                ])
+                ->distinct()
+                ->orderBy('name', 'asc')
+                ->get();
+
+            foreach ($interview_applicants as $applicant) {
+
+                $interview_data = DB::table('applicant_interview_headers as a')
+                    ->join('interview_applicants as b', 'a.id', '=', 'b.interview_id')
+                    ->join('applicant_headers as c', 'b.applicant_id', '=', 'c.id')
+                    ->select(
+                        'c.applicant_no',
+                        'c.email',
+                        DB::raw("UPPER(CONCAT(c.first_name,' ',c.last_name)) as name"),
+                        'a.interview_location',
+                        'a.start_date',
+                        'a.end_date',
+                        'a.start_time',
+                        'a.end_time',
+                        db::raw('cast(1 as int) as type')
+                    )
+                    ->where('a.id', $id)
+                    ->where('c.id', $applicant->applicant_id)
+                    ->get();
+
+                $user_account = User::where('employee_no', $applicant->applicant_no)->get();
+
+                Notification::send($user_account, new EmailInterviewSchedules($interview_data));
+            }
+
+            // email panelist
+            $interview_panels = DB::table('employees as a')
+                ->join('interview_panels as c', 'a.id', '=', 'c.employee_id')
+                ->select(
+                    'c.id',
+                    'a.id as employee_id',
+                    'a.employee_no',
+                    DB::raw("CASE WHEN ISNULL(a.is_encrypted,0) = 0 THEN
+                                CONCAT(a.first_name,' ',a.last_name)
+                            ELSE
+                                RTRIM([dbo].[ufn_DecryptString](a.first_name,'$app_key'))+' '+RTRIM([dbo].[ufn_DecryptString](a.last_name,'$app_key')) 
+                            END as name")
+                )
+                ->where([
+                    'a.active' => true,
+                    'a.is_employee' => true,
+                    'c.interview_id' => $id
+                ])
+                ->orderBy('name', 'asc')
+                ->get();
+
+            foreach ($interview_panels as $panel) {
+
+                $interview_data = DB::table('applicant_interview_headers as a')
+                    ->join('interview_panels as b', 'a.id', '=', 'b.interview_id')
+                    ->join('employees as c', 'b.employee_id', '=', 'c.id')
+                    ->select(
+                        'c.email',
+                        DB::raw("CASE WHEN ISNULL(c.is_encrypted,0) = 0 THEN
+                                    CONCAT(c.first_name,' ',c.last_name)
+                                ELSE
+                                    RTRIM([dbo].[ufn_DecryptString](c.first_name,'$app_key'))+' '+RTRIM([dbo].[ufn_DecryptString](c.last_name,'$app_key')) 
+                                END as name"),
+                        'a.interview_location',
+                        'a.start_date',
+                        'a.end_date',
+                        'a.start_time',
+                        'a.end_time',
+                        db::raw('cast(2 as int) as type')
+                    )
+                    ->where('a.id', $id)
+                    ->where('b.employee_id', $panel->employee_id)
+                    ->get();
+
+                $user_account = User::where('employee_no', $panel->employee_no)->get();
+
+                Notification::send($user_account, new EmailInterviewSchedules($interview_data));
+            }
+        } else {
+            $data = [
+                'posted' => false,
+                'posted_by' => Auth::user()->id,
+                'posted_date' => now()
+            ];
+        }
+
+        DB::table('applicant_interview_headers')->where('id', $id)->update($data);
+
+        return $this->successResponse(null, 'Interview processed successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to process interview: ' . $e->getMessage());
+        }
+    }
+
+    public function cancelInterview($id, $applicant_id)
+    {
+        try {
+            DB::table('interview_applicants')->where([
+                'interview_id' => $id,
+                'applicant_id' => $applicant_id
+            ])
+                ->update([
+                    'is_cancelled_interview' => true
+                ]);
+
+            return $this->successResponse(null, 'Interview cancelled successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to cancel interview: ' . $e->getMessage());
+        }
+    }
+
+    public function panel_interview_pds($id)
+    {
+        try {
+            $app_key = env("APP_KEY", "");
+
+            $applicant = DB::table('applicant_headers as a')
+                ->join('genders as b', 'a.gender', '=', 'b.id')
+                ->select('a.*', 'b.name as gender')
+                ->where('a.id', $id)
+                ->get();
+
+            $employee_data = DB::table('employees as a')->where(['employee_no' => $applicant[0]->applicant_no])->get();
+
+            if ($employee_data->isEmpty()) {
+                $emp_id = 0;
+            } else {
+                $emp_id = $employee_data[0]->id;
+            }
+
+            if ($emp_id == 0) {
+                $dummy_employee_info =
+                    array(
+                        'id' => 0,
+                        'photo' => '',
+                        'employee_no' => '',
+                        'access_no' => '',
+                        'name_prefix_id' => 0,
+                        'first_name' => '',
+                        'middle_name' => '',
+                        'last_name' => '',
+                        'name_suffix_id' => 0,
+                        'birth_place' => '',
+                        'birthdate' => '',
+                        'age' => '',
+                        'gender_id' => 0,
+                        'height' => '',
+                        'weight' => '',
+                        'blood_type_id' => 0,
+                        'email' => '',
+                        'mobile_no' => '',
+                        'telephone_no' => '',
+                        'citizenship_id' => 0,
+                        'civil_status_id' => 0,
+                        'religion_id' => 0,
+                        'is_dual_citizent' => false,
+                        'by_birth' => false,
+                        'by_naturalization' => false,
+                        'indicate_country' => '',
+                        'ra_region' => '',
+                        'ra_province' => '',
+                        'ra_city' => '',
+                        'ra_house_no' => '',
+                        'ra_barangay' => '',
+                        'ra_street' => '',
+                        'ra_village' => '',
+                        'pa_region' => '',
+                        'pa_province' => '',
+                        'pa_city' => '',
+                        'pa_house_no' => '',
+                        'pa_barangay' => '',
+                        'pa_street' => '',
+                        'pa_village' => '',
+                        'father_name_prefix_id' => 0,
+                        'father_first_name' => '',
+                        'father_middle_name' => '',
+                        'father_last_name' => '',
+                        'father_name_suffix_id' => 0,
+                        'mother_name_prefix_id' => '',
+                        'mother_first_name' => '',
+                        'mother_middle_name' => '',
+                        'mother_last_name' => '',
+                        'mother_name_suffix_id' => 0,
+                        'spouse_name_prefix_id' => 0,
+                        'spouse_first_name' => '',
+                        'spouse_middle_name' => '',
+                        'spouse_last_name' => '',
+                        'spouse_name_suffix_id' => 0,
+                        'spouse_occupation' => '',
+                        'spouse_employer' => '',
+                        'spouse_business_address' => '',
+                        'company_id' => 1,
+                        'branch_id' => 0,
+                        'department_id' => 0,
+                        'division_id' => 0,
+                        'section_id' => 0,
+                        'employment_type_id' => 0,
+                        'position_id' => 0,
+                        'plantilla_id' => 0,
+                        'is_plantilla' => false,
+                        'is_employee' => true,
+                        'is_teaching' => false,
+                        'date_hired' => '',
+                        'tin_no' => '',
+                        'gsis_no' => '',
+                        'sss_no' => '',
+                        'pagibig_no' => '',
+                        'philhealth_no' => '',
+                        'salary' => '',
+                        'tax_amount' => '',
+                        'gsis_amount' => '',
+                        'sss_amount' => '',
+                        'pagibig_amount' => '',
+                        'philhealth_amount' => '',
+                        'payroll_interval_id' => 0,
+                        'end_date' => '',
+                        'account_no' => ''
+                    );
+
+                $plantillas_selected = DB::table('plantillas')
+                    ->select('salary_grade_id', 'salary_step_id')
+                    ->where('id', 0)->get();
+
+                $employee_info = (object)$dummy_employee_info;
+                $employee_info =  collect([$employee_info]);
+            } else {
+
+                $employee_info = DB::table('employees')
+                    ->select(
+                        'id',
+                        'photo',
+                        'employee_no',
+                        'access_no',
+                        'name_prefix_id',
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN first_name ELSE dbo.ufn_DecryptString(first_name,'$app_key') END as first_name"),
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN middle_name ELSE dbo.ufn_DecryptString(middle_name,'$app_key') END as middle_name"),
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN last_name ELSE dbo.ufn_DecryptString(last_name,'$app_key') END as last_name"),
+                        'name_suffix_id',
+                        'birth_place',
+                        'birthdate',
+                        'age',
+                        'gender_id',
+                        'height',
+                        'weight',
+                        'blood_type_id',
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN email ELSE dbo.ufn_DecryptString(email,'$app_key') END as email"),
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN mobile_no ELSE dbo.ufn_DecryptString(mobile_no,'$app_key') END as mobile_no"),
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN telephone_no ELSE dbo.ufn_DecryptString(telephone_no,'$app_key') END as telephone_no"),
+                        'citizenship_id',
+                        'civil_status_id',
+                        'religion_id',
+                        'is_dual_citizent',
+                        'by_birth',
+                        'by_naturalization',
+                        'indicate_country',
+                        'ra_postal_id',
+                        'ra_region',
+                        'ra_province',
+                        'ra_city',
+                        'ra_house_no',
+                        'ra_barangay',
+                        'ra_street',
+                        'ra_village',
+                        'pa_postal_id',
+                        'pa_region',
+                        'pa_province',
+                        'pa_city',
+                        'pa_house_no',
+                        'pa_barangay',
+                        'pa_street',
+                        'pa_village',
+                        'father_name_prefix_id',
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN father_first_name ELSE dbo.ufn_DecryptString(father_first_name,'$app_key') END as father_first_name"),
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN father_middle_name ELSE dbo.ufn_DecryptString(father_middle_name,'$app_key') END as father_middle_name"),
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN father_last_name ELSE dbo.ufn_DecryptString(father_last_name,'$app_key') END as father_last_name"),
+                        'father_name_suffix_id',
+                        'mother_name_prefix_id',
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN mother_first_name ELSE dbo.ufn_DecryptString(mother_first_name,'$app_key') END as mother_first_name"),
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN mother_middle_name ELSE dbo.ufn_DecryptString(mother_middle_name,'$app_key') END as mother_middle_name"),
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN mother_last_name ELSE dbo.ufn_DecryptString(mother_last_name,'$app_key') END as mother_last_name"),
+                        'mother_name_suffix_id',
+                        'spouse_name_prefix_id',
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN spouse_first_name ELSE dbo.ufn_DecryptString(spouse_first_name,'$app_key') END as spouse_first_name"),
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN spouse_middle_name ELSE dbo.ufn_DecryptString(spouse_middle_name,'$app_key') END as spouse_middle_name"),
+                        DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN spouse_last_name ELSE dbo.ufn_DecryptString(spouse_last_name,'$app_key') END as spouse_last_name"),
+                        'spouse_name_suffix_id',
+                        // DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN spouse_occupation ELSE dbo.ufn_DecryptString(spouse_occupation,'$app_key') END as spouse_occupation"),
+                        // DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN spouse_employer ELSE dbo.ufn_DecryptString(spouse_employer,'$app_key') END as spouse_employer"),
+                        // DB::raw("CASE WHEN ISNULL(is_encrypted,0) = 0 THEN spouse_business_address ELSE dbo.ufn_DecryptString(spouse_business_address,'$app_key') END as spouse_business_address"),
+                        'spouse_occupation',
+                        'spouse_employer',
+                        'spouse_business_address',
+                        'spouse_mobile_no',
+                        'company_id',
+                        'branch_id',
+                        'department_id',
+                        'division_id',
+                        'section_id',
+                        'employment_type_id',
+                        'position_id',
+                        'plantilla_id',
+                        'is_plantilla',
+                        'is_employee',
+                        'is_teaching',
+                        'date_hired',
+                        'tin_no',
+                        'gsis_no',
+                        'sss_no',
+                        'pagibig_no',
+                        'philhealth_no',
+                        'salary',
+                        'tax_amount',
+                        'gsis_amount',
+                        'sss_amount',
+                        'pagibig_amount',
+                        'philhealth_amount',
+                        'payroll_interval_id',
+                        'end_date',
+                        'account_no'
+                    )
+                    ->where('id', $emp_id)
+                    ->orderBy('employees.first_name', 'asc')
+                    ->get();
+
+                $plantillas_selected = DB::table('plantillas')
+                    ->select('salary_grade_id', 'salary_step_id')
+                    ->where('id', $employee_info[0]->plantilla_id)->get();
+            }
+
+            $data  = DB::table('plantillas')
+                ->join('positions', 'positions.id', '=', 'plantillas.position_id')
+                ->join('salary_steps', 'salary_steps.id', '=', 'plantillas.salary_step_id')
+                ->join('salary_grades', 'salary_grades.id', '=', 'plantillas.salary_grade_id')
+                ->join('departments', 'departments.id', '=', 'plantillas.department_id')
+                ->join('applicant_details as a', 'a.position_applied_id', '=', 'plantillas.id')
+                ->join('applicant_headers as b', 'a.applicant_id', '=', 'b.id')
+                ->join('application_status as f', 'a.application_status_id', '=', 'f.id')
+                ->select('plantillas.id', 'plantillas.code', 'positions.name as position', 'salary_steps.name as step', 'salary_grades.name as grade', 'departments.name as department', 'plantillas.eligibility as eligibility', 'plantillas.experience as experience', 'plantillas.training as training', 'plantillas.education as education', 'plantillas.unit as unit', 'plantillas.publication_from as publication_from', 'plantillas.publication_to as publication_to', 'plantillas.status as status', 'plantillas.active', 'f.name as application_status')
+                ->where('a.is_plantilla', true)
+                ->where('b.id', $applicant[0]->id)
+                ->orderBy('positions.name', 'asc')
+                ->get();
+
+            $non_plantillas = DB::table('non_plantillas as a')
+                ->join('positions as b', 'a.position_id', '=', 'b.id')
+                ->join('departments as c', 'a.department_id', '=', 'c.id')
+                ->join('applicant_details as d', 'd.position_applied_id', '=', 'a.id')
+                ->join('applicant_headers as e', 'd.applicant_id', '=', 'e.id')
+                ->join('application_status as f', 'd.application_status_id', '=', 'f.id')
+                ->select(
+                    'a.id',
+                    'a.position_id',
+                    'b.name as position',
+                    'a.salary',
+                    'c.name as department',
+                    'a.eligibility',
+                    'a.experience',
+                    'a.education',
+                    'a.training',
+                    'a.description',
+                    'a.qualification',
+                    'a.vacant',
+                    'a.publication_from',
+                    'a.publication_to',
+                    'f.name as application_status',
+                    DB::raw(
+                        "case when a.status = 0 then 'Inactive' else 'Active' end as status"
+                    )
+                )
+                ->where('d.is_plantilla', false)
+                ->where('e.id', $applicant[0]->id)
+                ->orderBy('b.name', 'asc')
+                ->get();
+
+            $prefixes = DB::table('name_prefixes')->where('active', true)->orderBy('id', 'asc')->get();
+            $suffixes = DB::table('name_suffixes')->where('active', true)->orderBy('name', 'asc')->get();
+            $genders = DB::table('genders')->where('active', true)->orderBy('name', 'asc')->get();
+            $civil_status = DB::table('civil_status')->where('active', true)->orderBy('id', 'asc')->get();
+            $citizenships = DB::table('citizenships')->where('active', true)->orderBy('id', 'asc')->get();
+            $religions = DB::table('religions')->where('active', true)->orderBy('id', 'asc')->get();
+            $blood_types = DB::table('blood_types')->where('active', true)->orderBy('name', 'asc')->get();
+            $companies = DB::table('companies')->get();
+            $branches = DB::table('branches')->orderBy('id', 'asc')->get();
+            $departments = DB::table('departments')->where('active', true)->orderBy('name', 'asc')->get();
+            $employment_types = DB::table('employment_types')->where('active', true)->orderBy('id', 'asc')->get();
+            $positions = DB::table('positions')->where('active', true)->orderBy('name', 'asc')->get();
+
+            // Get Plantilla
+            $plantilla_emp = DB::table('plantillas')->where(['employee_id' => $emp_id, 'active' => true]);
+            $plantillas = DB::table('plantillas')->where(['employee_id' => 0, 'active' => true])->union($plantilla_emp)->get();
+
+            $salary_grades = DB::table('salary_grades')->where('active', true)->orderBy('id', 'asc')->get();
+            $salary_steps = DB::table('salary_steps')->where('active', true)->orderBy('id', 'asc')->get();
+            $blood_types = DB::table('blood_types')->where('active', true)->orderBy('id', 'asc')->get();
+            $payroll_intervals = DB::table('payroll_intervals')->where('active', true)->orderBy('id', 'asc')->get();
+            $eligibilities = DB::table('eligibilities')->where('active', true)->orderBy('name', 'asc')->get();
+            $learnings = DB::table('learnings')->where('active', true)->orderBy('name', 'asc')->get();
+            $divisions = DB::table('divisions')->where('active', true)->orderBy('name', 'asc')->get();
+            $sections = DB::table('sections')->where('active', true)->orderBy('name', 'asc')->get();
+
+            $applicant_id = $applicant[0]->id;
+
+            $children = DB::table('employee_children')->where('employee_id', $emp_id)->get();
+            $educations = DB::table('employee_educations')->where('employee_id', $emp_id)->orderBy('employee_educations.graduated_year', 'desc')->get();
+            $service_records = DB::table('service_records')->where('employee_id', $emp_id)->get();
+            $employments = DB::table('employee_employment_records')->where('employee_id', $emp_id)->get();
+            $examinations = DB::table('employee_examinations')->where('employee_id', $emp_id)->get();
+            $trainings = DB::table('employee_trainings')->where('employee_id', $emp_id)->get();
+            $organizations = DB::table('employee_organizations')->where('employee_id', $emp_id)->get();
+            $recognitions = DB::table('employee_recognations')->where('employee_id', $emp_id)->get();
+            $skills = DB::table('employee_skills')->where('employee_id', $emp_id)->get();
+            $memberships = DB::table('employee_memberships')->where('employee_id', $emp_id)->get();
+            $references = DB::table('employee_references')->where('employee_id', $emp_id)->get();
+            $dependents = DB::table('employee_dependents')->where('employee_id', $emp_id)->get();
+            $documents = DB::table('employee_documents')->where('employee_id', $emp_id)->get();
+
+            $loans = DB::table('loan_applications as a')
+                ->join('deductions as b', 'a.deduction_id', '=', 'b.id')
+                ->select(
+                    'b.name',
+                    'a.loan_amount',
+                    'a.payment',
+                    'a.balance'
+                )
+                ->where([
+                    'a.is_approve' => true,
+                    'a.employee_id' => $emp_id
+                ])
+                ->get();
+
+            $payroll_period_id = DB::table('payroll_incomes')->max('payroll_period_id');
+
+            $incomes = DB::table('payroll_incomes as a')
+                ->join('incomes as b', 'a.income_id', '=', 'b.id')
+                ->select(
+                    'b.name',
+                    'a.amount'
+                )
+                ->where([
+                    'a.employee_id' => $emp_id,
+                    'a.payroll_period_id' => $payroll_period_id
+                ])
+                ->get();
+
+            $salary_grade_steps = DB::table('salary_grades as a')
+                ->crossJoin('salary_steps as b')
+                ->select(
+                    DB::raw("CONVERT(nvarchar(50),a.id) + ' - ' + CONVERT(nvarchar(50),b.id) as id"),
+                    DB::raw("CONVERT(nvarchar(50),a.id) + ' - ' + CONVERT(nvarchar(50),b.id) as name")
+                )
+                ->get();
+
+            $quesionaires = DB::table('employee_pds_answers as a')
+                ->join('pds_questionaires as b', 'a.question_id', '=', 'b.id')
+                ->select(
+                    'b.id',
+                    'b.code',
+                    'b.questions',
+                    'a.is_yes',
+                    'a.is_no',
+                    'a.yes_details',
+                    'a.case_status',
+                    'a.date_filed'
+                )
+                ->where('a.employee_id', $emp_id)
+                ->orderBy('b.id', 'asc')
+                ->get();
+
+            if ($quesionaires->isEmpty()) {
+                $quesionaires = DB::table('pds_questionaires')->orderBy('id', 'asc')->get();
+            }
+
+            $eete_ratings = DB::table('eete_ratings')->get();
+
+            if ($eete_ratings->isEmpty()) {
+                $eete_ratings = [
+                    'id' => 0,
+                    'education_rating' => null,
+                    'experience_rating' => null,
+                    'training_rating' => null,
+                    'eligibility_rating' => null
+                ];
+
+                $eete_ratings = (object)$eete_ratings;
+                $eete_ratings = collect([$eete_ratings]);
+            }
+
+            $applicant_eete_ratings = DB::table('applicant_eete_ratings')->where('applicant_id', $applicant_id)->get();
+
+            if ($applicant_eete_ratings->isEmpty()) {
+                $applicant_eete_ratings = [
+                    'id' => 0,
+                    'applicant_id' => $applicant_id,
+                    'education_rating' => null,
+                    'experience_rating' => null,
+                    'training_rating' => null,
+                    'eligibility_rating' => null,
+                    'reviewed_status_id' => null
+                ];
+
+                $applicant_eete_ratings = (object)$applicant_eete_ratings;
+                $applicant_eete_ratings = collect([$applicant_eete_ratings]);
+            }
+
+            return $this->successResponse([
+                'applicant' => $applicant,
+                'data' => $data,
+                'non_plantillas' => $non_plantillas,
+                'prefixes' => $prefixes,
+                'suffixes' => $suffixes,
+                'genders' => $genders,
+                'civil_status' => $civil_status,
+                'citizenships' => $citizenships,
+                'religions' => $religions,
+                'blood_types' => $blood_types,
+                'companies' => $companies,
+                'branches' => $branches,
+                'departments' => $departments,
+                'employment_types' => $employment_types,
+                'positions' => $positions,
+                'plantillas' => $plantillas,
+                'salary_grades' => $salary_grades,
+                'salary_steps' => $salary_steps,
+                'payroll_intervals' => $payroll_intervals,
+                'eligibilities' => $eligibilities,
+                'learnings' => $learnings,
+                'employee_info' => $employee_info,
+                'plantillas_selected' => $plantillas_selected,
+                'children' => $children,
+                'educations' => $educations,
+                'service_records' => $service_records,
+                'employments' => $employments,
+                'examinations' => $examinations,
+                'trainings' => $trainings,
+                'organizations' => $organizations,
+                'recognitions' => $recognitions,
+                'skills' => $skills,
+                'memberships' => $memberships,
+                'references' => $references,
+                'loans' => $loans,
+                'incomes' => $incomes,
+                'divisions' => $divisions,
+                'sections' => $sections,
+                'dependents' => $dependents,
+                'documents' => $documents,
+                'salary_grade_steps' => $salary_grade_steps,
+                'quesionaires' => $quesionaires,
+                'eete_ratings' => $eete_ratings,
+                'applicant_eete_ratings' => $applicant_eete_ratings
+            ], 'Panel interview PDS data loaded successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to load panel interview PDS data: ' . $e->getMessage());
+        }
+    }
+
+    public function panel_interview_exam($id)
+    {
+        try {
+            $applicant_examinations = DB::table('applicant_examination_headers')
+                ->where([
+                    'applicant_id' => $id,
+                    'is_complete' => true
+                ])
+                ->get();
+
+            if ($applicant_examinations->isNotEmpty()) {
+                $applicant_examination_id = $applicant_examinations[0]->id;
+            } else {
+                $applicant_examination_id = 0;
+            }
+
+            $exam = DB::table('examination_schedule_header as a')
+                ->join('examination_setup_header as b', 'a.exam_id', '=', 'b.id')
+                ->join('applicant_examination_headers as c', 'c.exam_schedule_id', '=', 'a.id')
+                ->join('exam_categories as d', 'b.category_id', '=', 'd.id')
+                ->select(
+                    'a.id',
+                    'c.applicant_id',
+                    'a.exam_date_from',
+                    'a.exam_date_to',
+                    'a.exam_time_from',
+                    'a.exam_time_to',
+                    'b.exam_set',
+                    'b.exam_instruction',
+                    'b.exam_duration',
+                    'b.passing_criteria',
+                    'd.id as category_id',
+                    'd.name as category',
+                    'd.description',
+                    'c.id as applicant_examination_id',
+                    'c.exam_rating'
+                )
+                ->where([
+                    'a.posted' => 1,
+                    'c.id' => $applicant_examination_id
+                ])
+                ->get();
+
+            $exam_total_sub_categories = DB::table('applicant_examination_headers as a')
+                ->join('applicant_examination_details as b', 'a.id', '=', 'b.applicant_examination_id')
+                ->join('exam_questionaire_headers as c', 'b.question_id', '=', 'c.id')
+                ->join('exam_sub_categories as d', 'c.sub_category_id', '=', 'd.id')
+                ->join('exam_difficulty_levels as e', 'd.difficulty_level', '=', 'e.id')
+                ->select(
+                    'a.id',
+                    'd.sub_category',
+                    'e.difficulty_level',
+                    DB::raw("count(b.question_id) as total_items"),
+                    DB::raw("sum(b.correct) as total_correct")
+                )
+                ->where('a.id', $applicant_examination_id)
+                ->groupBy(
+                    'a.id',
+                    'd.sub_category',
+                    'e.difficulty_level'
+                )
+                ->get();
+
+            return $this->successResponse([
+                'exam' => $exam,
+                'exam_total_sub_categories' => $exam_total_sub_categories
+            ], 'Panel interview exam data loaded successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to retrieve panel interview exam data: ' . $e->getMessage());
+        }
+    }
+
+    public function panel_interview_rating($applicant_id, $employee_id, $interview_id)
+    {
+        try {
+            $applicants = DB::table('applicant_headers as a')
+                ->select(
+                    'a.id as applicant_id',
+                    'a.applicant_no',
+                    DB::raw("UPPER(CONCAT(a.first_name,' ',a.last_name)) as name")
+                )
+                ->where('a.id', $applicant_id)
+                ->get();
+
+            $ratings = DB::table('interview_panel_ratings')
+                ->where([
+                    'interview_id' => $interview_id,
+                    'applicant_id' => $applicant_id,
+                    'employee_id' => $employee_id
+                ])
+                ->get();
+
+            if ($ratings->isEmpty()) {
+                $ratings = [
+                    'id' => 0,
+                    'interview_id' => 0,
+                    'employee_id' => 0,
+                    'applicant_id' => 0,
+                    'bei_rating' => 0,
+                    'competency_rating' => 0,
+                ];
+
+                $ratings = (object)$ratings;
+                $ratings = collect([$ratings]);
+            }
+
+            return $this->successResponse([
+                'applicants' => $applicants,
+                'ratings' => $ratings,
+                'interview_id' => $interview_id,
+                'employee_id' => $employee_id
+            ], 'Panel interview rating data loaded successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to retrieve panel interview rating data: ' . $e->getMessage());
+        }
+    }
+
+    public function interview_rating(Request $request, $id)
+    {
+        try {
+            $validator = validator($request->all(), [
+                'interview_id' => 'required|integer',
+                'employee_id' => 'required|integer',
+                'applicant_id' => 'required|integer',
+                'bei_rating' => 'required|integer|min:0|max:100',
+                'competency_rating' => 'required|integer|min:0|max:100',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $data = [
+                'interview_id' => $request->interview_id,
+                'employee_id' => $request->employee_id,
+                'applicant_id' => $request->applicant_id,
+                'bei_rating' => $request->bei_rating,
+                'competency_rating' => $request->competency_rating,
+            ];
+
+            if ($id == 0) {
+                DB::table('interview_panel_ratings')->insert($data);
+            } else {
+                DB::table('interview_panel_ratings')->where('id', $id)->update($data);
+            }
+
+            // Note: completion ("Done") is handled by panel_interview_done so panelists can
+            // upload attachments first before marking the interview as completed.
+            return $this->successResponse(null, 'Rating saved successfully.');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to submit rating: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * List panelist attachments for a specific interview/applicant.
+     * Route: /panel-interviews/{id}/attachments/{interview_id}/{employee_id}/{applicant_id}
+     * The leading {id} is ignored (kept for route grouping).
+     */
+    public function panel_interview_list_attachments($id, $interview_id, $employee_id, $applicant_id)
+    {
+        try {
+            $authUserId = Auth::id();
+            $authEmployeeId = (int) (DB::table('users as u')
+                ->join('employees as e', 'e.employee_no', '=', 'u.employee_no')
+                ->where('u.id', $authUserId)
+                ->value('e.id') ?? 0);
+
+            // Require a valid employee mapping but always use the authenticated employee_id
+            if ($authEmployeeId === 0) {
+                return $this->errorResponse('Unauthorized.', 403);
+            }
+
+            $attachments = DB::table('interview_panel_attachments')
+                ->select('id', 'original_name', 'mime_type', 'size', 'created_at')
+                ->where([
+                    'interview_id' => $interview_id,
+                    'employee_id' => $authEmployeeId,
+                    'applicant_id' => $applicant_id
+                ])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return $this->successResponse([
+                'attachments' => $attachments
+            ], 'Attachments loaded successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to load attachments: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Upload an attachment for a panelist interview rating.
+     *
+     * Expects multipart/form-data:
+     * - interview_id, employee_id, applicant_id
+     * - file
+     */
+    public function panel_interview_upload_attachment(Request $request)
+    {
+        try {
+            $validator = validator($request->all(), [
+                'interview_id' => 'required|integer',
+                'employee_id' => 'required|integer',
+                'applicant_id' => 'required|integer',
+                'file' => 'required|file|max:10240', // 10MB
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $authUserId = Auth::id();
+            $authEmployeeId = (int) (DB::table('users as u')
+                ->join('employees as e', 'e.employee_no', '=', 'u.employee_no')
+                ->where('u.id', $authUserId)
+                ->value('e.id') ?? 0);
+
+            // Require a valid employee mapping but ignore/override employee_id from the request
+            if ($authEmployeeId === 0) {
+                return $this->errorResponse('Unauthorized.', 403);
+            }
+
+            $file = $request->file('file');
+            $originalName = $file->getClientOriginalName();
+            $safeOriginalName = preg_replace('/[^A-Za-z0-9\.\-_ ]/', '', $originalName);
+            $storedName = date('YmdHis') . '_' . Str::random(8) . '_' . $safeOriginalName;
+
+            $relativePath = 'interview_panel_attachments/' .
+                $request->interview_id . '/' . $request->employee_id . '/' . $request->applicant_id;
+
+            $storedPath = Storage::disk('local')->putFileAs($relativePath, $file, $storedName);
+            if (!$storedPath) {
+                return $this->errorResponse('Failed to store file.', 500);
+            }
+
+            $mimeType = $file->getClientMimeType();
+            $size = $file->getSize();
+
+            $id = DB::table('interview_panel_attachments')->insertGetId([
+                'interview_id' => $request->interview_id,
+                'employee_id' => $authEmployeeId,
+                'applicant_id' => $request->applicant_id,
+                'original_name' => $originalName,
+                'stored_name' => $storedName,
+                'path' => $storedPath,
+                'mime_type' => $mimeType,
+                'size' => $size,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return $this->successResponse([
+                'id' => $id
+            ], 'Attachment uploaded successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to upload attachment: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Preview (inline) an attachment by id.
+     * Route: /panel-interviews/{id}/attachment/{attachment_id}
+     * The leading {id} is ignored (kept for route grouping).
+     */
+    public function panel_interview_preview_attachment($id, $attachment_id)
+    {
+        try {
+            $attachment = DB::table('interview_panel_attachments')
+                ->where('id', $attachment_id)
+                ->first();
+
+            if (!$attachment) {
+                return $this->errorResponse('Attachment not found.', 404);
+            }
+
+            $authUserId = Auth::id();
+            $user = Auth::user();
+            
+            // Check if user is admin or has HR access (for Applicant Monitoring view)
+            $isAdminOrHR = $user && ((bool) ($user->is_admin ?? false) || (bool) ($user->with_hrm_access ?? false));
+            
+            $authEmployeeId = (int) (DB::table('users as u')
+                ->join('employees as e', 'e.employee_no', '=', 'u.employee_no')
+                ->where('u.id', $authUserId)
+                ->value('e.id') ?? 0);
+
+            // Allow access if:
+            // 1. User is admin or has HR access (for Applicant Monitoring), OR
+            // 2. User is the panelist who uploaded the attachment
+            if (!$isAdminOrHR && ($authEmployeeId === 0 || $authEmployeeId !== (int) $attachment->employee_id)) {
+                return $this->errorResponse('Unauthorized.', 403);
+            }
+
+            $relativePath = $attachment->path;
+            if (!$relativePath || !Storage::disk('local')->exists($relativePath)) {
+                return $this->errorResponse('File not found on server.', 404);
+            }
+
+            $absPath = storage_path('app/' . $relativePath);
+            $mime = Storage::disk('local')->mimeType($relativePath) ?: ($attachment->mime_type ?: 'application/octet-stream');
+            $headers = [
+                'Content-Type' => $mime,
+                'Content-Disposition' => 'inline; filename="' . $attachment->original_name . '"',
+            ];
+
+            return response()->file($absPath, $headers);
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to preview attachment: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mark a panelist's rating as done (after uploading attachments).
+     * - Requires at least one attachment uploaded
+     * - Marks interview_panels.is_complete_rating for that panelist
+     * - Marks interview_applicants.is_complete_interview ONLY if all panels are complete for that interview
+     */
+    public function panel_interview_done(Request $request)
+    {
+        try {
+            $validator = validator($request->all(), [
+                'interview_id' => 'required|integer',
+                'employee_id' => 'required|integer',
+                'applicant_id' => 'required|integer',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $authUserId = Auth::id();
+            $authEmployeeId = (int) (DB::table('users as u')
+                ->join('employees as e', 'e.employee_no', '=', 'u.employee_no')
+                ->where('u.id', $authUserId)
+                ->value('e.id') ?? 0);
+
+            // Require a valid employee mapping but ignore/override employee_id from the request
+            if ($authEmployeeId === 0) {
+                return $this->errorResponse('Unauthorized.', 403);
+            }
+
+            $attachmentCount = (int) DB::table('interview_panel_attachments')->where([
+                'interview_id' => $request->interview_id,
+                'employee_id' => $authEmployeeId,
+                'applicant_id' => $request->applicant_id,
+            ])->count();
+
+            if ($attachmentCount <= 0) {
+                return $this->errorResponse('Please upload at least one attachment before clicking Done.', 400);
+            }
+
+            DB::table('interview_panels')
+                ->where([
+                    'interview_id' => $request->interview_id,
+                    'employee_id' => $authEmployeeId,
+                ])
+                ->update([
+                    'is_complete_rating' => 1
+                ]);
+
+            $totalPanels = (int) DB::table('interview_panels')
+                ->where('interview_id', $request->interview_id)
+                ->count();
+
+            $completedPanels = (int) DB::table('interview_panels')
+                ->where([
+                    'interview_id' => $request->interview_id,
+                    'is_complete_rating' => 1
+                ])
+                ->count();
+
+            if ($totalPanels > 0 && $completedPanels >= $totalPanels) {
+                DB::table('interview_applicants')->where([
+                    'interview_id' => $request->interview_id,
+                    'applicant_id' => $request->applicant_id,
+                ])->update([
+                    'is_complete_interview' => 1
+                ]);
+            }
+
+            return $this->successResponse(null, 'Marked as done successfully.');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to mark done: ' . $e->getMessage());
+        }
+    }
+}

@@ -1,0 +1,60 @@
+
+-- Header
+
+insert into fix_schedules(
+[name]
+      ,[no_late]
+      ,[no_undertime]
+      ,[created_at]
+      ,[updated_at]
+)
+select 
+[a.name]
+      ,[a.no_late]
+      ,[a.no_undertime]
+      ,GETDATE() as [created_at]
+      ,Null as [updated_at]
+from mig_fix_schedules as a
+
+-- Details
+
+INSERT INTO fix_schedules_details(
+[fix_schedule_id]
+      ,[day_id]
+      ,[am_in]
+      ,[am_out]
+      ,[break_in]
+      ,[break_out]
+      ,[pm_in]
+      ,[pm_out]
+      ,[grace_period]
+      ,[flexi_hours]
+      ,[work_hours]
+      ,[created_at]
+      ,[updated_at]
+)
+SELECT 
+[b.fix_schedule_id]
+      ,[a.day]
+      ,[a.am_in]
+      ,[a.am_out]
+      ,[a.break_in]
+      ,[a.break_out]
+      ,[a.pm_in]
+      ,[a.pm_out]
+      ,[a.grace_period]
+      ,[a.flexi_hours]
+      ,[a.work_hours]
+      ,GETDATE() as [created_at]
+      ,Null as [updated_at]
+FROM mig_fix_schedule_details as a
+INNER JOIN fix_schedules as b on a.fix_schedule_name = b.name
+
+-- Employees with Fix Schedule
+
+UPDATE employees SET work_schedule_id = a.fix_schedule_id
+from fix_schedules as a INNER JOIN
+mig_employee_fix_schedules as b ON a.name = b.fix_schedule_name inner join 
+employees as c on b.employee_no = c.employee_no
+
+

@@ -1,0 +1,22 @@
+INSERT INTO payroll_incomes(
+[payroll_period_id]
+,[employment_id]
+,[income_id]
+,[employee_id]
+,[amount]
+,[created_at]
+,[updated_at]
+)
+SELECT 
+d.id as [payroll_period_id]
+,c.id as [employment_id]
+,e.id as [income_id]
+,b.id as [employee_id]
+,a.amount as [amount]
+,GETDATE() as [created_at]
+,null as [updated_at]
+FROM mig_employee_incomes as a
+INNER JOIN employees as b ON a.employee_no = b.employee_no
+INNER JOIN employment_types as c on a.employee_type = c.id
+INNER JOIN payroll_periods as d on a.payroll_period = d.id
+INNER JOIN incomes as e on a.deduction = e.id

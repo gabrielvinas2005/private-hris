@@ -1,0 +1,8 @@
+*
+!public/
+!.gitignore
+!pdfMappings/
+!pdfMappings/*.json
+!non_dtr_attachments/
+!non_dtr_attachments/.gitignore
+!non_dtr_attachments/README.md

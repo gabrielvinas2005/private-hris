@@ -1,0 +1,20 @@
+INSERT INTO deductions(
+[name]
+,[active]
+,[is_sss]
+,[is_gsis]
+,[is_philhealth]
+,[is_pagibig]
+,[created_at]
+,[updated_at]
+)
+SELECT 
+a.name [name]
+,CAST(1 as BIT) as [active]
+,a.is_sss as [is_sss]
+,a.is_gsis as [is_gsis]
+,a.is_philhealth as [is_philhealth]
+,a.is_pagibig as [is_pagibig]
+,GETDATE() as [created_at]
+,null as [updated_at]
+FROM mig_deductions as a

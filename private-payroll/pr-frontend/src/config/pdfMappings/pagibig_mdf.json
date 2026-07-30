@@ -1,0 +1,505 @@
+{
+    "member_last_name": {
+        "x": 166,
+        "y": 350,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "member_first_name": {
+        "x": 260,
+        "y": 350,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "member_name_extension": {
+        "x": 380,
+        "y": 350,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "member_middle_name": {
+        "x": 450,
+        "y": 350,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "father_last_name": {
+        "x": 166,
+        "y": 372,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "father_first_name": {
+        "x": 260,
+        "y": 372,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "father_middle_name": {
+        "x": 450,
+        "y": 372,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "mother_last_name": {
+        "x": 166,
+        "y": 397,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "mother_first_name": {
+        "x": 260,
+        "y": 397,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "mother_middle_name": {
+        "x": 450,
+        "y": 397,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "spouse_last_name": {
+        "x": 166,
+        "y": 417,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "spouse_first_name": {
+        "x": 260,
+        "y": 417,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "spouse_middle_name": {
+        "x": 450,
+        "y": 417,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "date_of_birth_month": {
+        "x": 23,
+        "y": 465,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "date_of_birth_day": {
+        "x": 75,
+        "y": 465,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "date_of_birth_year": {
+        "x": 130,
+        "y": 465,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "place_of_birth": {
+        "x": 20,
+        "y": 505,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "sex_male": {
+        "x": 23,
+        "y": 528,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "sex_female": {
+        "x": 23,
+        "y": 538,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "marital_status_married": {
+        "x": 212,
+        "y": 472,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "marital_status_single": {
+        "x": 212,
+        "y": 463,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "marital_status_widow": {
+        "x": 304,
+        "y": 463,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "marital_status_annulled": {
+        "x": 364,
+        "y": 463,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "marital_status_legally_separated": {
+        "x": 304,
+        "y": 472,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "citizenship": {
+        "x": 255,
+        "y": 500,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "tin_1": {
+        "x": 410,
+        "y": 467,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "tin_2": {
+        "x": 460,
+        "y": 467,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "tin_3": {
+        "x": 510,
+        "y": 467,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "sss_no": {
+        "x": 413,
+        "y": 494,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 15
+    },
+    "gsis_no": {
+        "x": 413,
+        "y": 494,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 15
+    },
+    "employee_no": {
+        "x": 413,
+        "y": 520,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 14
+    },
+    "height": {
+        "x": 100,
+        "y": 538,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "weight": {
+        "x": 157,
+        "y": 538,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "mobile_no": {
+        "x": 475,
+        "y": 647,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "email": {
+        "x": 464,
+        "y": 667,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "permanent_address_unit_room_floor": {
+        "x": 36,
+        "y": 623,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "permanent_address_building_name": {
+        "x": 140,
+        "y": 623,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "permanent_address_lot_block_phase_house": {
+        "x": 270,
+        "y": 623,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "permanent_address_street_name": {
+        "x": 340,
+        "y": 623,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "permanent_address_subdivision": {
+        "x": 20,
+        "y": 656,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "permanent_address_barangay": {
+        "x": 70,
+        "y": 656,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "permanent_address_municipality_city": {
+        "x": 177,
+        "y": 656,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "permanent_address_province_state_country": {
+        "x": 265,
+        "y": 656,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "permanent_address_zip": {
+        "x": 360,
+        "y": 656,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "permanent_zip": {
+        "x": 359,
+        "y": 656,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "present_address_unit_room_floor": {
+        "x": 36,
+        "y": 696,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "present_address_building_name": {
+        "x": 140,
+        "y": 696,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "present_address_lot_block_phase_house": {
+        "x": 270,
+        "y": 696,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "present_address_street_name": {
+        "x": 340,
+        "y": 696,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "present_address_subdivision": {
+        "x": 20,
+        "y": 728,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "present_address_barangay": {
+        "x": 70,
+        "y": 728,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "present_address_municipality_city": {
+        "x": 177,
+        "y": 728,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "present_address_province_state_country": {
+        "x": 265,
+        "y": 728,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "present_address_zip": {
+        "x": 360,
+        "y": 728,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 1,
+        "charSpacing": 16
+    },
+    "employer_name": {
+        "x": 79,
+        "y": 136,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 2
+    },
+    "employer_address": {
+        "x": 40,
+        "y": 175,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 2,
+        "charSpacing": 16
+    },
+    "employer_zip": {
+        "x": 325,
+        "y": 226,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 2,
+        "charSpacing": 16
+    },
+    "monthly_compensation": {
+        "x": 520,
+        "y": 158,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 2,
+        "charSpacing": 16
+    },
+    "date_employed": {
+        "x": 515,
+        "y": 225,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 2,
+        "charSpacing": 16
+    },
+    "dependent_1_last_name": {
+        "x": 40,
+        "y": 525,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 2,
+        "charSpacing": 16
+    },
+    "dependent_1_first_name": {
+        "x": 110,
+        "y": 525,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 2,
+        "charSpacing": 16
+    },
+    "dependent_1_middle_name": {
+        "x": 247,
+        "y": 525,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 2,
+        "charSpacing": 16
+    },
+    "dependent_1_birthdate": {
+        "x": 471,
+        "y": 520,
+        "fontSize": 10,
+        "maxWidth": 200,
+        "page": 2,
+        "charSpacing": 12
+    }
+}

@@ -1,0 +1,15 @@
+
+INSERT INTO [dbo].[employee_memberships]
+([employee_id]
+,[membership]
+,[created_at]
+,[updated_at])
+select distinct 
+b.id as [employee_id]
+,isnull(ltrim(dbo.ToProperCase(a.[Membership in Association/Organization])),'') as [membership]
+,getdate() as [created_at]
+,null as [updated_at]
+from mig_memberships a inner join
+employees b on a.[Employee No] = b.employee_no  order by b.id asc
+
+

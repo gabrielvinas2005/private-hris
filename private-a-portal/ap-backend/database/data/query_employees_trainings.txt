@@ -1,0 +1,25 @@
+
+INSERT INTO [dbo].[employee_trainings]
+           ([employee_id]
+           ,[training]
+           ,[training_from]
+           ,[training_to]
+           ,[hours]
+           ,[sponsored_by]
+           ,[learning_id]
+           ,[created_at]
+           ,[updated_at]
+		   )
+select distinct 
+ b.id as [employee_id]
+,isnull(a.Seminar,'') as [training]
+,null as [training_from]
+,null as [training_to]
+,isnull(a.Hours, null) as [hours]
+,isnull(a.[Sponsored By],'') as [sponsored_by]
+,0 as [learning_id]
+,getdate() as [created_at]
+,null as [updated_at]
+from mig_trainings a inner join
+employees b on a.[Employee No] = b.employee_no  order by b.id asc
+

@@ -1,0 +1,231 @@
+@import './base.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+#app {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  font-weight: normal;
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
+
+@media (min-width: 1024px) {}
+
+body {
+  margin: 0;
+}
+
+/* Toast notifications */
+.tk-toast.el-notification {
+  padding: 0;
+  background-color: transparent;
+  box-shadow: none;
+  border: none;
+  min-width: auto;
+}
+
+.tk-toast .el-notification__content {
+  margin: 0;
+}
+
+.tk-toast__content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  padding-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+  background-color: #fff;
+  min-width: 320px;
+  max-width: 380px;
+}
+
+.tk-toast__icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tk-toast__icon {
+  font-size: 20px;
+}
+
+.tk-toast__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(148, 163, 184, 0.5);
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: tk-spin 0.8s linear infinite;
+}
+
+@keyframes tk-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.tk-toast__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tk-toast__title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.tk-toast__desc {
+  font-size: 13px;
+  color: #475569;
+}
+
+.tk-toast {
+  --tk-toast-accent: #2563eb;
+}
+
+.tk-toast__progress {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 12px;
+  height: 4px;
+  border-radius: 999px;
+  background-color: rgba(148, 163, 184, 0.3);
+  overflow: hidden;
+}
+
+.tk-toast__progress-bar {
+  width: 100%;
+  height: 100%;
+  background-color: var(--tk-toast-accent);
+  animation: tk-toast-progress linear forwards;
+  transform-origin: left center;
+}
+
+@keyframes tk-toast-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+.tk-toast--success {
+  --tk-toast-accent: #22c55e;
+}
+
+.tk-toast--success .tk-toast__content {
+  background-color: #ecfdf5;
+}
+
+.tk-toast--success .tk-toast__icon-wrap {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #15803d;
+}
+
+.tk-toast--error {
+  --tk-toast-accent: #ef4444;
+}
+
+.tk-toast--error .tk-toast__content {
+  background-color: #fef2f2;
+}
+
+.tk-toast--error .tk-toast__icon-wrap {
+  background-color: rgba(248, 113, 113, 0.18);
+  color: #b91c1c;
+}
+
+.tk-toast--warning {
+  --tk-toast-accent: #f59e0b;
+}
+
+.tk-toast--warning .tk-toast__content {
+  background-color: #fff7ed;
+}
+
+.tk-toast--warning .tk-toast__icon-wrap {
+  background-color: rgba(251, 191, 36, 0.2);
+  color: #b45309;
+}
+
+.tk-toast--info {
+  --tk-toast-accent: #6366f1;
+}
+
+.tk-toast--info .tk-toast__content {
+  background-color: #eef2ff;
+}
+
+.tk-toast--info .tk-toast__icon-wrap {
+  background-color: rgba(79, 70, 229, 0.18);
+  color: #4338ca;
+}
+
+.tk-toast--loading {
+  --tk-toast-accent: #2563eb;
+}
+
+.tk-toast--loading .tk-toast__content {
+  background-color: #f8fafc;
+}
+
+.tk-toast--loading .tk-toast__icon-wrap {
+  background-color: rgba(148, 163, 184, 0.2);
+}
+
+/* Tooltip color variants to match button colors with white text */
+.tt-primary .el-popper__arrow::before, .tt-primary {
+  background-color: var(--el-color-primary) !important;
+  color: #fff !important;
+}
+.tt-success .el-popper__arrow::before, .tt-success {
+  background-color: var(--el-color-success) !important;
+  color: #fff !important;
+}
+.tt-warning .el-popper__arrow::before, .tt-warning {
+  background-color: var(--el-color-warning) !important;
+  color: #fff !important;
+}
+.tt-danger .el-popper__arrow::before, .tt-danger {
+  background-color: var(--el-color-danger) !important;
+  color: #fff !important;
+}
+
+/* Info tone for viewer list button tooltip */
+.tt-info .el-popper__arrow::before, .tt-info {
+  background-color: var(--el-color-info) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Remove outline/border/shadow on custom-colored tooltips */
+.tt-primary, .tt-success, .tt-warning, .tt-danger {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}

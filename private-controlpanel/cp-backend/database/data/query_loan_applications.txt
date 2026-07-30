@@ -1,0 +1,34 @@
+INSERT INTO loan_applications(
+[deduction_id]
+,[employee_id]
+,[loan_amount]
+,[loan_amortization]
+,[remarks]
+,[effectivity_date]
+,[end_date]
+,[is_approve]
+,[is_disapprove]
+,[created_at]
+,[updated_at]
+,[payment]
+,[balance]
+,[voucher_number]
+)
+SELECT 
+c.id as [deduction_id]
+,b.id as [employee_id]
+,aloan_amount as [loan_amount]
+,a.loan_amortization as [loan_amortization]
+,a.remarks as [remarks]
+,a.effectivity_date as [effectivity_date]
+,a.end_date as  [end_date]
+,a.is_approve as [is_approve]
+,a.is_disapprove as [is_disapprove]
+,GETDATE() as [created_at]
+,null as [updated_at]
+,a.payment as [payment]
+,a.balance as [balance]
+,a.voucher_number as [voucher_number]
+FROM mig_loan_applications as a
+INNER JOIN employees as b ON a.employee_no = b..employee_no
+INNER JOIN deductions as c on a.loan = c.name

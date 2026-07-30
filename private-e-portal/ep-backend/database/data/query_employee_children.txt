@@ -1,0 +1,19 @@
+INSERT INTO employee_children(
+[employee_id]
+,[child_name]
+,[child_birthdate]
+,[created_at]
+,[updated_at]
+,[child_middlename]
+,[child_lastname]
+)
+SELECT 
+b.id as [employee_id]
+,a.[child_name]
+,a.[child_birthdate]
+,GETDATE() as [created_at]
+,null as [updated_at]
+,a.[child_middlename]
+,a.[child_lastname]
+FROM mig_employee_children as a
+INNER JOIN employees as b ON a.employee_no = b.employee_no

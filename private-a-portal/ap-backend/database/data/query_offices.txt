@@ -1,0 +1,20 @@
+INSERT INTO departments(
+[code]
+,[name]
+,[functionality]
+,[active]
+,[created_at]
+,[updated_at]
+,[employee_id]
+,[branch_id]
+)
+SELECT 
+a.[code]
+,a.[name]
+,a.[functionality]
+,CAST(1 AS BIT) as [active]
+,GETDATE() as [created_at]
+,null as [updated_at]
+,a.[employee_id]
+,a.[branch_id]
+FROM mig_offices as a

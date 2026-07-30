@@ -1,0 +1,26 @@
+INSERT INTO [dbo].[employee_examinations]
+(
+[employee_id]
+,[exam_rating]
+,[exam_date]
+,[place_of_exam]
+,[license_number]
+,[date_released]
+,[created_at]
+,[updated_at]
+,[eligibility_id]
+)
+select distinct 
+	b.id,
+	isnull(a.Rating,0),
+	null,
+	isnull(a.[Place of Exam],''),
+	ISNULL(a.[License Number],null),
+	null,
+	GETDATE(),
+	null,
+	ISNULL(c.id,0)
+from mig_eligibility a inner join
+employees b on a.[Employee No] = b.employee_no inner join
+eligibilities c on LTRIM(RTRIM(a.name)) = LTRIM(RTRIM(c.name))
+order by b.id asc

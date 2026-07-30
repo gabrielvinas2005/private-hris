@@ -1,0 +1,13 @@
+INSERT INTO employee_recognations(
+[employee_id]
+,[recognation]
+,[created_at]
+,[updated_at]
+)
+SELECT 
+b.id as [employee_id]
+,a.[recognation]
+,GETDATE() as [created_at]
+,null as [updated_at]
+FROM mig_employee_recognations as a
+INNER JOIN employees as b ON a.employee_no = b.employee_no

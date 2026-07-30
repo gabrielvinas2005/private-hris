@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Laravel API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 3px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        input, button { margin: 5px; padding: 8px; }
+    </style>
+</head>
+<body>
+    <h1>Laravel API Login Test</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: Basic Login with Username</h3>
+        <input type="text" id="username1" placeholder="Username" value="admin">
+        <input type="password" id="password1" placeholder="Password" value="password">
+        <button onclick="testLogin('username')">Test Username Login</button>
+        <div id="result1" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 2: Login with Email</h3>
+        <input type="text" id="email2" placeholder="Email" value="admin@example.com">
+        <input type="password" id="password2" placeholder="Password" value="password">
+        <button onclick="testLogin('email')">Test Email Login</button>
+        <div id="result2" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 3: Check API Endpoint</h3>
+        <button onclick="checkEndpoint()">Check if /api/login exists</button>
+        <div id="result3" class="result"></div>
+    </div>
+
+    <script>
+        async function testLogin(type) {
+            const resultDiv = document.getElementById(`result${type === 'username' ? '1' : '2'}`);
+            resultDiv.innerHTML = 'Testing...';
+            
+            let requestData = {};
+            if (type === 'username') {
+                const username = document.getElementById('username1').value;
+                const password = document.getElementById('password1').value;
+                requestData = { username, password };
+            } else {
+                const email = document.getElementById('email2').value;
+                const password = document.getElementById('password2').value;
+                requestData = { email, password };
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="success">Success! Response: ${JSON.stringify(data, null, 2)}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">Error ${response.status}: ${JSON.stringify(data, null, 2)}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Network Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function checkEndpoint() {
+            const resultDiv = document.getElementById('result3');
+            resultDiv.innerHTML = 'Checking...';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/login', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="success">Endpoint exists and accepts requests</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">Endpoint returned status: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Cannot reach endpoint: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,1 @@
+DROP INDEX [employees_access_no_unique] ON [dbo].[employees]

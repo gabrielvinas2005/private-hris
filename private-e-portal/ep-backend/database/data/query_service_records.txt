@@ -1,0 +1,33 @@
+
+INSERT INTO [dbo].[service_records]
+([employee_id]
+,[start_date]
+,[end_date]
+,[designation]
+,[employment_type]
+,[annual_salary]
+,[place_of_assignment]
+,[leave_without_pay]
+,[separation_date]
+,[cause]
+,[branch]
+,[created_at]
+,[updated_at])
+select distinct 
+b.id as [employee_id]
+,null as [start_date]
+,null as [end_date]
+,isnull(ltrim(a.Designation),'') as [designation]
+,isnull(ltrim(a.Status),'') as [employment_type]
+,(cast(isnull(a.[Rate Month],0) as decimal(18,2)) * 12.00) as [annual_salary]
+,isnull(a.[Place of Assignment],'') as [place_of_assignment]
+,null as [leave_without_pay]
+,null as [separation_date]
+,null as [cause]
+,null as [branch]
+,getdate() as [created_at]
+,null as [updated_at]
+from mig_service_records a inner join
+employees b on a.[Employee No] = b.employee_no  order by b.id asc
+
+

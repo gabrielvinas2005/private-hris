@@ -1,0 +1,23 @@
+
+INSERT INTO [dbo].[employee_organizations]
+    ([employee_id]
+    ,[organization]
+    ,[org_from]
+    ,[org_to]
+    ,[org_hours]
+    ,[org_position]
+    ,[created_at]
+    ,[updated_at])
+select distinct 
+b.id as [employee_id]
+,isnull(a.[Organization Name], '') as [organization]
+,null as [org_from]
+,null as [org_to]
+,isnull(a.Hours, 0) as [org_hours]
+,isnull(a.Position, '') as [org_position]
+,getdate() as [created_at]
+,null as [updated_at]
+from mig_organizations a inner join
+employees b on a.[Employee No] = b.employee_no  order by b.id asc
+
+

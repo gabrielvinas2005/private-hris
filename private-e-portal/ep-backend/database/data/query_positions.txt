@@ -1,0 +1,14 @@
+INSERT INTO positions(
+[name]
+,[active]
+,[created_at]
+,[updated_at]
+,[description]
+)
+SELECT 
+a.[name]
+,CAST(1 AS BIT) as [active]
+,GETDATE() as [created_at]
+,null as [updated_at]
+,a.[description]
+FROM mig_positions as a

@@ -1,0 +1,29 @@
+
+INSERT INTO [dbo].[employee_employment_records]
+           ([employee_id]
+           ,[work_start_date]
+           ,[work_end_date]
+           ,[work_company]
+           ,[monthly_salary]
+           ,[salary_grade_step]
+           ,[status_of_appointment]
+           ,[position]
+           ,[government_service_id]
+           ,[created_at]
+           ,[updated_at])
+select distinct 
+b.id as [employee_id]
+,isnull(a.[Date From],null) as [work_start_date]
+,isnull(a.[Date To], null) as [work_end_date]
+,null as [work_company]
+,isnull(a.[Monthly Salary], 0) as [monthly_salary]
+,null as [salary_grade_step]
+,isnull(LTRIM(dbo.ToProperCase(a.[Status of Appointment])),'') as [status_of_appointment]
+,isnull(LTRIM(Upper(a.Position)),'') as[position]
+,0 as [government_service_id]
+,getdate() as [created_at]
+,null as [updated_at]
+from mig_employment a inner join
+employees b on a.[Employee No] = b.employee_no  order by b.id asc
+
+

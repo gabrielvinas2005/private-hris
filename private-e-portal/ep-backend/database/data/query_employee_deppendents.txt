@@ -1,0 +1,17 @@
+INSERT INTO employee_dependents(
+[employee_id]
+,[name]
+,[relationship]
+,[course]
+,[created_at]
+,[updated_at]
+)
+SELECT 
+b.id as [employee_id]
+,a.[name]
+,a.[relationship]
+,a.[course]
+,GETDATE() as [created_at]
+,null as [updated_at]
+FROM mig_employee_dependents as a
+INNER JOIN employees as b ON a.employee_no = b.employee_no
