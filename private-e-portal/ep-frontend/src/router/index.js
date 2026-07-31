@@ -47,8 +47,38 @@ import PanelInterviewRatings from '../views/PanelInterviewRatings/index.vue';
 const AnnouncementsView = () => import('../views/Announcement/index.vue');
 import OtpVerification from '../views/auth/otp.vue';
 import ChangePassword from '../views/auth/change-password.vue';
+import DocumentRequestsView from '../views/document-request.vue';
+import TrainingRecordView from '../views/TrainingRecord.vue'
+import DownloadablesView from '../views/Downloadables.vue'
+
+
+
+
 
 const routes = [
+
+    //downloadables route
+    {
+    path: '/downloadables',
+    component: DownloadablesView,
+    meta: { requiresAuth: true }
+    },
+
+    //trainig records route
+    {
+    path: '/training-records',
+    component: TrainingRecordView,
+    meta: { requiresAuth: true }
+    },
+    
+    // Document Requests route
+    {
+    path: '/document-requests',
+    component: DocumentRequestsView,
+    meta: { requiresAuth: true }
+    },
+
+
     {
         path: '/',
         component: home,

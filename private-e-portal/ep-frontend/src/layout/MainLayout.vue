@@ -54,6 +54,30 @@
           </svg>
           <span v-if="!isSidebarCollapsed" class="font-medium">Leave & Time Management</span>
         </router-link>
+
+        <!-- Training Records -->
+        <router-link
+            to="/training-records"
+            class="flex items-center py-3 space-x-3 text-sm font-medium transition-all duration-200 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm group"
+            :class="[isSidebarCollapsed ? 'justify-center px-0' : 'px-4', isActive('/training-records') ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100' : '']"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-11.247S17.5 6.253 12 6.253z"></path>
+            </svg>
+            <span v-if="!isSidebarCollapsed" class="font-medium">Training Records</span>
+        </router-link>
+
+        <!-- Downloadables -->
+         <router-link
+              to="/downloadables"
+              class="flex items-center py-3 space-x-3 text-sm font-medium transition-all duration-200 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm group"
+              :class="[isSidebarCollapsed ? 'justify-center px-0' : 'px-4', isActive('/downloadables') ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100' : '']"
+          >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <span v-if="!isSidebarCollapsed" class="font-medium">Downloadables</span>
+          </router-link>
         
         <!-- Pass Slip 
         <router-link
@@ -178,7 +202,6 @@
             to="/document-requests"
             class="flex items-center py-3 space-x-3 text-sm font-medium transition-all duration-200 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm group"
             :class="[isSidebarCollapsed ? 'justify-center px-0' : 'px-4', isActive('/document-requests') ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100' : '']"
-            v-if="isMenuAccessLoaded && hasMenuAccess('Document Requests')"
           >
             <!-- Document / File Outline SVG Icon -->
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

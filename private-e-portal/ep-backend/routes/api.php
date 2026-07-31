@@ -1,4 +1,8 @@
 <?php
+use App\Http\Controllers\DocumentRequestController;
+use App\Http\Controllers\TrainingRecordController;
+use App\Http\Controllers\DownloadablesController;
+
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +38,23 @@ Route::post('/login', 'Api\AuthController@login');
 Route::post('/register', 'Api\AuthController@register');
 Route::post('/verify-otp', 'Api\AuthController@verifyOtp');
 
+//Downloadables Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/downloadables', [DownloadablesController::class, 'index']);
+    Route::get('/downloadables/{id}/download', [DownloadablesController::class, 'download']);
+});
+
+//Training Records Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/training-records', [TrainingRecordController::class, 'index']);
+    Route::post('/training-records', [TrainingRecordController::class, 'store']);
+});
+
+//Document Request  
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/document-requests', [DocumentRequestController::class, 'index']);
+    Route::post('/document-requests', [DocumentRequestController::class, 'store']);
+});
 
 // Authentication routes
 // User authentication check route

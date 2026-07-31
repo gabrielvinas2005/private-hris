@@ -1,6 +1,53 @@
 import axios from 'axios'
 import { currentConfig } from '../config/api.js'
 
+// Downloadables API methods
+export const downloadablesApiService = {
+    async getDownloadables() {
+        const response = await apiClient.get('/downloadables')
+        return response.data
+    },
+
+    async downloadFile(id, fileName) {
+        const response = await apiClient.get(`/downloadables/${id}/download`, {
+            responseType: 'blob'
+        })
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', fileName)
+        document.body.appendChild(link)
+        link.click()
+        link.parentElement.removeChild(link)
+    }
+}
+
+// Training Record API methods
+export const trainingRecordApiService = {
+    async getRecords() {
+        const response = await apiClient.get('/training-records')
+        return response.data
+    },
+
+    async createRecord(payload) {
+        const response = await apiClient.post('/training-records', payload)
+        return response.data
+    }
+}
+
+//Document Request API methods
+export const documentRequestApiService = {
+    async getRequests() {
+        const response = await apiClient.get('/document-requests')
+        return response.data
+    },
+
+    async submitRequest(payload) {
+        const response = await apiClient.post('/document-requests', payload)
+        return response.data
+    }
+}
+
 // Create axios instance with base configuration
 const apiClient = axios.create({
     baseURL: currentConfig.BASE_URL,
