@@ -50,20 +50,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/201_file_updates_add/{id}/{request_id}', 'EmployeeRequestController@store')->name('201_file_updates_add');
     Route::get('/201_file_add/{id}', 'EmployeeFileController@update')->name('201_file_add');
 
-    // SALN
-    Route::get('/SALN/{id}', 'SALNController@index')->name('SALN');
-    Route::post('/real-properties/store', 'SALNController@store')->name('real-properties.store');
-    Route::post('/personal-properties/store', 'SALNController@storepersonal')->name('personal-properties.store');
-    Route::post('/liabilities/store', 'SALNController@storeliabilities')->name('liabilities.store');
-    Route::post('/business-interests/store', 'SALNController@storebusiness')->name('business-interests.store');
-    Route::post('/relatives/store', 'SALNController@storerelatives')->name('relatives.store');
-    Route::get('/saln_download/{id}', 'SALNController@download')->name('saln_download');
-    Route::delete('/real-properties/{id}', 'SALNController@destroy')->name('real-properties.destroy');
-    Route::delete('/personal-properties/{id}', 'SALNController@destroypersonal')->name('personal-properties.destroy');
-    Route::delete('/liabilities/{id}', 'SALNController@destroyliabilities')->name('liabilities.destroy');
-    Route::delete('/business-interests/{id}', 'SALNController@destroybusiness')->name('business-interests.destroy');
-    Route::delete('/relatives/{id}', 'SALNController@destroyrelatives')->name('relatives.destroy');
-
 
     // Overtime Application
     Route::get('/overtime_application/{id}', 'OvertimeApplicationController@index')->name('overtime_applications');
@@ -541,9 +527,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/loan_print', 'PagIbigLoanController@loanprint')->name('loan_print');
 
 
-    // GSIS Remittance Report
-    Route::get('/gsis_remittance', 'GSISRemittanceController@index')->name('gsis_remittance');
-    Route::post('/gsis_remittance_print', 'GSISRemittanceController@print')->name('gsis_remittance_print');
     // Bank Remittance Report
     Route::get('/bank_remittance', 'BankRemittanceController@index')->name('bank_remittance');
     Route::post('/bank_remittance_print', 'BankRemittanceController@print')->name('bank_remittance_print');
@@ -719,14 +702,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/philhealth_table_delete/{id}', 'PhilhealthController@delete')->name('philhealth_table_delete');
     Route::post('/philhealth_table', 'PhilhealthController@store')->name('philhealth_table_add');
     Route::delete('/philhealth_table_delete/{id}', 'PhilhealthController@destroy')->name('philhealth_table_destroy');
-    // GSIS Setup
-    Route::get('/gsis_table', 'GSISController@index')->name('gsis_tables');
-    Route::get('/gsis_table_delete/{id}', 'GSISController@delete')->name('gsis_table_delete');
-    Route::post('/gsis_table', 'GSISController@store')->name('gsis_table_add');
-    Route::delete('/gsis_table_delete/{id}', 'GSISController@destroy')->name('gsis_table_destroy');
-    Route::get('/gsis_list', 'GSISController@index')->name('gsis_list');
-    Route::get('/gsis_add/{id}', 'GSISController@add')->name('gsis_add');
-    Route::post('/gsis_add/{id}', 'GSISController@storeGSIS')->name('gsis_add');
     // SSS Setup
     Route::get('/sss_table', 'SSSController@index')->name('sss_tables');
     Route::get('/sss_table_delete/{id}', 'SSSController@delete')->name('sss_table_delete');

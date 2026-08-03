@@ -44,13 +44,6 @@ Route::get('/shared-auth-session', function () {
     return response()->json(['error' => 'No shared auth session'], 404);
 });
 
-// Temporary: 201-file route for testing (remove authentication)
-Route::get('/201-files', 'EmployeeFileController@index');
-
-// Users route (requires authentication)
-// Route::get('/users', 'UsersController@index');
-// Route::post('/users', 'UsersController@store');
-
 // Authentication routes
 Route::post('/login', 'Api\AuthController@login');
 Route::post('/register', 'Api\AuthController@register');
@@ -59,7 +52,7 @@ Route::post('/register', 'Api\AuthController@register');
 if (in_array(config('app.env'), ['local', 'development', 'dev'])) {
     Route::post('/dev-login', 'Api\AuthController@devLogin');
 }
-// Authentication routes
+
 // User authentication check route
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return response()->json([
@@ -70,7 +63,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
         'message' => 'User retrieved successfully'
     ]);
 });
-
 
 // Public routes for specific resources (no authentication)
 Route::get('/downloadable-forms/{id}/preview', 'DownloadableFormController@preview');
@@ -89,25 +81,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Announcements
     Route::get('/announcements', 'AnnouncementController@index');
 
-    // Applicant Examination Routes
-    Route::get('/applicant-examination-intro/{id}', 'ApplicantsController@examIntro');
-    Route::get('/applicant-examination-page/{id}', 'ApplicantsController@examPage');
-    Route::post('/applicant-examination-submit/{applicant_examination_id}', 'ApplicantsController@examSubmit');
-    Route::post('/applicant-examination-auto-save/{applicant_examination_id}', 'ApplicantsController@examAutoSave');
-    Route::get('/applicant-examination-result/{applicant_examination_id}', 'ApplicantsController@examResult');
-
-    // Applicant Portal Routes
-    Route::get('/applicant-page', 'ApplicantsController@applicant_page');
-    Route::get('/applicant-apply/{applicant_id}/{position_id}/{is_plantilla}', 'ApplicantsController@apply');
-    Route::post('/applicant-pds-store/{id}', 'ApplicantsController@pds_store');
-    Route::get('/applicant-delete/{type_id}/{id}', 'ApplicantsController@pds_delete');
-    Route::delete('/applicant-destroy/{type_id}/{id}', 'ApplicantsController@pds_destroy');
-    Route::get('/applicant-download/{id}', 'ApplicantsController@download');
-
-    // OTP Authentication
-    Route::get('/user-verification', 'UsersController@userVerification');
-    Route::get('/user-verification-check', 'UsersController@userVerificationCheck');
-
     // Employee Portal Routes - 201 File
     Route::get('/201-files/{id}', 'EmployeeFileController@index');
     Route::get('/201-ipcr-view/{id}', 'EmployeeFileController@ipcr_view');
@@ -115,20 +88,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/201-file-updates-add/{id}/{employee_id}', 'EmployeeRequestController@add');
     Route::post('/201-file-updates-add/{id}/{request_id}', 'EmployeeRequestController@store');
     Route::get('/201-file-add/{id}', 'EmployeeFileController@update');
-
-    // SALN Routes
-    Route::get('/saln/{id}', 'SALNController@index');
-    Route::post('/real-properties', 'SALNController@store');
-    Route::post('/personal-properties', 'SALNController@storepersonal');
-    Route::post('/liabilities', 'SALNController@storeliabilities');
-    Route::post('/business-interests', 'SALNController@storebusiness');
-    Route::post('/relatives', 'SALNController@storerelatives');
-    Route::get('/saln-download/{id}', 'SALNController@download');
-    Route::delete('/real-properties/{id}', 'SALNController@destroy');
-    Route::delete('/personal-properties/{id}', 'SALNController@destroypersonal');
-    Route::delete('/liabilities/{id}', 'SALNController@destroyliabilities');
-    Route::delete('/business-interests/{id}', 'SALNController@destroybusiness');
-    Route::delete('/relatives/{id}', 'SALNController@destroyrelatives');
 
     // Overtime Application Routes
     Route::get('/overtime-applications/{id}', 'OvertimeApplicationController@index');
@@ -689,10 +648,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/pag-ibig-loan', 'PagIbigLoanController@loan');
     Route::post('/loan/print', 'PagIbigLoanController@loanprint');
 
-    // GSIS Remittance Report
-    Route::get('/gsis-remittance', 'GSISRemittanceController@index');
-    Route::post('/gsis-remittance/print', 'GSISRemittanceController@print');
-
     // Bank Remittance Report
     Route::get('/bank-remittance', 'BankRemittanceController@index');
     Route::post('/bank-remittance/print', 'BankRemittanceController@print');
@@ -919,15 +874,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/philhealth-tables/{id}/delete', 'PhilhealthController@delete');
     Route::post('/philhealth-tables', 'PhilhealthController@store');
     Route::delete('/philhealth-tables/{id}', 'PhilhealthController@destroy');
-
-    // GSIS Setup
-    Route::get('/gsis-tables', 'GSISController@index');
-    Route::get('/gsis-tables/{id}/delete', 'GSISController@delete');
-    Route::post('/gsis-tables', 'GSISController@store');
-    Route::delete('/gsis-tables/{id}', 'GSISController@destroy');
-    Route::get('/gsis', 'GSISController@index');
-    Route::get('/gsis/{id}/add', 'GSISController@add');
-    Route::post('/gsis/{id}', 'GSISController@storeGSIS');
 
     // SSS Setup
     Route::get('/sss-tables', 'SSSController@index');

@@ -44,22 +44,14 @@
               <RouterLink to="/hr-setup/office" class="submenu-item"><el-icon><OfficeBuilding /></el-icon><span class="label">Department</span></RouterLink>
               <RouterLink to="/hr-setup/division" class="submenu-item"><el-icon><Collection /></el-icon><span class="label">Division</span></RouterLink>
               <RouterLink to="/hr-setup/section" class="submenu-item"><el-icon><Collection /></el-icon><span class="label">Section</span></RouterLink>
-              <RouterLink to="/hr-setup/eligibility" class="submenu-item"><el-icon><Medal /></el-icon><span class="label">Eligibility</span></RouterLink>
               <RouterLink to="/hr-setup/employment-type" class="submenu-item"><el-icon><Tickets /></el-icon><span class="label">Employment Type</span></RouterLink>
               <RouterLink to="/hr-setup/specialization" class="submenu-item"><el-icon><Collection /></el-icon><span class="label">Specialization</span></RouterLink>
               <RouterLink to="/hr-setup/position" class="submenu-item"><el-icon><Postcard /></el-icon><span class="label">Position</span></RouterLink>
-              <RouterLink to="/hr-setup/plantila" class="submenu-item"><el-icon><Collection /></el-icon><span class="label">Plantilla</span></RouterLink>
-              <RouterLink to="/hr-setup/non-plantila" class="submenu-item"><el-icon><Collection /></el-icon><span class="label">Non-Plantilla</span></RouterLink>
               <RouterLink to="/hr-setup/promotion-types" class="submenu-item"><el-icon><Collection /></el-icon><span class="label">Promotion Types</span></RouterLink>
               <RouterLink to="/hr-setup/off-boarding-types" class="submenu-item"><el-icon><Remove /></el-icon><span class="label">Off Boarding Types</span></RouterLink>
-              <RouterLink to="/hr-setup/ipcr-ratings" class="submenu-item"><el-icon><Star /></el-icon><span class="label">IPCR Ratings</span></RouterLink>
               <RouterLink to="/hr-setup/document-no" class="submenu-item"><el-icon><Document /></el-icon><span class="label">Document No.</span></RouterLink>
               <RouterLink to="/hr-setup/document-type" class="submenu-item"><el-icon><Document /></el-icon><span class="label">Document Type</span></RouterLink>
-              <RouterLink to="/hr-setup/semester-rating" class="submenu-item"><el-icon><Collection /></el-icon><span class="label">Semester Rating</span></RouterLink>
               <RouterLink to="/hr-setup/competencies" class="submenu-item"><el-icon><Collection /></el-icon><span class="label">Competencies</span></RouterLink>
-              <RouterLink to="/hr-setup/eete-rating" class="submenu-item"><el-icon><TrendCharts /></el-icon><span class="label">EETE Rating</span></RouterLink>
-              <RouterLink to="/hr-setup/exam-category" class="submenu-item"><el-icon><Notebook /></el-icon><span class="label">Exam Category</span></RouterLink>
-              <RouterLink to="/hr-setup/pmt" class="submenu-item"><el-icon><UserFilled /></el-icon><span class="label">PMT</span></RouterLink>
               <RouterLink to="/hr-setup/downloadable-docs" class="submenu-item"><el-icon><Document /></el-icon><span class="label">Downloadable Docs</span></RouterLink>
               <RouterLink to="/hr-setup/interview-setup" class="submenu-item"><el-icon><Document /></el-icon><span class="label">Interview Setup</span></RouterLink>
               <RouterLink to="/hr-setup/applicant-documents" class="submenu-item"><el-icon><Document /></el-icon><span class="label">Applicant Docs</span></RouterLink>
@@ -101,7 +93,6 @@
               <RouterLink to="/payroll-setup/tax-table-setup" class="submenu-item"><el-icon><Collection /></el-icon><span class="label">Tax Table Setup</span></RouterLink>
               <RouterLink to="/payroll-setup/HDMF Table Setup" class="submenu-item"><el-icon><Collection /></el-icon><span class="label">HDMF Table Setup</span></RouterLink>
               <RouterLink to="/payroll-setup/Philhealth Table Setup" class="submenu-item"><el-icon><Collection /></el-icon><span class="label">Philhealth Table Setup</span></RouterLink>
-              <RouterLink to="/payroll-setup/GSIS Table Setup" class="submenu-item"><el-icon><Tickets /></el-icon><span class="label">GSIS Table Setup</span></RouterLink>
               <RouterLink to="/payroll-setup/Salary Step Setup" class="submenu-item"><el-icon><Timer /></el-icon><span class="label">Salary Step Setup</span></RouterLink>
               <RouterLink to="/payroll-setup/salary-grade-setup" class="submenu-item"><el-icon><Postcard /></el-icon><span class="label">Salary Grade Setup</span></RouterLink>
               <RouterLink to="/payroll-setup/income-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">Income Setup</span></RouterLink>
@@ -109,16 +100,8 @@
               <RouterLink to="/payroll-setup/deduction-priority-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">Deduction Priority Setup</span></RouterLink>
               <RouterLink to="/payroll-setup/payroll-interval-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">Payroll Interval Setup</span></RouterLink>
               <RouterLink to="/payroll-setup/payroll-cutoff-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">Payroll Cut-off Setup</span></RouterLink>
-              <RouterLink to="/payroll-setup/loyalty-award-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">Loyalty Award Setup</span></RouterLink>
               <RouterLink to="/payroll-setup/uniform-and-clothing-allowance-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">Uniform and Clothing Allowance Setup</span></RouterLink>
-              <RouterLink to="/payroll-setup/rata-positions-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">RATA Positions Setup</span></RouterLink>
-              <RouterLink to="/payroll-setup/rata-table-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">RATA Table Setup</span></RouterLink>
-              <RouterLink to="/payroll-setup/hazard-pay-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">Hazard Pay Setup</span></RouterLink>
               <RouterLink to="/payroll-setup/overtime-tax-table-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">Overtime Tax Table Setup</span></RouterLink>
-              <RouterLink to="/payroll-setup/mid-year-bonus-table-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">Mid Year Bonus Table Setup</span></RouterLink>
-              <RouterLink to="/payroll-setup/year-end-bonus-table-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">Year End Bonus Table Setup</span></RouterLink>
-              <RouterLink to="/payroll-setup/cash-gift-table-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">Cash Gift Table Setup</span></RouterLink>
-              <RouterLink to="/payroll-setup/monetization-setup" class="submenu-item"><el-icon><User /></el-icon><span class="label">Monetization Setup</span></RouterLink>
             </div>
           </el-collapse-transition>
 
