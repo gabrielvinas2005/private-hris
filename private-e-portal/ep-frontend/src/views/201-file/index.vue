@@ -251,6 +251,24 @@
         </el-card>
       </div>
 
+      <!-- Empty State for Users without Employee Profile (e.g., Admin) -->
+      <el-card v-else shadow="hover">
+        <div class="text-center py-12">
+          <div class="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-200">
+            <el-icon size="32" color="#d97706">
+              <User />
+            </el-icon>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-2">No Employee Profile Linked</h3>
+          <p class="text-slate-600 max-w-md mx-auto mb-4 text-sm leading-relaxed">
+            Your account (<strong>{{ userData.email || 'Administrator' }}</strong>) is an administrative user without an associated Employee 201 File in the system.
+          </p>
+          <div class="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-lg text-xs font-medium border border-slate-200">
+            <span>To view or edit employee profiles, please log in with an employee account or assign an employee profile to this account in HR Management.</span>
+          </div>
+        </div>
+      </el-card>
+
     </div>
   </MainLayout>
 </template>

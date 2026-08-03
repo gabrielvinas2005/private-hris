@@ -45,8 +45,14 @@ export const documentRequestApiService = {
     async submitRequest(payload) {
         const response = await apiClient.post('/document-requests', payload)
         return response.data
+    },
+
+    async cancelRequest(id) {
+        const response = await apiClient.delete(`/document-requests/${id}`)
+        return response.data
     }
 }
+
 
 // Create axios instance with base configuration
 const apiClient = axios.create({

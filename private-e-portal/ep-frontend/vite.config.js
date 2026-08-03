@@ -10,7 +10,7 @@ export default defineConfig({
     vue(),
     vueDevTools(
       {
-        launchEditor: 'cursor',
+        launchEditor: process.env.LAUNCH_EDITOR || 'code',
       }
     ),
   ],

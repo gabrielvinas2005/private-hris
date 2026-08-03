@@ -19,6 +19,7 @@
             <el-option label="Processing" value="Processing" />
             <el-option label="Ready for Pickup" value="Ready for Pickup" />
             <el-option label="Released" value="Released" />
+            <el-option label="Cancelled" value="Cancelled" />
             <el-option label="Denied" value="Denied" />
           </el-select>
         </div>
@@ -41,9 +42,18 @@
               <el-tag :type="statusTagType(row.status_label)" size="small">{{ row.status_label }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="Actions" width="120" fixed="right">
+          <el-table-column label="Actions" width="160" fixed="right">
             <template #default="{ row }">
               <el-button type="primary" link size="small" @click="viewRequest(row)">View</el-button>
+              <el-button 
+                v-if="row.status_label === 'Pending'" 
+                type="danger" 
+                link 
+                size="small" 
+                @click="cancelRequest(row)"
+              >
+                Cancel
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -131,7 +141,7 @@
 
 <script>
 import MainLayout from '@/layout/MainLayout.vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { documentRequestApiService } from '@/services/apiService.js'
 
 const defaultForm = () => ({
@@ -152,10 +162,10 @@ export default {
       statusFilter: '',
       requests: [],
       documentTypes: [
-    { label: 'Certificate of Employment', value: 'coe' },
-    { label: 'Health Clearance', value: 'health_clearance' },
-    { label: 'Workspace Clearance', value: 'workspace_clearance' }
-],
+        { label: 'Certificate of Employment', value: 'coe' },
+        { label: 'Health Clearance', value: 'health_clearance' },
+        { label: 'Workspace Clearance', value: 'workspace_clearance' }
+      ],
       requestModalVisible: false,
       detailVisible: false,
       selectedRequest: null,
@@ -215,6 +225,7 @@ export default {
     statusTagType(label) {
       if (label === 'Released') return 'success'
       if (label === 'Denied') return 'danger'
+      if (label === 'Cancelled') return 'info'
       if (label === 'Ready for Pickup') return ''
       return 'warning'
     },
@@ -258,6 +269,27 @@ export default {
         ElMessage.error(error?.response?.data?.message || error?.message || 'Failed to submit request')
       } finally {
         this.submitting = false
+      }
+    },
+    async cancelRequest(row) {
+      try {
+        await ElMessageBox.confirm(
+          `Are you sure you want to cancel request #${row.id}?`,
+          'Cancel Request',
+          {
+            confirmButtonText: 'Yes, Cancel',
+            cancelButtonText: 'No',
+            type: 'warning'
+          }
+        )
+
+        await documentRequestApiService.cancelRequest(row.id)
+        ElMessage.success('Document request cancelled successfully')
+        await this.loadRequests()
+      } catch (error) {
+        if (error !== 'cancel') {
+          ElMessage.error(error?.response?.data?.message || error?.message || 'Failed to cancel request')
+        }
       }
     }
   }

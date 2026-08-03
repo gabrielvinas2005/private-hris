@@ -258,7 +258,7 @@ class EmployeeRequestController extends Controller
                 ->first();
 
             if (!$schedule) {
-                return $this->errorResponse('Editing of 201 File is currently not available. Please check the update schedule.');
+                return $this->errorResponse('Editing of File and Records is currently not available. Please check the update schedule.');
             }
 
             $validator = validator($request->all(), [
@@ -805,7 +805,7 @@ class EmployeeRequestController extends Controller
                 'module'  => 'Human Resource Module',
                 'menu'    => 'Review 201 Updates',
                 'activity' => 'Requested',
-                'description' => 'Requested 201 File Update.',
+                'description' => 'Requested File and Records Update.',
             );
         } else {
             //Save audit trail
@@ -814,7 +814,7 @@ class EmployeeRequestController extends Controller
                 'module'  => 'Human Resource Module',
                 'menu'    => 'Review 201 Updates',
                 'activity' => 'Edit',
-                'description' => 'Edited Request 201 File Update.',
+                'description' => 'Edited Request File and Records Update.',
             );
         }
 
@@ -859,7 +859,7 @@ class EmployeeRequestController extends Controller
                 ->first();
 
             if (!$schedule) {
-                return $this->errorResponse('Editing of 201 File is currently not available. Please check the update schedule.');
+                return $this->errorResponse('Editing of File and Records is currently not available. Please check the update schedule.');
             }
 
             // Get or create request_id for this employee
@@ -1757,7 +1757,7 @@ class EmployeeRequestController extends Controller
                 'module'  => 'Human Resource Module',
                 'menu'    => 'Review 201 Updates',
                 'activity' => 'Approved',
-                'description' => 'Approved Requested 201 File Update.',
+                'description' => 'Approved Requested File and Records Update.',
             );
 
             Audit::create($data_audit);
@@ -1770,7 +1770,7 @@ class EmployeeRequestController extends Controller
                 'module'  => 'Human Resource Module',
                 'menu'    => 'Review 201 Updates',
                 'activity' => 'Dispproved',
-                'description' => 'Dispproved Requested 201 File Update.',
+                'description' => 'Dispproved Requested File and Records Update.',
             );
 
             Audit::create($data_audit);

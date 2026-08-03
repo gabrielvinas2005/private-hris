@@ -61,14 +61,19 @@ class DashboardController extends Controller
             // Get overtime hours this month
             $overtimeHours = $this->getOvertimeHours($employeeId);
 
-            // Recent activity disabled per request
-            $recentActivity = [];
+            // Get latest payslip summary
+            $payslipSummary = $this->getLatestPayslipSummary($employeeId);
+
+            // Get recent announcements
+            $announcements = $this->getRecentAnnouncements($employeeId);
 
             return $this->successResponse([
                 'leave_balance' => $leaveBalance,
                 'pending_requests' => $pendingRequests,
                 'work_hours' => $workHours,
                 'overtime_hours' => $overtimeHours,
+                'payslip_summary' => $payslipSummary,
+                'announcements' => $announcements,
                 'recent_activity' => $recentActivity
             ], 'Dashboard data retrieved successfully');
         } catch (\Exception $e) {
@@ -203,7 +208,68 @@ class DashboardController extends Controller
         return round($overtimeHours, 1);
     }
 
-    // recent activity function removed per request
+    /**
+     * Get latest payslip summary for an employee
+     */
+    private function getLatestPayslipSummary($employeeId)
+    {
+        try {
+            $latest = DB::table('payroll_summaries as s')
+                ->join('payroll_periods as p', 'p.id', '=', 's.payroll_period_id')
+                ->join('payroll_intervals as i', 'i.id', '=', 'p.payroll_interval_id')
+                ->where('s.employee_id', $employeeId)
+                ->where('p.active', 1)
+                ->where('p.posted', 1)
+                ->orderBy('p.release_date', 'desc')
+                ->select(
+                    'p.release_date',
+                    'i.name as interval_name',
+                    's.gross_pay',
+                    's.total_deductions',
+                    's.net_pay'
+                )
+                ->first();
+
+            return $latest ? [
+                'release_date' => $latest->release_date,
+                'interval' => $latest->interval_name,
+                'gross_pay' => (float)$latest->gross_pay,
+                'total_deductions' => (float)$latest->total_deductions,
+                'net_pay' => (float)$latest->net_pay
+            ] : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get recent announcements for employee
+     */
+    private function getRecentAnnouncements($employeeId)
+    {
+        try {
+            $table = \Illuminate\Support\Facades\Schema::hasTable('announcements') ? 'announcements' : (\Illuminate\Support\Facades\Schema::hasTable('announcement') ? 'announcement' : null);
+            if (!$table) return [];
+
+            return DB::table($table)
+                ->select(
+                    'id',
+                    'Title as title',
+                    DB::raw("Event as content"),
+                    DB::raw("Creted_at as created_at")
+                )
+                ->where(function ($q) use ($employeeId) {
+                    $q->where('employee_id', $employeeId)
+                       ->orWhereNull('employee_id')
+                       ->orWhere('employee_id', 0);
+                })
+                ->orderBy(DB::raw('Creted_at'), 'desc')
+                ->limit(5)
+                ->get();
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
 
     /**
      * Get human readable time ago

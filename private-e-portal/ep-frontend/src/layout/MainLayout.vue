@@ -66,18 +66,7 @@
             </svg>
             <span v-if="!isSidebarCollapsed" class="font-medium">Training Records</span>
         </router-link>
-
-        <!-- Downloadables -->
-         <router-link
-              to="/downloadables"
-              class="flex items-center py-3 space-x-3 text-sm font-medium transition-all duration-200 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm group"
-              :class="[isSidebarCollapsed ? 'justify-center px-0' : 'px-4', isActive('/downloadables') ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100' : '']"
-          >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
-              <span v-if="!isSidebarCollapsed" class="font-medium">Downloadables</span>
-          </router-link>
+        
         
         <!-- Pass Slip 
         <router-link
@@ -209,6 +198,18 @@
             </svg>
             <span v-if="!isSidebarCollapsed" class="font-medium">Document Requests</span>
         </router-link>
+
+        <!-- Downloadables -->
+         <router-link
+              to="/downloadables"
+              class="flex items-center py-3 space-x-3 text-sm font-medium transition-all duration-200 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-700 hover:shadow-sm group"
+              :class="[isSidebarCollapsed ? 'justify-center px-0' : 'px-4', isActive('/downloadables') ? 'bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100' : '']"
+          >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <span v-if="!isSidebarCollapsed" class="font-medium">Downloadables</span>
+          </router-link>
 
         <router-link
           v-if="isIpcrAvailable"
@@ -505,13 +506,13 @@
 
       <!-- Main Content Area -->
       <main class="flex-1 min-w-0 p-4 overflow-y-auto bg-slate-100 sm:p-6">
-        <!-- Breadcrumb Navigation -->
+        <!-- Breadcrumb Navigation 
         <div v-if="breadcrumbs.length > 0" class="mb-6">
           <div class="p-4 bg-white border shadow-sm border-slate-200 rounded-2xl">
         <Breadcrumb :breadcrumbs="breadcrumbs" />
       </div>
     </div>
-
+    -->
         <!-- Page Content -->
         <div class="p-4 bg-white border shadow-sm border-slate-200 rounded-2xl sm:p-6">
       <slot />

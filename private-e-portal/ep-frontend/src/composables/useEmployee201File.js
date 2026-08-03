@@ -138,7 +138,7 @@ export function useEmployee201File() {
                 religionOptions.value = data.religions || []
                 employmentTypeOptions.value = data.employment_types || []
                 console.log('Employment types from API:', data.employment_types, 'Stored:', employmentTypeOptions.value)
-                
+
                 // Address dropdowns are already initialized from frontend assets
                 // No need to reload them from backend
 

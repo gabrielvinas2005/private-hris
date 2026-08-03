@@ -59,23 +59,23 @@ const routes = [
 
     //downloadables route
     {
-    path: '/downloadables',
-    component: DownloadablesView,
-    meta: { requiresAuth: true }
+        path: '/downloadables',
+        component: DownloadablesView,
+        meta: { requiresAuth: true }
     },
 
     //trainig records route
     {
-    path: '/training-records',
-    component: TrainingRecordView,
-    meta: { requiresAuth: true }
+        path: '/training-records',
+        component: TrainingRecordView,
+        meta: { requiresAuth: true }
     },
-    
+
     // Document Requests route
     {
-    path: '/document-requests',
-    component: DocumentRequestsView,
-    meta: { requiresAuth: true }
+        path: '/document-requests',
+        component: DocumentRequestsView,
+        meta: { requiresAuth: true }
     },
 
 

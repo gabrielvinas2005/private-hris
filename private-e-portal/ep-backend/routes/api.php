@@ -54,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/document-requests', [DocumentRequestController::class, 'index']);
     Route::post('/document-requests', [DocumentRequestController::class, 'store']);
+    Route::delete('/document-requests/{id}', [DocumentRequestController::class, 'cancel']);
 });
 
 // Authentication routes

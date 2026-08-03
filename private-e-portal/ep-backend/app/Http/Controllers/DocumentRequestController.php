@@ -18,6 +18,49 @@ class DocumentRequestController extends Controller
         ['value' => 'workspace_clearance', 'label' => 'Workspace Clearance'],
     ];
 
+    public function cancel($id)
+{
+    try {
+        $user = Auth::user();
+        $docRequest = DB::table('document_requests')->where('id', $id)->first();
+
+        if (!$docRequest) {
+            return $this->notFoundResponse('Document request not found.');
+        }
+
+        // Only allow owner or admin to cancel
+        $isAdmin = (bool) ($user->access_all_branches ?? false);
+        if (!$isAdmin && $docRequest->user_id !== $user->id) {
+            return $this->forbiddenResponse('You are not authorized to cancel this request.');
+        }
+
+        // Only allow cancelling pending requests
+        if ($docRequest->status !== 'Pending') {
+            return $this->errorResponse('Only pending requests can be cancelled.');
+        }
+
+        DB::table('document_requests')
+            ->where('id', $id)
+            ->update([
+                'status' => 'Cancelled',
+                'updated_at' => now(),
+            ]);
+
+        Audit::create([
+            'user_id' => $user->id,
+            'module' => 'HR Module',
+            'menu' => 'Document Request',
+            'activity' => 'Cancel',
+            'description' => 'Cancelled document request #' . $id,
+        ]);
+
+        return $this->successResponse(null, 'Document request cancelled successfully.');
+    } catch (\Exception $e) {
+        return $this->serverErrorResponse('Failed to cancel request: ' . $e->getMessage());
+    }
+}
+
+    
     public function index()
     {
         try {
