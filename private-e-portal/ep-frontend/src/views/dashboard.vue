@@ -281,15 +281,30 @@
       <!-- Company Announcements Feed -->
       <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="font-semibold text-gray-900">Announcements</h3>
-          <div class="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
-            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
-            </svg>
+          <div class="flex items-center gap-2">
+            <h3 class="font-semibold text-gray-900">Announcements</h3>
+            <span class="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 font-medium rounded-full">Official</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button 
+              v-if="hasHrmAccess || userData?.is_admin || hasAnyAdminAccess()" 
+              @click="openAnnouncementModal"
+              class="text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>+ Create Announcement</span>
+            </button>
+            <div class="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
+              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+              </svg>
+            </div>
           </div>
         </div>
         <AnnouncementList v-if="announcements.length" :announcements="announcements" />
-        <p v-else class="text-sm text-gray-500">No announcements right now</p>
+        <p v-else class="text-sm text-gray-500 py-4 text-center">No announcements right now</p>
       </div>
     </div>
 
@@ -377,6 +392,66 @@
 
       </div>
     </div>
+
+    <!-- Create Announcement Dialog for EP Dashboard -->
+    <el-dialog
+      v-model="showAnnouncementModal"
+      title="Create Announcement"
+      width="580px"
+      :close-on-click-modal="false"
+    >
+      <el-form label-position="top">
+        <el-form-item label="Target Audience">
+          <el-radio-group v-model="announcementForm.isGlobal">
+            <el-radio :label="true">Global (All Employees)</el-radio>
+            <el-radio :label="false">Specific Employee</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item v-if="!announcementForm.isGlobal" label="Select Employee">
+          <el-select
+            v-model="announcementForm.employee_id"
+            placeholder="Search employee..."
+            filterable
+            class="w-full"
+          >
+            <el-option
+              v-for="emp in announcementEmployees"
+              :key="emp.id"
+              :label="emp.name"
+              :value="emp.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="Title">
+          <el-input v-model="announcementForm.title" placeholder="Announcement title..." />
+        </el-form-item>
+
+        <el-form-item label="Content">
+          <el-input
+            v-model="announcementForm.content"
+            type="textarea"
+            :rows="5"
+            placeholder="Write announcement body..."
+          />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <el-button @click="showAnnouncementModal = false">Cancel</el-button>
+          <el-button
+            type="primary"
+            :loading="submittingAnnouncement"
+            @click="submitDashboardAnnouncement"
+            style="background-color: #2563eb; border-color: #2563eb;"
+          >
+            Publish Announcement
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </MainLayout>
 </template>
 
@@ -434,7 +509,16 @@ export default {
       hasHrpAccess: false,
       hasHrtAccess: false,
       hasCpmAccess: false,
-      hasMissedLog: false
+      hasMissedLog: false,
+      showAnnouncementModal: false,
+      announcementForm: {
+        title: '',
+        content: '',
+        isGlobal: true,
+        employee_id: null
+      },
+      announcementEmployees: [],
+      submittingAnnouncement: false
     }
   },
   computed: {
@@ -483,7 +567,11 @@ export default {
     const storedUserData = localStorage.getItem('user_data')
     if (storedUserData) {
       this.userData = JSON.parse(storedUserData)
-      const isAdmin = this.toBool(this.userData?.is_admin)
+      const roleStr = String(this.userData?.role || this.userData?.user_role || '').toLowerCase()
+      const isAdmin = this.toBool(this.userData?.is_admin) || 
+        this.userData?.user_type_id === 1 || 
+        ['admin', 'hr', 'administrator', 'hr_admin'].includes(roleStr)
+
       this.hasHrmAccess = this.toBool(this.userData?.with_hrm_access) || isAdmin
       this.hasHrpAccess = this.toBool(this.userData?.with_hrp_access) || isAdmin
       this.hasHrtAccess = this.toBool(this.userData?.with_hrt_access) || isAdmin
@@ -729,6 +817,52 @@ export default {
         }
       } catch (error) {
         console.error('Error loading announcements:', error)
+      }
+    },
+
+    openAnnouncementModal() {
+      this.announcementForm = { title: '', content: '', isGlobal: true, employee_id: null }
+      this.showAnnouncementModal = true
+      this.loadAnnouncementEmployees()
+    },
+
+    async loadAnnouncementEmployees() {
+      try {
+        const ApiService = (await import('../services/api.js')).default
+        const res = await ApiService.getAnnouncementEmployees()
+        if (res && res.data) {
+          this.announcementEmployees = res.data
+        }
+      } catch (e) {
+        console.warn('Failed to load employees for announcement selection:', e)
+      }
+    },
+
+    async submitDashboardAnnouncement() {
+      if (!this.announcementForm.title || !this.announcementForm.content) {
+        this.$message ? this.$message.warning('Please enter title and content') : alert('Please enter title and content')
+        return
+      }
+      this.submittingAnnouncement = true
+      try {
+        const ApiService = (await import('../services/api.js')).default
+        const payload = {
+          title: this.announcementForm.title,
+          content: this.announcementForm.content,
+          employee_id: this.announcementForm.isGlobal ? null : this.announcementForm.employee_id
+        }
+        const res = await ApiService.createAnnouncement(payload)
+        if (res?.success || res?.id || res?.data) {
+          if (this.$message) this.$message.success('Announcement published successfully!')
+          this.showAnnouncementModal = false
+          await this.loadAnnouncements()
+        } else {
+          if (this.$message) this.$message.error(res?.message || 'Failed to publish announcement')
+        }
+      } catch (e) {
+        if (this.$message) this.$message.error(e?.message || 'Failed to publish announcement')
+      } finally {
+        this.submittingAnnouncement = false
       }
     },
 

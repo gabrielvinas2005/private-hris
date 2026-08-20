@@ -36,7 +36,7 @@
           ]"
         >
           <el-icon class="text-lg flex-shrink-0"><Menu /></el-icon>
-          <span v-if="!collapsed">HR Module</span>
+          <span v-if="!collapsed">Overview</span>
         </RouterLink>
 
         <RouterLink
@@ -404,7 +404,7 @@
         <div class="mt-2 mb-2 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 class="text-xl font-bold tracking-tight text-slate-900">
-              <slot name="header">HR Module</slot>
+              <slot name="header">Overview</slot>
             </h2>
             <p class="mt-0.5 text-sm text-slate-500">Employee Master Data & HR Lifecycle Management</p>
           </div>
@@ -441,11 +441,9 @@
       </header>
 
       <!-- Main Slot Content -->
-      <main class="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto bg-[#F3F5FA]">
-        <div class="p-4 bg-white border border-slate-200/70 shadow-sm rounded-2xl sm:p-6">
-          <slot />
+        <div class="p-4 bg-white">
+          <slot/>
         </div>
-      </main>
     </div>
   </div>
 </template>

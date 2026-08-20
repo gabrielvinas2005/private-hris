@@ -3295,7 +3295,49 @@ class DailyTimeRecordController extends Controller
                 $setupType = 'on_site';
                 $loggingMethod = 'Office Biometric Terminal';
                 $enableWebClock = false;
-                $setupMessage = 'On-Site Setup: Assigned to office Biometric Terminal login.';
+                $setupMessage = 'On-Site Setup: Assigned to office Biometric Terminal login (Lunch AM OUT 12:00 PM & PM IN 01:00 PM auto-recorded).';
+            }
+
+            // AUTO-RECORD LUNCH BREAK (AM OUT & PM IN) FOR ON-SITE EMPLOYEES
+            if ($setupType === 'on_site' && $todayRecord && !empty($amIn)) {
+                $nowTime = Carbon::now('Asia/Manila');
+                $lunchStart = Carbon::parse("{$today} 12:00:00", 'Asia/Manila');
+                $lunchEnd   = Carbon::parse("{$today} 13:00:00", 'Asia/Manila');
+                $updates = [];
+
+                if ($nowTime->gte($lunchStart) && empty($amOut)) {
+                    $amOut = '12:00:00';
+                    $updates['am_out'] = '12:00:00';
+                }
+
+                if ($nowTime->gte($lunchEnd) && empty($pmIn)) {
+                    $pmIn = '13:00:00';
+                    $updates['pm_in'] = '13:00:00';
+                }
+
+                if (!empty($updates)) {
+                    DB::table('time_data')
+                        ->where('id', $todayRecord->id)
+                        ->update($updates);
+                    // Re-calculate realtime work hours with updated lunch punches
+                    $todayRecord->am_out = $amOut;
+                    $todayRecord->pm_in = $pmIn;
+                    $this->calculateAndUpdateRealtimeWorkHours($todayRecord);
+                }
+            }
+
+            $isMissedLogToday = false;
+            if (!empty($pmIn) && empty($amOut) && !empty($amIn)) {
+                $isMissedLogToday = true;
+            } elseif (!empty($pmOut) && empty($pmIn)) {
+                $isMissedLogToday = true;
+            } elseif (!empty($amOut) && empty($amIn)) {
+                $isMissedLogToday = true;
+            } else {
+                $currentHour = (int) Carbon::now('Asia/Manila')->format('H');
+                if ($currentHour >= 19 && !empty($amIn) && empty($pmOut)) {
+                    $isMissedLogToday = true;
+                }
             }
 
             return $this->successResponse([
@@ -3313,7 +3355,7 @@ class DailyTimeRecordController extends Controller
                 'work_hours'               => $todayRecord->work_hours ?? 0,
                 'is_late'                  => ($todayRecord->late ?? 0) > 0,
                 'is_undertime'             => ($todayRecord->undertime ?? 0) > 0,
-                'is_missed_log'            => empty($amIn) || (empty($amOut) && !empty($pmIn)) || (empty($pmOut) && !empty($amOut)),
+                'is_missed_log'            => $isMissedLogToday,
                 'has_biometric_today'      => !empty($biometricLog),
                 'biometric_time'           => $biometricLog ? Carbon::parse($biometricLog->punch_time)->format('h:i A') : null,
                 'pass_slips_used_this_month' => $passSlipsUsed,

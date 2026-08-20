@@ -623,7 +623,7 @@
       <!-- Feature #2: Floating Shift-End Smart Reminder Banner -->
       <div 
         v-if="checkIsClockedIn() && !isReminderDismissed" 
-        class="fixed bottom-6 right-6 z-50 max-w-md bg-slate-900 text-white rounded-2xl p-4 shadow-2xl border border-slate-700/60 backdrop-blur-md flex items-center justify-between gap-4 animate-bounce-subtle"
+        class="fixed bottom-6 right-6 z-50 max-w-md bg-slate-900 text-white rounded-2xl p-4 shadow-2xl border border-slate-700/60 backdrop-blur-md flex items-center justify-between gap-4 transition-all duration-300"
       >
         <div class="flex items-center gap-3">
           <div class="relative flex h-3 w-3 flex-shrink-0">
@@ -639,14 +639,14 @@
           <button 
             @click="quickClockOut" 
             :disabled="isQuickClockingOut"
-            class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl transition shadow"
+            class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl transition shadow cursor-pointer"
           >
             {{ isQuickClockingOut ? 'Clocking Out...' : 'Clock Out Now' }}
           </button>
           <button 
-            @click="isReminderDismissed = true" 
-            class="text-slate-400 hover:text-white text-xs p-1"
-            title="Dismiss reminder"
+            @click="dismissReminder" 
+            class="text-slate-400 hover:text-white text-xs p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+            title="Dismiss reminder for this session"
           >
             ✕
           </button>
@@ -756,7 +756,7 @@ export default {
         maxSessionTimer: null,
         INACTIVITY_TIMEOUT_MS: 30 * 60 * 1000, // 30 minutes
         MAX_SESSION_TIMEOUT_MS: 5 * 60 * 60 * 1000, // 5 hours
-        isReminderDismissed: false,
+        isReminderDismissed: sessionStorage.getItem('shift_reminder_dismissed') === 'true',
         isQuickClockingOut: false,
         showLogoutGuardModal: false,
         isLoggingOutWithPunch: false,
@@ -903,10 +903,6 @@ export default {
       this.loadNotifications()
     }, 30000) // 30 seconds
 
-    // Feature #3: Window/Tab close warning when clocked in
-    this._boundBeforeUnload = this.handleBeforeUnload.bind(this)
-    window.addEventListener('beforeunload', this._boundBeforeUnload)
-
     // Ensure session_start_time exists
     if (!localStorage.getItem('session_start_time')) {
       localStorage.setItem('session_start_time', Date.now().toString())
@@ -925,9 +921,6 @@ export default {
   beforeUnmount() {
     document.removeEventListener('click', this.handleClickOutside)
     window.removeEventListener('profile-photo-updated', this.handlePhotoUpdated)
-    if (this._boundBeforeUnload) {
-      window.removeEventListener('beforeunload', this._boundBeforeUnload)
-    }
     // Clear notification interval
     if (this.notificationInterval) {
       clearInterval(this.notificationInterval)
@@ -1444,13 +1437,9 @@ export default {
         this.photoReady = true
       }
     },
-    // Feature #3: Window/Tab close warning
-    handleBeforeUnload(event) {
-      if (this.checkIsClockedIn()) {
-        event.preventDefault()
-        event.returnValue = 'You are currently Clocked In. Are you sure you want to leave without clocking out?'
-        return event.returnValue
-      }
+    dismissReminder() {
+      this.isReminderDismissed = true
+      sessionStorage.setItem('shift_reminder_dismissed', 'true')
     },
     // Feature #2: Quick clock out from floating shift reminder banner
     async quickClockOut() {
@@ -1465,6 +1454,7 @@ export default {
         await dtrApiService.webClockPunch(payload)
         localStorage.setItem('is_clocked_in', 'false')
         this.isReminderDismissed = true
+        sessionStorage.setItem('shift_reminder_dismissed', 'true')
         if (this.$toast) this.$toast.success('Successfully Clocked Out!')
       } catch (e) {
         if (this.$toast) this.$toast.error('Failed to Clock Out. Redirecting to clock terminal...')

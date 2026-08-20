@@ -1,0 +1,1 @@
+import{_ as s,d as t,e as r,f as o}from"./index-BtP9JMpM.js";const n={name:"HRReports"},a={class:"hr-reports"};function p(c,e,_,d,l,f){return r(),t("div",a,[...e[0]||(e[0]=[o("h1",null,"HR Reports",-1),o("p",null,"Coming soon...",-1)])])}const m=s(n,[["render",p],["__scopeId","data-v-c6d91643"]]);export{m as default};

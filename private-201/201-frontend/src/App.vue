@@ -155,7 +155,7 @@ onBeforeUnmount(() => {
     
     <!-- Main Application -->
     <MainLayout v-if="isAuthenticatedLocal && !isAuthenticating && !isBootstrapping">
-      <template #header>HR Module</template>
+      <template #header>Overview</template>
       <RouterView />
     </MainLayout>
     

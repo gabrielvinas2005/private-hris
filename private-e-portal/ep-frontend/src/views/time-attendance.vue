@@ -23,6 +23,8 @@
           :is-clocked-in-over8-hours="todayStatus.status === 'Clocked In' && todayStatus.work_hours > 8"
           :pass-slips-used="todayStatus.pass_slips_used_this_month"
           :pass-slip-limit="todayStatus.pass_slip_monthly_limit"
+          :lunch-alert-type="lunchAlertType"
+          :setup-type="todayStatus.setup_type"
           @alert-action="handleAlertAction"
         />
 
@@ -247,6 +249,13 @@
         @punch-success="handlePunchSuccess"
       />
 
+      <!-- Real-Time Lunch Break Milestone Modal -->
+      <LunchBreakModal
+        v-model:visible="showLunchModal"
+        :alert-type="lunchAlertType || 'lunch_start'"
+        :setup-type="todayStatus.setup_type || 'on_site'"
+      />
+
       <!-- Overtime Request Modal -->
       <el-dialog v-model="showOtModal" title="File Overtime Request" width="480px">
         <el-form label-position="top">
@@ -319,6 +328,7 @@ import TodayAttendanceCard from '../components/time-attendance/TodayAttendanceCa
 import WeeklyScheduleCard from '../components/time-attendance/WeeklyScheduleCard.vue'
 import AttendanceAlertsPanel from '../components/time-attendance/AttendanceAlertsPanel.vue'
 import ClockPanelModal from '../components/time-attendance/ClockPanelModal.vue'
+import LunchBreakModal from '../components/time-attendance/LunchBreakModal.vue'
 import AttendanceHistoryTable from '../components/time-attendance/AttendanceHistoryTable.vue'
 import PassSlipSection from '../components/time-attendance/PassSlipSection.vue'
 import CorrectionDisputeSection from '../components/time-attendance/CorrectionDisputeSection.vue'
@@ -333,6 +343,7 @@ export default {
     WeeklyScheduleCard,
     AttendanceAlertsPanel,
     ClockPanelModal,
+    LunchBreakModal,
     AttendanceHistoryTable,
     PassSlipSection,
     CorrectionDisputeSection
@@ -346,6 +357,9 @@ export default {
       ],
       activeTab: 'dtr',
       showClockModal: false,
+      showLunchModal: false,
+      lunchAlertType: null,
+      lunchInterval: null,
       showOtModal: false,
       otSubmitting: false,
       showTravelModal: false,
@@ -408,8 +422,50 @@ export default {
     await this.loadOvertime()
     await this.loadTravel()
     this.buildLocatorLogs()
+    this.checkLunchTimeMilestones()
+    this.lunchInterval = setInterval(this.checkLunchTimeMilestones, 10000)
+  },
+  beforeUnmount() {
+    if (this.lunchInterval) {
+      clearInterval(this.lunchInterval)
+    }
   },
   methods: {
+    checkLunchTimeMilestones() {
+      const now = new Date()
+      const hours = now.getHours()
+      const mins = now.getMinutes()
+      const todayDate = now.toISOString().slice(0, 10)
+
+      let currentMilestone = null
+
+      // Milestone 1: 11:50 AM to 11:59 AM (10 mins before lunch)
+      if (hours === 11 && mins >= 50 && mins <= 59) {
+        currentMilestone = '10_before_lunch'
+      }
+      // Milestone 2: 12:00 PM to 12:49 PM (Lunch break active)
+      else if (hours === 12 && mins >= 0 && mins <= 49) {
+        currentMilestone = 'lunch_start'
+      }
+      // Milestone 3: 12:50 PM to 12:59 PM (10 mins before lunch ends)
+      else if (hours === 12 && mins >= 50 && mins <= 59) {
+        currentMilestone = '10_before_end'
+      }
+      // Milestone 4: 1:00 PM to 1:10 PM (Lunch break ended)
+      else if (hours === 13 && mins >= 0 && mins <= 10) {
+        currentMilestone = 'lunch_end'
+      }
+
+      this.lunchAlertType = currentMilestone
+
+      if (currentMilestone) {
+        const dismissKey = `lunch_popup_dismissed_${currentMilestone}_${todayDate}`
+        if (!sessionStorage.getItem(dismissKey)) {
+          this.showLunchModal = true
+          sessionStorage.setItem(dismissKey, 'true')
+        }
+      }
+    },
     async fetchTodayStatus() {
       this.isLoadingStatus = true
       try {
@@ -468,6 +524,7 @@ export default {
       if (alert.action === 'correction') this.activeTab = 'correction'
       else if (alert.action === 'clockout') this.showClockModal = true
       else if (alert.action === 'passslip') this.activeTab = 'pass-slip'
+      else if (alert.action === 'lunch_popup') this.showLunchModal = true
     },
     statusBadgeClass(status) {
       switch ((status || '').toLowerCase()) {

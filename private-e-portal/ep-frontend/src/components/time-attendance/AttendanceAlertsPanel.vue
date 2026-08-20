@@ -41,12 +41,57 @@ export default {
     isOvertimeApproved: { type: Boolean, default: false },
     isClockedInOver8Hours: { type: Boolean, default: false },
     passSlipsUsed: { type: Number, default: 0 },
-    passSlipLimit: { type: Number, default: 4 }
+    passSlipLimit: { type: Number, default: 4 },
+    lunchAlertType: { type: String, default: null }, // 10_before_lunch, lunch_start, 10_before_end, lunch_end
+    setupType: { type: String, default: 'on_site' }
   },
   emits: ['alert-action'],
   computed: {
     alerts() {
       const list = []
+
+      // 1. Real-Time Lunch Break Banners
+      if (this.lunchAlertType === '10_before_lunch') {
+        list.push({
+          id: 'lunch-10-before',
+          type: 'warning',
+          title: 'Lunch Break Ahead (10 Mins)',
+          message: 'Lunch break starts at 12:00 PM in 10 minutes. Prepare to wrap up your morning tasks!',
+          actionLabel: 'View Details',
+          action: 'lunch_popup'
+        })
+      } else if (this.lunchAlertType === 'lunch_start') {
+        list.push({
+          id: 'lunch-start',
+          type: 'info',
+          title: 'Lunch Break Started (12:00 PM)',
+          message: this.setupType === 'on_site'
+            ? 'Lunch break has officially started! (On-Site setup: AM OUT 12:00 PM & PM IN 1:00 PM are auto-recorded for you).'
+            : 'Lunch break has officially started! Enjoy your meal. Don\'t forget to punch AM OUT on your Web Clock.',
+          actionLabel: 'View Details',
+          action: 'lunch_popup'
+        })
+      } else if (this.lunchAlertType === '10_before_end') {
+        list.push({
+          id: 'lunch-10-end',
+          type: 'warning',
+          title: 'Lunch Break Ending Soon (10 Mins)',
+          message: 'Lunch break ends at 1:00 PM in 10 minutes. Please head back to your workstation for the afternoon shift.',
+          actionLabel: 'View Details',
+          action: 'lunch_popup'
+        })
+      } else if (this.lunchAlertType === 'lunch_end') {
+        list.push({
+          id: 'lunch-end',
+          type: 'info',
+          title: 'Lunch Break Ended — Afternoon Shift (1:00 PM)',
+          message: this.setupType === 'on_site'
+            ? 'Lunch break is over and afternoon shift has begun! Your PM IN (1:00 PM) punch is automatically credited.'
+            : 'Lunch break is over! Welcome back. Remember to punch PM IN on your Web Clock.',
+          actionLabel: 'View Details',
+          action: 'lunch_popup'
+        })
+      }
 
       if (this.isMissedLogToday) {
         list.push({

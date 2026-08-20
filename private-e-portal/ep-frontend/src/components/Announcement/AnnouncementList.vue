@@ -52,6 +52,10 @@ export default {
       type: Array,
       default: () => []
     },
+    announcements: {
+      type: Array,
+      default: () => []
+    },
     limit: {
       type: Number,
       default: 0
@@ -74,8 +78,13 @@ export default {
     }
   },
   computed: {
+    itemList() {
+      if (Array.isArray(this.items) && this.items.length > 0) return this.items
+      if (Array.isArray(this.announcements) && this.announcements.length > 0) return this.announcements
+      return []
+    },
     displayItems() {
-      return this.limit > 0 ? this.items.slice(0, this.limit) : this.items
+      return this.limit > 0 ? this.itemList.slice(0, this.limit) : this.itemList
     }
   },
   methods: {
