@@ -260,12 +260,24 @@ class DailyTimeRecordController extends Controller
             $dtrPayrollPeriodIds = $this->getDtrIncludedPayrollPeriodIds($payroll_period);
             $displayPeriod = $this->normalizeDtrPayrollPeriodForDisplay($payroll_period);
 
+            // Auto-assign payroll_period_id to any unlinked time_data records within date range
+            if (!empty($payroll_period->attendance_start_date) && !empty($payroll_period->attendance_end_date)) {
+                DB::table('time_data')
+                    ->where('employee_id', $id)
+                    ->whereDate('date', '>=', $payroll_period->attendance_start_date)
+                    ->whereDate('date', '<=', $payroll_period->attendance_end_date)
+                    ->where(function ($q) {
+                        $q->where('payroll_period_id', 0)->orWhereNull('payroll_period_id');
+                    })
+                    ->update(['payroll_period_id' => $payroll_period_id]);
+            }
+
         // get daily time records
         $daily_time_records = DB::table('time_data as a')
             ->join('employees as b', 'a.employee_id', '=', 'b.id')
             ->leftJoin('departments as c', 'c.id', '=', 'b.department_id')
             ->leftJoin('positions as d', 'd.id', '=', 'b.position_id')
-            ->join('payroll_periods as e', 'e.id', '=', 'a.payroll_period_id')
+            ->leftJoin('payroll_periods as e', 'e.id', '=', 'a.payroll_period_id')
             ->join('employment_types as f', 'f.id', '=', 'b.employment_type_id')
             ->select(
                 'a.id',
@@ -3502,9 +3514,98 @@ class DailyTimeRecordController extends Controller
                 }
             }
 
+            $timeRecord = DB::table('time_data')
+                ->where('employee_id', $employee->id)
+                ->where('date', $today)
+                ->first();
+            if ($timeRecord) {
+                $this->syncTimeDataPayrollPeriodAndHours($timeRecord->id);
+            }
+
             return $this->getTodayStatus($userId);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 500);
+        }
+    }
+
+    private function syncTimeDataPayrollPeriodAndHours($timeDataId)
+    {
+        $row = DB::table('time_data')->where('id', $timeDataId)->first();
+        if (!$row) return;
+
+        $updates = [];
+
+        if (empty($row->payroll_period_id) || (int)$row->payroll_period_id === 0) {
+            $employee = DB::table('employees')->where('id', $row->employee_id)->first();
+            if ($employee) {
+                $employeeTypeId = (int)($employee->employment_type_id ?? 0);
+                $periodId = 0;
+
+                if (Schema::hasTable('payroll_period_Etype') && $employeeTypeId > 0) {
+                    $etypeColumns = $this->getPayrollPeriodEtypeColumns();
+                    $period = DB::table('payroll_periods as a')
+                        ->join('payroll_period_Etype as pet', 'pet.' . $etypeColumns['period'], '=', 'a.id')
+                        ->where('pet.' . $etypeColumns['employment'], $employeeTypeId)
+                        ->whereDate('a.attendance_start_date', '<=', $row->date)
+                        ->whereDate('a.attendance_end_date', '>=', $row->date)
+                        ->select('a.id')
+                        ->first();
+                    if ($period) {
+                        $periodId = (int)$period->id;
+                    }
+                }
+
+                if ($periodId === 0) {
+                    $period = DB::table('payroll_periods')
+                        ->whereDate('attendance_start_date', '<=', $row->date)
+                        ->whereDate('attendance_end_date', '>=', $row->date)
+                        ->select('id')
+                        ->first();
+                    if ($period) {
+                        $periodId = (int)$period->id;
+                    }
+                }
+
+                if ($periodId > 0) {
+                    $updates['payroll_period_id'] = $periodId;
+                }
+            }
+        }
+
+        $amIn = $row->am_in;
+        $amOut = $row->am_out;
+        $pmIn = $row->pm_in;
+        $pmOut = $row->pm_out;
+        $wh = 0;
+
+        if (!empty($amIn) && !empty($amOut)) {
+            $s = strtotime($row->date . ' ' . $amIn);
+            $e = strtotime($row->date . ' ' . $amOut);
+            if ($e > $s) $wh += ($e - $s) / 3600;
+        }
+
+        if (!empty($pmIn) && !empty($pmOut)) {
+            $s = strtotime($row->date . ' ' . $pmIn);
+            $e = strtotime($row->date . ' ' . $pmOut);
+            if ($e > $s) $wh += ($e - $s) / 3600;
+        }
+
+        if ($wh == 0 && !empty($amIn) && !empty($pmOut)) {
+            $s = strtotime($row->date . ' ' . $amIn);
+            $e = strtotime($row->date . ' ' . $pmOut);
+            if ($e > $s) {
+                $tot = $e - $s;
+                if ($tot > 18000) $tot -= 3600;
+                $wh = $tot / 3600;
+            }
+        }
+
+        if ($wh > 0) {
+            $updates['work_hours'] = round($wh, 2);
+        }
+
+        if (!empty($updates)) {
+            DB::table('time_data')->where('id', $timeDataId)->update($updates);
         }
     }
 }

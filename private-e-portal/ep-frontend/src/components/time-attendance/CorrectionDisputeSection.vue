@@ -63,7 +63,7 @@
             <el-option
               v-for="p in payrollPeriods"
               :key="p.id"
-              :label="p.period_description || `${p.start_date} to ${p.end_date}`"
+              :label="p.period_description || p.name || `${p.attendance_start_date || p.start_date} to ${p.attendance_end_date || p.end_date}`"
               :value="p.id"
             />
           </el-select>

@@ -164,7 +164,7 @@
                   ><strong class="val-value">{{ employeeCount }}</strong>
                 </div>
                 <div class="val-item">
-                  <span class="val-label">GSIS setup</span
+                  <span class="val-label">SSS setup</span
                   ><span class="val-tag" :class="gsisSetup ? 'ok' : 'err'">{{
                     gsisSetup ? "Configured" : "Missing"
                   }}</span>
@@ -256,20 +256,18 @@ const processStatus = ref("");
 const processLog = ref([]);
 const warnings = ref([]);
 const processOptions = ref({
-  includeGsis: true,
-  // includeSss: true,
+  includeSss: true,
   includePagibig: true,
   includePhilhealth: true,
   includeTax: true,
   includeAttendance: true,
-  // includeOvertime: true,
   includeHoliday: true,
 });
 const optionItems = [
   {
-    key: "includeGsis",
-    title: "Include GSIS contributions",
-    description: "Government Service Insurance System contributions.",
+    key: "includeSss",
+    title: "Include SSS contributions",
+    description: "Social Security System contributions for applicable employees.",
   },
   // {
   //   key: "includeSss",
@@ -431,8 +429,7 @@ const handleStartProcess = async () => {
     const steps = [
       { show: true, msg: "Validating employee data…" },
       { show: true, msg: "Calculating basic salaries…" },
-      { show: opts.includeGsis, msg: "Processing GSIS contributions…" },
-      // { show: opts.includeSss, msg: "Processing SSS contributions…" },
+      { show: opts.includeSss || opts.includeGsis, msg: "Processing SSS contributions…" },
       { show: opts.includePagibig, msg: "Processing Pag-IBIG contributions…" },
       {
         show: opts.includePhilhealth,

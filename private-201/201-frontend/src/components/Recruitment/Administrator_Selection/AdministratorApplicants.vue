@@ -5,7 +5,7 @@
         <span class="font-bold">Applicants for Administrator Selection</span>
         <div class="flex items-center gap-2">
           <el-input v-model="search" placeholder="Search applicant" size="small" style="width: 260px" />
-          <el-button type="primary" size="small" @click="printCSForm5" :disabled="isAllAppointed">Print CS Form 5</el-button>
+          <el-button type="primary" size="small" @click="printCSForm5" :disabled="isAllAppointed">Print Appointment Form</el-button>
           <el-button size="small" text @click="$emit('close')">×</el-button>
         </div>
       </div>
@@ -49,8 +49,8 @@
       </el-table-column>
     </el-table>
 
-    <!-- CS Form 5 Print Dialog -->
-    <el-dialog v-model="printDialogVisible" title="Print CS Form 5" width="500px">
+    <!-- Appointment Form Print Dialog -->
+    <el-dialog v-model="printDialogVisible" title="Print Appointment Form" width="500px">
       <el-form :model="printForm" label-width="120px">
         <el-form-item label="Position Title" required>
           <el-input v-model="printForm.position_title" placeholder="Enter position title" />

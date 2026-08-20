@@ -16,7 +16,7 @@
       <!-- Computed Live Hours counter -->
       <div class="text-right">
         <span class="text-[11px] text-slate-400 font-medium block">Worked Hours</span>
-        <span class="text-lg font-black text-indigo-600">
+        <span class="text-lg font-black text-indigo-600 tabular-nums">
           {{ displayHours }}
         </span>
       </div>
@@ -152,6 +152,19 @@ export default {
         return d
       }
 
+      const formatDuration = (secs) => {
+        const totalMins = Math.max(0, Math.floor(secs / 60))
+        const hrs = Math.floor(totalMins / 60)
+        const mins = totalMins % 60
+        if (hrs > 0 && mins > 0) {
+          return `${hrs} ${hrs === 1 ? 'hr' : 'hrs'} ${mins} ${mins === 1 ? 'min' : 'mins'}`
+        } else if (hrs > 0) {
+          return `${hrs} ${hrs === 1 ? 'hr' : 'hrs'}`
+        } else {
+          return `${mins} ${mins === 1 ? 'min' : 'mins'}`
+        }
+      }
+
       const amInDate = parseTimeToDate(this.amIn)
       const amOutDate = parseTimeToDate(this.amOut)
       const pmInDate = parseTimeToDate(this.pmIn)
@@ -177,12 +190,11 @@ export default {
       }
 
       if (totalSeconds > 0) {
-        const hrs = Math.max(0, totalSeconds / 3600)
-        return hrs.toFixed(2) + ' hrs'
+        return formatDuration(totalSeconds)
       }
 
       const num = Number(this.workHours) || 0
-      return num.toFixed(2) + ' hrs'
+      return formatDuration(num * 3600)
     }
   }
 }

@@ -552,16 +552,256 @@ const loadChartJs = () => {
       resolve()
       return
     }
-    const script = document.createElement('script')
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js'
-    script.onload = () => resolve()
-    script.onerror = () => resolve()
-    document.head.appendChild(script)
+    const cdnSources = [
+      'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js',
+      'https://unpkg.com/chart.js@4.4.4/dist/chart.umd.min.js'
+    ]
+    let index = 0
+    const tryNext = () => {
+      if (index >= cdnSources.length) {
+        resolve()
+        return
+      }
+      const script = document.createElement('script')
+      script.src = cdnSources[index++]
+      script.onload = () => resolve()
+      script.onerror = () => tryNext()
+      document.head.appendChild(script)
+    }
+    tryNext()
   })
 }
 
+const drawCustomFallbackCharts = () => {
+  // 1. Headcount by Department
+  const elHc = document.getElementById('chartHeadcount')
+  if (elHc && elHc.getContext) {
+    const ctx = elHc.getContext('2d')
+    const width = (elHc.width = elHc.parentElement?.clientWidth || 400)
+    const height = (elHc.height = elHc.parentElement?.clientHeight || 200)
+    ctx.clearRect(0, 0, width, height)
+
+    const labels = deptChartLabels.value.length ? deptChartLabels.value : ['Operations', 'Engineering', 'Sales', 'Finance', 'Design', 'People Ops']
+    const data = deptChartData.value.length ? deptChartData.value : [24, 30, 15, 8, 5, 4]
+    const maxVal = Math.max(...data, 1)
+
+    const paddingLeft = 35, paddingBottom = 30, paddingTop = 20, paddingRight = 15
+    const chartW = width - paddingLeft - paddingRight
+    const chartH = height - paddingTop - paddingBottom
+    const gap = chartW / labels.length
+    const barWidth = Math.min(26, gap - 10)
+
+    ctx.strokeStyle = '#EEF0F5'
+    ctx.lineWidth = 1
+    for (let i = 0; i <= 4; i++) {
+      const y = paddingTop + (chartH / 4) * i
+      ctx.beginPath()
+      ctx.moveTo(paddingLeft, y)
+      ctx.lineTo(width - paddingRight, y)
+      ctx.stroke()
+    }
+
+    labels.forEach((lbl, idx) => {
+      const val = data[idx] || 0
+      const barH = (val / maxVal) * chartH
+      const x = paddingLeft + idx * gap + (gap - barWidth) / 2
+      const y = paddingTop + (chartH - barH)
+
+      ctx.fillStyle = '#3457D5'
+      if (ctx.roundRect) {
+        ctx.beginPath()
+        ctx.roundRect(x, y, barWidth, barH, [6, 6, 0, 0])
+        ctx.fill()
+      } else {
+        ctx.fillRect(x, y, barWidth, barH)
+      }
+
+      ctx.fillStyle = '#475569'
+      ctx.font = '10px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText(val, x + barWidth / 2, Math.max(y - 4, 12))
+
+      ctx.fillStyle = '#64748B'
+      ctx.font = '10px sans-serif'
+      ctx.fillText(lbl.length > 7 ? lbl.substring(0, 6) + '…' : lbl, x + barWidth / 2, height - 8)
+    })
+  }
+
+  // 2. Attendance Today
+  const elAtt = document.getElementById('chartAttendance')
+  if (elAtt && elAtt.getContext) {
+    const ctx = elAtt.getContext('2d')
+    const width = (elAtt.width = elAtt.parentElement?.clientWidth || 300)
+    const height = (elAtt.height = elAtt.parentElement?.clientHeight || 200)
+    ctx.clearRect(0, 0, width, height)
+
+    const present = attendanceToday.value.present || 1
+    const onLeave = attendanceToday.value.on_leave || 39
+    const absent = attendanceToday.value.unplanned_absence || 15
+    const total = present + onLeave + absent
+    const slices = [
+      { val: present, color: '#16A34A' },
+      { val: onLeave, color: '#3457D5' },
+      { val: absent, color: '#DC2626' }
+    ]
+
+    const centerX = width / 2
+    const centerY = height / 2 - 5
+    const outerRadius = Math.min(centerX, centerY) - 15
+    const innerRadius = outerRadius * 0.72
+
+    let startAngle = -Math.PI / 2
+    slices.forEach(slice => {
+      if (slice.val <= 0) return
+      const sliceAngle = (slice.val / total) * (Math.PI * 2)
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, outerRadius, startAngle, startAngle + sliceAngle)
+      ctx.arc(centerX, centerY, innerRadius, startAngle + sliceAngle, startAngle, true)
+      ctx.closePath()
+      ctx.fillStyle = slice.color
+      ctx.fill()
+      startAngle += sliceAngle
+    })
+
+    ctx.fillStyle = '#0F172A'
+    ctx.font = 'bold 16px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(total, centerX, centerY - 6)
+
+    ctx.fillStyle = '#64748B'
+    ctx.font = '10px sans-serif'
+    ctx.fillText('Total', centerX, centerY + 12)
+  }
+
+  // 3. Turnover & Retention
+  const elTurn = document.getElementById('chartTurnover')
+  if (elTurn && elTurn.getContext) {
+    const ctx = elTurn.getContext('2d')
+    const width = (elTurn.width = elTurn.parentElement?.clientWidth || 400)
+    const height = (elTurn.height = elTurn.parentElement?.clientHeight || 160)
+    ctx.clearRect(0, 0, width, height)
+
+    const labels = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']
+    const volData = [5.1, 5.6, 6.0, 6.4, 6.1, 6.0]
+    const involData = [1.8, 2.0, 2.2, 2.6, 2.4, 2.4]
+
+    const paddingLeft = 30, paddingBottom = 22, paddingTop = 12, paddingRight = 15
+    const chartW = width - paddingLeft - paddingRight
+    const chartH = height - paddingTop - paddingBottom
+
+    ctx.strokeStyle = '#EEF0F5'
+    ctx.lineWidth = 1
+    for (let i = 0; i <= 3; i++) {
+      const y = paddingTop + (chartH / 3) * i
+      ctx.beginPath()
+      ctx.moveTo(paddingLeft, y)
+      ctx.lineTo(width - paddingRight, y)
+      ctx.stroke()
+    }
+
+    const drawLine = (data, color, fillColor) => {
+      const gap = chartW / (data.length - 1)
+      ctx.beginPath()
+      data.forEach((val, i) => {
+        const x = paddingLeft + i * gap
+        const y = paddingTop + chartH - (val / 8) * chartH
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      })
+
+      ctx.strokeStyle = color
+      ctx.lineWidth = 2.2
+      ctx.stroke()
+
+      ctx.lineTo(paddingLeft + (data.length - 1) * gap, paddingTop + chartH)
+      ctx.lineTo(paddingLeft, paddingTop + chartH)
+      ctx.closePath()
+      ctx.fillStyle = fillColor
+      ctx.fill()
+    }
+
+    drawLine(volData, '#3457D5', 'rgba(52,87,213,0.08)')
+    drawLine(involData, '#D97706', 'rgba(217,119,6,0.06)')
+
+    labels.forEach((lbl, i) => {
+      const x = paddingLeft + i * (chartW / (labels.length - 1))
+      ctx.fillStyle = '#64748B'
+      ctx.font = '10px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText(lbl, x, height - 4)
+    })
+  }
+
+  // 4. Labor Cost — Budget vs Actual
+  const elBud = document.getElementById('chartBudget')
+  if (elBud && elBud.getContext) {
+    const ctx = elBud.getContext('2d')
+    const width = (elBud.width = elBud.parentElement?.clientWidth || 400)
+    const height = (elBud.height = elBud.parentElement?.clientHeight || 160)
+    ctx.clearRect(0, 0, width, height)
+
+    const labels = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']
+    const budgetData = [6.0, 6.1, 6.2, 6.3, 6.3, 6.4]
+    const actualData = [5.8, 6.0, 6.3, 6.5, 6.2, parseFloat(kpis.value.payroll_spend) || 3.24]
+
+    const paddingLeft = 35, paddingBottom = 22, paddingTop = 12, paddingRight = 15
+    const chartW = width - paddingLeft - paddingRight
+    const chartH = height - paddingTop - paddingBottom
+    const groupW = chartW / labels.length
+    const barW = Math.min(12, groupW / 2.5)
+
+    ctx.strokeStyle = '#EEF0F5'
+    ctx.lineWidth = 1
+    for (let i = 0; i <= 3; i++) {
+      const y = paddingTop + (chartH / 3) * i
+      ctx.beginPath()
+      ctx.moveTo(paddingLeft, y)
+      ctx.lineTo(width - paddingRight, y)
+      ctx.stroke()
+    }
+
+    labels.forEach((lbl, i) => {
+      const bVal = budgetData[i]
+      const aVal = actualData[i]
+
+      const bH = (bVal / 7) * chartH
+      const aH = (aVal / 7) * chartH
+
+      const groupX = paddingLeft + i * groupW + (groupW - (barW * 2 + 4)) / 2
+
+      ctx.fillStyle = '#E9EDFC'
+      if (ctx.roundRect) {
+        ctx.beginPath()
+        ctx.roundRect(groupX, paddingTop + (chartH - bH), barW, bH, [4, 4, 0, 0])
+        ctx.fill()
+      } else {
+        ctx.fillRect(groupX, paddingTop + (chartH - bH), barW, bH)
+      }
+
+      ctx.fillStyle = '#3457D5'
+      if (ctx.roundRect) {
+        ctx.beginPath()
+        ctx.roundRect(groupX + barW + 3, paddingTop + (chartH - aH), barW, aH, [4, 4, 0, 0])
+        ctx.fill()
+      } else {
+        ctx.fillRect(groupX + barW + 3, paddingTop + (chartH - aH), barW, aH)
+      }
+
+      ctx.fillStyle = '#64748B'
+      ctx.font = '10px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText(lbl, groupX + barW + 1, height - 4)
+    })
+  }
+}
+
 const initCharts = () => {
-  if (!window.Chart) return
+  if (!window.Chart) {
+    drawCustomFallbackCharts()
+    return
+  }
 
   window.Chart.defaults.font.family = "'Plus Jakarta Sans', 'Inter', sans-serif"
   window.Chart.defaults.font.size = 11
@@ -714,6 +954,7 @@ onMounted(async () => {
   nextTick(() => {
     initCharts()
   })
+  window.addEventListener('resize', initCharts)
 
   // Load User Permissions
   try {

@@ -257,9 +257,9 @@
       <p class="text-center text-gray-600 mt-8">
         Need help?
         <a
-          href="mailto:support@pttchris.com"
+          href="mailto:support@privatehris.com"
           class="text-blue-600 hover:text-blue-700"
-          >support@pttchris.com</a
+          >support@privatehris.com</a
         >
       </p>
     </div>

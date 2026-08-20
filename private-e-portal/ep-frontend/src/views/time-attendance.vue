@@ -43,10 +43,10 @@
       </div>
 
       <!-- 5-Column Main Layout: Left 3 cols (Tabs + Body Content), Right 2 cols (Weekly Schedule) -->
-      <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
+      <div class="grid grid-cols-1 lg:grid-cols-6 gap-4 items-start">
 
         <!-- Left Main Column: Span 3 Columns -->
-        <div class="lg:col-span-3 space-y-4">
+        <div class="lg:col-span-4 space-y-4">
           <!-- div5: Main Navigation Tabs -->
           <div class="bg-white rounded-2xl p-2 shadow-sm border border-slate-200">
             <div class="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0">

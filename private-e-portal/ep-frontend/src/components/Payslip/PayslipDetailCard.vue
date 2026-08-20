@@ -46,8 +46,8 @@
               <div class="flex justify-between mb-1"><span>Late Amount:</span><span>{{ formatAmount(payslip.late_amount) }}</span></div>
               <div class="flex justify-between mb-1"><span>Undertime:</span><span>{{ formatAmount(payslip.ut_amount) }}</span></div>
               <div class="flex justify-between mb-1"><span>Absent:</span><span>{{ formatAmount(payslip.absent_amount) }}</span></div>
-              <div class="flex justify-between mb-1"><span>GSIS:</span><span>{{ formatAmount(payslip.gsis) }}</span></div>
-              <div class="flex justify-between mb-1"><span>SSS:</span><span>{{ formatAmount(payslip.sss) }}</span></div>
+              <div v-if="payslip.gsis" class="flex justify-between mb-1"><span>GSIS:</span><span>{{ formatAmount(payslip.gsis) }}</span></div>
+              <div class="flex justify-between mb-1"><span>SSS:</span><span>{{ formatAmount(payslip.sss || payslip.gsis) }}</span></div>
               <div class="flex justify-between mb-1"><span>Pag-ibig:</span><span>{{ formatAmount(payslip.pagibig) }}</span></div>
               <div class="flex justify-between mb-1"><span>PhilHealth:</span><span>{{ formatAmount(payslip.philhealth) }}</span></div>
               <div class="flex justify-between mb-1"><span>Tax:</span><span>{{ formatAmount(payslip.tax) }}</span></div>

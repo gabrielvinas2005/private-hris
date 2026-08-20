@@ -9,11 +9,7 @@
           </svg>
         </div>
         <div>
-          <div class="flex items-center gap-2 text-xs uppercase tracking-wider font-semibold text-indigo-300 mb-1">
-            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            Server Synced Clock
-          </div>
-          <h2 class="text-3xl font-extrabold tracking-tight text-white">
+          <h2 class="text-3xl font-extrabold tracking-tight text-white tabular-nums">
             {{ currentTimeString }}
           </h2>
           <p class="text-sm text-slate-300 font-medium mt-0.5">

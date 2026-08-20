@@ -25,26 +25,45 @@
           <el-option
             v-for="period in payrollPeriods"
             :key="period.id"
-            :label="period.period_description || `${period.start_date} to ${period.end_date}`"
+            :label="formatPeriodLabel(period)"
             :value="period.id"
           />
         </el-select>
 
-        <!-- Download DTR Button -->
-        <el-button
-          type="primary"
-          :loading="exportingPdf"
-          :disabled="!selectedPayrollPeriod"
-          @click="downloadDTR"
-          class="!rounded-xl font-semibold shadow-sm"
-        >
-          <template #icon>
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          </template>
-          Download DTR PDF
-        </el-button>
+        <!-- Action Buttons: Preview & Download DTR PDF -->
+        <div class="flex items-center gap-2">
+          <el-button
+            type="info"
+            plain
+            :loading="previewingPdf"
+            :disabled="!selectedPayrollPeriod"
+            @click="previewDTR"
+            class="!rounded-xl font-semibold shadow-sm"
+          >
+            <template #icon>
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </template>
+            Preview DTR
+          </el-button>
+
+          <el-button
+            type="primary"
+            :loading="exportingPdf"
+            :disabled="!selectedPayrollPeriod"
+            @click="downloadDTR"
+            class="!rounded-xl font-semibold shadow-sm"
+          >
+            <template #icon>
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </template>
+            Download DTR PDF
+          </el-button>
+        </div>
       </div>
     </div>
 
@@ -73,7 +92,7 @@
         <el-table-column label="Day Type" width="130">
           <template #default="{ row }">
             <span :class="dayTypeBadgeClass(row)" class="px-2.5 py-1 rounded-full text-[11px] font-bold inline-block">
-              {{ row.day_type_label || 'Regular' }}
+              {{ row.day_type_label || (row.is_holiday ? 'Holiday' : (row.is_restday ? 'Rest Day' : (row.is_ob ? 'Official Travel' : 'Regular'))) }}
             </span>
           </template>
         </el-table-column>
@@ -83,18 +102,18 @@
           <template #default="{ row }">
             <div class="text-xs space-y-0.5">
               <span class="text-slate-700 font-medium block">
-                AM: {{ row.am_in || '--:--' }} – {{ row.am_out || '--:--' }}
+                AM: {{ formatPunchTime(row.am_in) }} – {{ formatPunchTime(row.am_out) }}
               </span>
               <span class="text-slate-700 font-medium block">
-                PM: {{ row.pm_in || '--:--' }} – {{ row.pm_out || '--:--' }}
+                PM: {{ formatPunchTime(row.pm_in) }} – {{ formatPunchTime(row.pm_out) }}
               </span>
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="Worked Hrs" width="110">
+        <el-table-column label="Worked Hours" min-width="130">
           <template #default="{ row }">
             <span class="text-xs font-bold text-slate-900">
-              {{ row.hours_worked ? Number(row.hours_worked).toFixed(2) : '0.00' }} hrs
+              {{ formatWorkHours(row.hours_worked || row.work_hours) }}
             </span>
           </template>
         </el-table-column>
@@ -157,6 +176,42 @@
         <span class="text-xl font-black text-purple-400">{{ runningTotals.totalOT }} hrs</span>
       </div>
     </div>
+
+    <!-- DTR PDF Preview Dialog -->
+    <el-dialog
+      v-model="pdfPreviewVisible"
+      title="Daily Time Record (DTR) PDF Preview"
+      width="900px"
+      top="5vh"
+      destroy-on-close
+      @closed="cleanupPdfPreview"
+    >
+      <div v-loading="previewingPdf" class="w-full h-[70vh] bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center border border-slate-200">
+        <iframe
+          v-if="pdfPreviewUrl"
+          :src="pdfPreviewUrl"
+          class="w-full h-full"
+          frameborder="0"
+        />
+        <div v-else class="text-slate-400 text-sm font-medium">
+          Generating PDF preview...
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-slate-500 font-medium">
+            Official HRIS DTR Document
+          </span>
+          <div class="flex items-center gap-2">
+            <el-button @click="pdfPreviewVisible = false">Close</el-button>
+            <el-button type="primary" :loading="exportingPdf" @click="downloadDTR">
+              Download PDF
+            </el-button>
+          </div>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -173,6 +228,9 @@ export default {
       toast: useToast(),
       loading: false,
       exportingPdf: false,
+      previewingPdf: false,
+      pdfPreviewVisible: false,
+      pdfPreviewUrl: '',
       selectedPayrollPeriod: null,
       payrollPeriods: [],
       tableRows: []
@@ -187,7 +245,7 @@ export default {
       let totalOT = 0
 
       this.tableRows.forEach(row => {
-        if ((row.work_hours || 0) > 0 || row.am_in || row.pm_in) daysPresent++
+        if ((row.hours_worked || row.work_hours || 0) > 0 || row.am_in || row.pm_in) daysPresent++
         totalLate += Number(row.late || 0)
         totalUndertime += Number(row.undertime || 0)
         if (row.absent || row.is_absent) totalAbsences++
@@ -211,11 +269,50 @@ export default {
     await this.loadPayrollPeriods()
   },
   methods: {
+    formatWorkHours(val) {
+      const num = Number(val)
+      if (isNaN(num) || num <= 0) return '0 hrs 0 mins'
+      const totalMinutes = Math.round(num * 60)
+      const hrs = Math.floor(totalMinutes / 60)
+      const mins = totalMinutes % 60
+      if (hrs > 0 && mins > 0) return `${hrs} hrs ${mins} mins`
+      if (hrs > 0) return `${hrs} hrs 0 mins`
+      return `${mins} mins`
+    },
+    formatPeriodLabel(period) {
+      if (!period) return ''
+      if (period.period_description) return period.period_description
+      if (period.name) return period.name
+      const start = period.attendance_start_date || period.start_date
+      const end = period.attendance_end_date || period.end_date
+      if (start && end) return `${start} to ${end}`
+      return `Payroll Period #${period.id}`
+    },
+    formatPunchTime(val) {
+      if (!val || val === '--:--') return '--:--'
+      if (val.length <= 8 && (val.includes('AM') || val.includes('PM'))) return val
+      if (/^\d{2}:\d{2}(:\d{2})?$/.test(val)) {
+        const parts = val.split(':')
+        let hrs = parseInt(parts[0], 10)
+        const mins = parts[1]
+        const ampm = hrs >= 12 ? 'PM' : 'AM'
+        hrs = hrs % 12 || 12
+        return `${String(hrs).padStart(2, '0')}:${mins} ${ampm}`
+      }
+      try {
+        const d = new Date(val)
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+        }
+      } catch (e) {}
+      return val
+    },
     async loadPayrollPeriods() {
       try {
         const { dtrApiService } = await import('../../services/apiService.js')
-        const data = await dtrApiService.getDTRApplicationPayrollPeriods(this.employeeId)
-        this.payrollPeriods = Array.isArray(data) ? data : (data.payroll_periods || data.data || [])
+        const response = await dtrApiService.getDTRApplicationPayrollPeriods(this.employeeId)
+        const raw = response?.data?.payroll_periods || response?.payroll_periods || (Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : []))
+        this.payrollPeriods = Array.isArray(raw) ? raw : []
         if (this.payrollPeriods.length > 0) {
           this.selectedPayrollPeriod = this.payrollPeriods[0].id
           await this.fetchPeriodDTR()
@@ -230,9 +327,15 @@ export default {
       try {
         const { dtrApiService } = await import('../../services/apiService.js')
         const response = await dtrApiService.getDTRDetail(this.employeeId, this.selectedPayrollPeriod)
-        const records = response.dtr_records || response.data || response || []
-        this.tableRows = Array.isArray(records) ? records : []
+        const data = response?.data || response
+        const records = data?.daily_time_records || data?.dtr_records || (Array.isArray(data) ? data : [])
+        this.tableRows = Array.isArray(records) ? records.map(r => ({
+          ...r,
+          hours_worked: r.work_hours ?? r.hours_worked ?? 0,
+          day_name: r.day_name || (r.date ? new Date(r.date).toLocaleDateString('en-US', { weekday: 'short' }) : '')
+        })) : []
       } catch (err) {
+        console.error('Fetch DTR error:', err)
         this.toast.error('Failed to load DTR history for selected period.')
       } finally {
         this.loading = false
@@ -264,6 +367,30 @@ export default {
         this.toast.error('Failed to download DTR PDF.')
       } finally {
         this.exportingPdf = false
+      }
+    },
+    async previewDTR() {
+      if (!this.selectedPayrollPeriod) return
+      this.previewingPdf = true
+      try {
+        const { dtrApiService } = await import('../../services/apiService.js')
+        const blob = await dtrApiService.printDTR(this.employeeId, this.selectedPayrollPeriod)
+        if (this.pdfPreviewUrl) {
+          window.URL.revokeObjectURL(this.pdfPreviewUrl)
+        }
+        this.pdfPreviewUrl = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }))
+        this.pdfPreviewVisible = true
+      } catch (err) {
+        console.error('Preview PDF error:', err)
+        this.toast.error('Failed to generate DTR PDF preview.')
+      } finally {
+        this.previewingPdf = false
+      }
+    },
+    cleanupPdfPreview() {
+      if (this.pdfPreviewUrl) {
+        window.URL.revokeObjectURL(this.pdfPreviewUrl)
+        this.pdfPreviewUrl = ''
       }
     }
   }
