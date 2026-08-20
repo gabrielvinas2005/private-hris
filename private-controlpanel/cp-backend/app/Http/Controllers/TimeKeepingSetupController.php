@@ -32,9 +32,10 @@ class TimeKeepingSetupController extends Controller
                 ->leftJoin('time_keeping_setups as tk', 'tk.employment_type_id', '=', 'et.id')
                 ->select(
                     'et.*',
-                    'tk.work_days as tk_work_days',
-                    'tk.work_hours as tk_work_hours',
-                    'tk.with_holiday_pay as tk_with_holiday_pay'
+                    'tk.enable_web_clock as tk_enable_web_clock',
+                    'tk.enable_biometric as tk_enable_biometric',
+                    'tk.require_selfie as tk_require_selfie',
+                    'tk.enforce_geofence as tk_enforce_geofence'
                 )
                 ->where('et.active', true)
                 ->orderby('et.name', 'asc')
@@ -54,8 +55,6 @@ class TimeKeepingSetupController extends Controller
         try {
             $validator = validator($request->all(), [
                 'employment_type_id' => 'required|exists:employment_types,id',
-                'work_days' => 'required|numeric|min:0',
-                'work_hours' => 'required|numeric|min:0'
             ]);
 
             if ($validator->fails()) {
@@ -63,13 +62,13 @@ class TimeKeepingSetupController extends Controller
             }
 
             $data = $request->all();
-
             $e_id = $data['employment_type_id'];
 
             $timekeeping_data = [
-                'work_days' => $data['work_days'],
-                'work_hours' => $data['work_hours'],
-                'with_holiday_pay' => $request->has('with_holiday_pay') ? true : false
+                'enable_web_clock' => $request->boolean('enable_web_clock', true),
+                'enable_biometric' => $request->boolean('enable_biometric', true),
+                'require_selfie'   => $request->boolean('require_selfie', true),
+                'enforce_geofence' => $request->boolean('enforce_geofence', true),
             ];
 
             DB::table('time_keeping_setups')->updateOrInsert(['employment_type_id' => $e_id], $timekeeping_data);
@@ -98,7 +97,13 @@ class TimeKeepingSetupController extends Controller
     {
         try {
             $data = DB::table('time_keeping_setups')
-                ->select("employment_type_id", "work_days", "work_hours", "with_holiday_pay")
+                ->select(
+                    'employment_type_id',
+                    'enable_web_clock',
+                    'enable_biometric',
+                    'require_selfie',
+                    'enforce_geofence'
+                )
                 ->where('employment_type_id', $id)
                 ->get();
 
@@ -149,9 +154,10 @@ class TimeKeepingSetupController extends Controller
                 'employment_types' => $employment_types,
                 'fields' => [
                     'employment_type_id' => ['type' => 'select', 'required' => true],
-                    'work_days' => ['type' => 'number', 'required' => true],
-                    'work_hours' => ['type' => 'number', 'required' => true],
-                    'with_holiday_pay' => ['type' => 'checkbox', 'required' => false]
+                    'enable_web_clock'   => ['type' => 'switch', 'required' => false],
+                    'enable_biometric'   => ['type' => 'switch', 'required' => false],
+                    'require_selfie'     => ['type' => 'switch', 'required' => false],
+                    'enforce_geofence'   => ['type' => 'switch', 'required' => false]
                 ]
             ], 'Create timekeeping setup form structure');
         } catch (\Exception $e) {
@@ -195,15 +201,6 @@ class TimeKeepingSetupController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $validator = validator($request->all(), [
-                'work_days' => 'required|numeric|min:0',
-                'work_hours' => 'required|numeric|min:0'
-            ]);
-
-            if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors());
-            }
-
             $timekeeping_setup = DB::table('time_keeping_setups')->where('employment_type_id', $id)->first();
 
             if (!$timekeeping_setup) {
@@ -211,9 +208,10 @@ class TimeKeepingSetupController extends Controller
             }
 
             $timekeeping_data = [
-                'work_days' => $request->work_days,
-                'work_hours' => $request->work_hours,
-                'with_holiday_pay' => $request->has('with_holiday_pay') ? true : false
+                'enable_web_clock' => $request->boolean('enable_web_clock', true),
+                'enable_biometric' => $request->boolean('enable_biometric', true),
+                'require_selfie'   => $request->boolean('require_selfie', true),
+                'enforce_geofence' => $request->boolean('enforce_geofence', true),
             ];
 
             DB::table('time_keeping_setups')->where('employment_type_id', $id)->update($timekeeping_data);
@@ -263,6 +261,43 @@ class TimeKeepingSetupController extends Controller
             return $this->successResponse(null, 'Timekeeping setup deleted successfully');
         } catch (\Exception $e) {
             return $this->serverErrorResponse('Failed to delete timekeeping setup: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Return portal-facing feature configuration (no auth required — called by Employee Portal).
+     * Returns the first active employment type's settings, or system defaults if none exist.
+     * The Employee Portal uses this to enable/disable Time & Attendance features at runtime.
+     */
+    public function getPortalConfig()
+    {
+        try {
+            $config = DB::table('time_keeping_setups as tk')
+                ->join('employment_types as et', 'et.id', '=', 'tk.employment_type_id')
+                ->where('et.active', true)
+                ->select(
+                    'tk.enable_web_clock',
+                    'tk.enable_biometric',
+                    'tk.require_selfie',
+                    'tk.enforce_geofence'
+                )
+                ->first();
+
+            // Return sensible defaults when no setup has been saved yet
+            return $this->successResponse([
+                'enable_web_clock' => (bool) ($config->enable_web_clock ?? true),
+                'enable_biometric' => (bool) ($config->enable_biometric ?? true),
+                'require_selfie'   => (bool) ($config->require_selfie ?? true),
+                'enforce_geofence' => (bool) ($config->enforce_geofence ?? true),
+            ], 'Portal timekeeping configuration retrieved');
+        } catch (\Exception $e) {
+            // Graceful fallback — Portal still works with defaults if DB call fails
+            return $this->successResponse([
+                'enable_web_clock' => true,
+                'enable_biometric' => true,
+                'require_selfie'   => true,
+                'enforce_geofence' => true,
+            ], 'Portal timekeeping configuration (default fallback)');
         }
     }
 }

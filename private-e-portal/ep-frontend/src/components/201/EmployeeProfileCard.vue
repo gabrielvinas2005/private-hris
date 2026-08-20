@@ -1,483 +1,106 @@
 <template>
-  <el-card shadow="hover" class="mb-6">
-    <el-form 
-      :model="isEditMode ? localFormData : employee" 
-      label-width="140px" 
-      label-position="left"
-      :disabled="!isEditMode || !canUpdate"
+  <div class="mb-6 relative">
+    <!-- Profile Photo Avatar (Outside the white frame on the left) -->
+    <div class="relative flex items-center justify-center mb-4 md:mb-0 md:absolute md:left-6 md:top-1/2 md:-translate-y-1/2 z-10 flex-shrink-0">
+      <div class="w-28 h-28 sm:w-40 sm:h-40 rounded-full border-[6px] border-[#3f3f3f] overflow-hidden bg-gray-100 flex items-center justify-center shadow-md">
+        <template v-if="hasPhoto">
+          <img
+            :src="computedImageSrc"
+            :alt="formattedName"
+            class="w-full h-full object-cover transition-opacity duration-200"
+            :class="{ 'opacity-0': !isImageLoaded, 'opacity-100': isImageLoaded }"
+            @load="handleImageLoad"
+            @error="handleImageError"
+          />
+        </template>
+        <template v-else>
+          <el-icon :size="56" color="#6b7280">
+            <User />
+          </el-icon>
+        </template>
+      </div>
+    </div>
+
+    <!-- Frame 98 Read-Mode Profile Header Banner -->
+    <div 
+      class="ml-8 lg:ml-20 w-[calc(100%-2rem)] lg:w-[calc(100%-5rem)] rounded-[9px] p-5 lg:p-6 md:pl-44 lg:pl-52 transition-all border border-slate-200/60 shadow-sm"
+      style="background: white;"
     >
-      <el-row :gutter="24">
-        <!-- Left Column: Profile Photo and Contact Info -->
-        <el-col :xs="24" :sm="24" :md="8" :lg="6">
-          <div class="text-center mb-6">
-            <!-- Profile Photo -->
-            <div class="relative inline-block mb-4">
-              <div class="w-32 h-32 rounded-full border-4 border-gray-200 overflow-hidden bg-gray-100 flex items-center justify-center mx-auto">
-                <template v-if="hasPhoto">
-                  <img
-                    :src="computedImageSrc"
-                    :alt="employee.name"
-                    class="w-full h-full object-cover transition-opacity duration-200"
-                    :class="{ 'opacity-0': !isImageLoaded, 'opacity-100': isImageLoaded }"
-                    @load="handleImageLoad"
-                    @error="handleImageError"
-                  />
-                </template>
-                <template v-else>
-                  <el-icon :size="64" color="#9ca3af">
-                    <User />
-                  </el-icon>
-                </template>
-              </div>
-              <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-2 border-white"></div>
-            </div>
-            
-            <!-- Employee Name -->
-            <h3 v-if="!isEditable" class="text-lg font-semibold text-gray-900 mb-2">
-              {{ employee.name || '-' }}
-            </h3>
-            <div v-else class="space-y-2 mb-2">
-              <el-form-item label="" prop="first_name">
-                <el-input
-                  v-model="localFormData.first_name"
-                  @input="updateField('first_name', $event)"
-                  placeholder="First Name"
-                />
-              </el-form-item>
-              <el-form-item label="" prop="middle_name">
-                <el-input
-                  v-model="localFormData.middle_name"
-                  @input="updateField('middle_name', $event)"
-                  placeholder="Middle Name"
-                />
-              </el-form-item>
-              <el-form-item label="" prop="last_name">
-                <el-input
-                  v-model="localFormData.last_name"
-                  @input="updateField('last_name', $event)"
-                  placeholder="Last Name"
-                />
-              </el-form-item>
-            </div>
-            
-            <!-- Employee Number -->
-            <p class="text-sm text-gray-600 mb-4">
-              <strong>Employee No:</strong> {{ employee.employee_no || '-' }}
+      <div class="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
+        
+        <!-- Left Section: Name & Designation -->
+        <div class="flex items-center min-w-[200px]">
+          <!-- Name and Position/Title -->
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight leading-tight">
+              {{ formattedName }}
+            </h2>
+            <p class="text-lg sm:text-xl text-slate-600 font-normal italic mt-1">
+              {{ formattedPosition }}
             </p>
-
-            <!-- Contact Information -->
-            <el-divider content-position="left">Contact Information</el-divider>
-            
-            <el-form-item label="Email" prop="email">
-              <span v-if="!isEditMode || !canUpdate" class="text-gray-700">{{ employee?.email || '-' }}</span>
-              <el-input
-                v-else
-                v-model="localFormData.email"
-                @input="updateField('email', $event)"
-                placeholder="Email"
-                :disabled="!canUpdate"
-              />
-            </el-form-item>
-            
-            <el-form-item label="Mobile No." prop="mobile_no">
-              <span v-if="!isEditMode || !canUpdate" class="text-gray-700">{{ employee?.mobile_no || '-' }}</span>
-              <el-input
-                v-else
-                v-model="localFormData.mobile_no"
-                @input="updateField('mobile_no', $event)"
-                placeholder="Mobile No."
-                :disabled="!canUpdate"
-              />
-            </el-form-item>
-            
-            <el-form-item label="Telephone No." prop="telephone_no">
-              <span v-if="!isEditMode || !canUpdate" class="text-gray-700">{{ employee?.telephone_no || '-' }}</span>
-              <el-input
-                v-else
-                v-model="localFormData.telephone_no"
-                @input="updateField('telephone_no', $event)"
-                placeholder="Telephone No."
-                :disabled="!canUpdate"
-              />
-            </el-form-item>
           </div>
-        </el-col>
+        </div>
 
-        <!-- Right Column: Personal and Address Information -->
-        <el-col :xs="24" :sm="24" :md="16" :lg="18">
-          <el-row :gutter="24">
-            <!-- Personal Information -->
-            <el-col :xs="24" :sm="24" :md="12">
-              <el-card shadow="never" class="mb-4">
-                <template #header>
-                  <div class="card-header">
-                    <span class="font-semibold">Personal Information</span>
-                  </div>
-                </template>
-                
-                <el-form-item label="Birth Date" prop="birthdate">
-                  <span v-if="!isEditable" class="text-gray-900">
-                    {{ employee?.birthdate ? formatDate(employee.birthdate) : '-' }}
-                  </span>
-                  <el-date-picker
-                    v-else
-                    v-model="localFormData.birthdate"
-                    type="date"
-                    format="YYYY-MM-DD"
-                    value-format="YYYY-MM-DD"
-                    @change="updateField('birthdate', $event)"
-                    style="width: 100%"
-                    :disabled="!canUpdate"
-                  />
-                </el-form-item>
+        <!-- Middle Section: Key Metrics Table with Horizontal Dividers -->
+        <div class="flex-1 max-w-xl w-full px-2 lg:px-6">
+          <div class="space-y-2">
+            <!-- Row 1 -->
+            <div class="flex items-center justify-between pb-2 border-b border-gray-300/80 text-sm sm:text-base">
+              <div class="w-1/2 flex items-center gap-1.5">
+                <span class="text-slate-500 font-normal">Code:</span>
+                <span class="font-bold text-slate-800">{{ formattedCode }}</span>
+              </div>
+              <div class="w-1/2 flex items-center gap-1.5 justify-start pl-4">
+                <span class="text-slate-500 font-normal">Status:</span>
+                <span class="font-bold text-slate-800">{{ formattedStatus }}</span>
+              </div>
+            </div>
 
-                <el-form-item label="Age" prop="age">
-                  <span v-if="!isEditable" class="text-gray-900">
-                    {{ employee?.age ? `${employee.age} years old` : '-' }}
-                  </span>
-                  <el-input-number
-                    v-else
-                    v-model="localFormData.age"
-                    @change="updateField('age', $event)"
-                    :min="0"
-                    :max="150"
-                    style="width: 100%"
-                    :disabled="!canUpdate"
-                  />
-                </el-form-item>
+            <!-- Row 2 -->
+            <div class="flex items-center justify-between pb-2 border-b border-gray-300/80 text-sm sm:text-base">
+              <div class="w-1/2 flex items-center gap-1.5">
+                <span class="text-slate-500 font-normal">Born:</span>
+                <span class="font-bold text-slate-800">{{ formattedBirthdate }}</span>
+              </div>
+              <div class="w-1/2 flex items-center gap-1.5 justify-start pl-4">
+                <span class="text-slate-500 font-normal">Age:</span>
+                <span class="font-bold text-slate-800">{{ formattedAge }}</span>
+              </div>
+            </div>
 
-                <el-form-item label="Gender" prop="gender_id">
-                  <span v-if="!isEditable" class="text-gray-900">{{ employee?.gender || '-' }}</span>
-                  <el-select
-                    v-else
-                    v-model="localFormData.gender_id"
-                    @change="updateField('gender_id', $event)"
-                    placeholder="Select Gender"
-                    style="width: 100%"
-                    :disabled="!canUpdate"
-                  >
-                    <el-option
-                      v-for="option in genderOptions"
-                      :key="option.id"
-                      :label="option.name"
-                      :value="option.id"
-                    />
-                  </el-select>
-                </el-form-item>
+            <!-- Row 3 -->
+            <div class="flex items-center justify-between pt-0.5 text-sm sm:text-base">
+              <div class="w-1/2 flex items-center gap-1.5">
+                <span class="text-slate-500 font-normal">Gender:</span>
+                <span class="font-bold text-slate-800">{{ formattedGender }}</span>
+              </div>
+              <div class="w-1/2 flex items-center gap-1.5 justify-start pl-4">
+                <span class="text-slate-500 font-normal">Employed for:</span>
+                <span class="font-bold text-slate-800">{{ computedServiceLength }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                <el-form-item label="Height" prop="height">
-                  <span v-if="!isEditable" class="text-gray-900">
-                    {{ employee?.height ? `${employee.height} m.` : '-' }}
-                  </span>
-                  <el-input
-                    v-else
-                    v-model="localFormData.height"
-                    @input="updateField('height', $event)"
-                    placeholder="Height in meters"
-                    :disabled="!canUpdate"
-                  />
-                </el-form-item>
+        <!-- Right Section: Branch & Department -->
+        <div class="flex flex-col justify-center space-y-4 min-w-[200px] border-t lg:border-t-0 pt-4 lg:pt-0 border-gray-300/60 lg:mr-8 lg:-translate-x-4">
+          <div>
+            <p class="text-xs sm:text-sm text-slate-500 font-normal">Branch</p>
+            <p class="text-sm sm:text-base font-bold text-slate-800 truncate">
+              {{ formattedBranch }}
+            </p>
+          </div>
+          <div>
+            <p class="text-xs sm:text-sm text-slate-500 font-normal">Department</p>
+            <p class="text-sm sm:text-base font-bold text-slate-800 truncate">
+              {{ formattedDepartment }}
+            </p>
+          </div>
+        </div>
 
-                <el-form-item label="Weight" prop="weight">
-                  <span v-if="!isEditable" class="text-gray-900">
-                    {{ employee?.weight ? `${employee.weight} kg.` : '-' }}
-                  </span>
-                  <el-input
-                    v-else
-                    v-model="localFormData.weight"
-                    @input="updateField('weight', $event)"
-                    placeholder="Weight in kg"
-                    :disabled="!canUpdate"
-                  />
-                </el-form-item>
-
-                <el-form-item label="Blood Type" prop="blood_type_id">
-                  <span v-if="!isEditable" class="text-gray-900">{{ employee?.blood_type || '-' }}</span>
-                  <el-select
-                    v-else
-                    v-model="localFormData.blood_type_id"
-                    @change="updateField('blood_type_id', $event)"
-                    placeholder="Select Blood Type"
-                    style="width: 100%"
-                    :disabled="!canUpdate"
-                  >
-                    <el-option
-                      v-for="option in bloodTypeOptions"
-                      :key="option.id"
-                      :label="option.name"
-                      :value="option.id"
-                    />
-                  </el-select>
-                </el-form-item>
-
-                <el-form-item label="Citizenship" prop="citizenship_id">
-                  <span v-if="!isEditable" class="text-gray-900">{{ employee?.citizenship || '-' }}</span>
-                  <el-input
-                    v-else
-                    v-model="localFormData.citizenship"
-                    @input="updateField('citizenship', $event)"
-                    placeholder="Citizenship"
-                    :disabled="!canUpdate"
-                  />
-                </el-form-item>
-
-                <el-form-item label="Civil Status" prop="civil_status_id">
-                  <span v-if="!isEditable" class="text-gray-900">{{ employee?.civil_status || '-' }}</span>
-                  <el-select
-                    v-else
-                    v-model="localFormData.civil_status_id"
-                    @change="updateField('civil_status_id', $event)"
-                    placeholder="Select Civil Status"
-                    style="width: 100%"
-                    :disabled="!canUpdate"
-                  >
-                    <el-option
-                      v-for="option in civilStatusOptions"
-                      :key="option.id"
-                      :label="option.name"
-                      :value="option.id"
-                    />
-                  </el-select>
-                </el-form-item>
-
-                <el-form-item label="Religion" prop="religion_id">
-                  <span v-if="!isEditable" class="text-gray-900">{{ employee?.religion || '-' }}</span>
-                  <el-select
-                    v-else
-                    v-model="localFormData.religion_id"
-                    @change="updateField('religion_id', $event)"
-                    placeholder="Select Religion"
-                    style="width: 100%"
-                    :disabled="!canUpdate"
-                  >
-                    <el-option
-                      v-for="option in religionOptions"
-                      :key="option.id"
-                      :label="option.name"
-                      :value="option.id"
-                    />
-                  </el-select>
-                </el-form-item>
-              </el-card>
-            </el-col>
-
-            <!-- Address Information -->
-            <el-col :xs="24" :sm="24" :md="12">
-              <el-card shadow="never">
-                <template #header>
-                  <div class="card-header">
-                    <span class="font-semibold">Address Information</span>
-                  </div>
-                </template>
-
-                <!-- Current Address -->
-                <el-divider content-position="left">Current Address</el-divider>
-                
-                <div v-if="!isEditable" class="mb-4">
-                  <p class="text-sm text-gray-900">{{ formatAddress(currentAddress) }}</p>
-                </div>
-                <div v-else>
-                  <el-form-item label="House No." prop="ra_house_no">
-                    <el-input
-                      v-model="localFormData.ra_house_no"
-                      @input="updateField('ra_house_no', $event)"
-                      placeholder="House No."
-                      :disabled="!canUpdate"
-                    />
-                  </el-form-item>
-                  <el-form-item label="Street" prop="ra_street">
-                    <el-input
-                      v-model="localFormData.ra_street"
-                      @input="updateField('ra_street', $event)"
-                      placeholder="Street"
-                      :disabled="!canUpdate"
-                    />
-                  </el-form-item>
-                  <el-form-item label="Village" prop="ra_village">
-                    <el-input
-                      v-model="localFormData.ra_village"
-                      @input="updateField('ra_village', $event)"
-                      placeholder="Village"
-                      :disabled="!canUpdate"
-                    />
-                  </el-form-item>
-                  <el-form-item label="Region" prop="ra_region">
-                    <el-select
-                      v-model="localFormData.ra_region"
-                      @change="handleRaRegionChange"
-                      placeholder="Select Region"
-                      style="width: 100%"
-                      :disabled="!canUpdate"
-                      filterable
-                    >
-                      <el-option
-                        v-for="region in regionOptions"
-                        :key="region.regCode"
-                        :label="region.regDesc"
-                        :value="region.regCode"
-                      />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="Province" prop="ra_province">
-                    <el-select
-                      v-model="localFormData.ra_province"
-                      @change="handleRaProvinceChange"
-                      placeholder="Select Province"
-                      style="width: 100%"
-                      :disabled="!canUpdate || !localFormData.ra_region"
-                      filterable
-                    >
-                      <el-option
-                        v-for="province in filteredRaProvinces"
-                        :key="province.provCode"
-                        :label="province.provDesc"
-                        :value="province.provCode"
-                      />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="City" prop="ra_city">
-                    <el-select
-                      v-model="localFormData.ra_city"
-                      @change="handleRaCityChange"
-                      placeholder="Select City"
-                      style="width: 100%"
-                      :disabled="!canUpdate || !localFormData.ra_province"
-                      filterable
-                    >
-                      <el-option
-                        v-for="city in filteredRaCities"
-                        :key="city.citymunCode"
-                        :label="city.citymunDesc"
-                        :value="city.citymunCode"
-                      />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="Barangay" prop="ra_barangay">
-                    <el-select
-                      v-model="localFormData.ra_barangay"
-                      @change="updateField('ra_barangay', $event)"
-                      placeholder="Select Barangay"
-                      style="width: 100%"
-                      :disabled="!canUpdate || !localFormData.ra_city"
-                      filterable
-                    >
-                      <el-option
-                        v-for="barangay in filteredRaBarangays"
-                        :key="barangay.brgyCode"
-                        :label="barangay.brgyDesc"
-                        :value="barangay.brgyCode"
-                      />
-                    </el-select>
-                  </el-form-item>
-                </div>
-
-                <!-- Permanent Address -->
-                <el-divider content-position="left">Permanent Address</el-divider>
-                
-                <div v-if="!isEditable" class="mb-4">
-                  <p class="text-sm text-gray-900">{{ formatAddress(permanentAddress) }}</p>
-                </div>
-                <div v-else>
-                  <el-form-item label="House No." prop="pa_house_no">
-                    <el-input
-                      v-model="localFormData.pa_house_no"
-                      @input="updateField('pa_house_no', $event)"
-                      placeholder="House No."
-                      :disabled="!canUpdate"
-                    />
-                  </el-form-item>
-                  <el-form-item label="Street" prop="pa_street">
-                    <el-input
-                      v-model="localFormData.pa_street"
-                      @input="updateField('pa_street', $event)"
-                      placeholder="Street"
-                      :disabled="!canUpdate"
-                    />
-                  </el-form-item>
-                  <el-form-item label="Village" prop="pa_village">
-                    <el-input
-                      v-model="localFormData.pa_village"
-                      @input="updateField('pa_village', $event)"
-                      placeholder="Village"
-                      :disabled="!canUpdate"
-                    />
-                  </el-form-item>
-                  <el-form-item label="Region" prop="pa_region">
-                    <el-select
-                      v-model="localFormData.pa_region"
-                      @change="handlePaRegionChange"
-                      placeholder="Select Region"
-                      style="width: 100%"
-                      :disabled="!canUpdate"
-                      filterable
-                    >
-                      <el-option
-                        v-for="region in regionOptions"
-                        :key="region.regCode"
-                        :label="region.regDesc"
-                        :value="region.regCode"
-                      />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="Province" prop="pa_province">
-                    <el-select
-                      v-model="localFormData.pa_province"
-                      @change="handlePaProvinceChange"
-                      placeholder="Select Province"
-                      style="width: 100%"
-                      :disabled="!canUpdate || !localFormData.pa_region"
-                      filterable
-                    >
-                      <el-option
-                        v-for="province in filteredPaProvinces"
-                        :key="province.provCode"
-                        :label="province.provDesc"
-                        :value="province.provCode"
-                      />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="City" prop="pa_city">
-                    <el-select
-                      v-model="localFormData.pa_city"
-                      @change="handlePaCityChange"
-                      placeholder="Select City"
-                      style="width: 100%"
-                      :disabled="!canUpdate || !localFormData.pa_province"
-                      filterable
-                    >
-                      <el-option
-                        v-for="city in filteredPaCities"
-                        :key="city.citymunCode"
-                        :label="city.citymunDesc"
-                        :value="city.citymunCode"
-                      />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="Barangay" prop="pa_barangay">
-                    <el-select
-                      v-model="localFormData.pa_barangay"
-                      @change="updateField('pa_barangay', $event)"
-                      placeholder="Select Barangay"
-                      style="width: 100%"
-                      :disabled="!canUpdate || !localFormData.pa_city"
-                      filterable
-                    >
-                      <el-option
-                        v-for="barangay in filteredPaBarangays"
-                        :key="barangay.brgyCode"
-                        :label="barangay.brgyDesc"
-                        :value="barangay.brgyCode"
-                      />
-                    </el-select>
-                  </el-form-item>
-                </div>
-              </el-card>
-            </el-col>
-          </el-row>
-        </el-col>
-      </el-row>
-    </el-form>
-  </el-card>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -545,6 +168,7 @@ export default {
   emits: ['update:form-data'],
   data() {
     return {
+      showDetails: false,
       objectUrl: null,
       isImageLoaded: false,
       imageFailed: false,
@@ -575,18 +199,99 @@ export default {
     'employee.photo': {
       immediate: true,
       handler(newVal) {
-        this.isImageLoaded = false
+        this.isImageLoaded = !!newVal
         this.imageFailed = false
-        this.updateObjectUrl(newVal)
       }
     }
   },
   computed: {
+    formattedName() {
+      if (this.employee?.last_name && this.employee?.first_name) {
+        const m = this.employee.middle_name ? ` ${this.employee.middle_name.charAt(0)}.` : ''
+        return `${this.employee.last_name}, ${this.employee.first_name}${m}`
+      }
+      return this.employee?.name || '-'
+    },
+    formattedPosition() {
+      return this.employee?.position || this.employee?.designation || this.employee?.role || '-'
+    },
+    formattedCode() {
+      return this.employee?.employee_no || this.employee?.code || '-'
+    },
+    formattedStatus() {
+      return this.employee?.employment_type || this.employee?.status || '-'
+    },
+    formattedBirthdate() {
+      if (this.employee?.birthdate) {
+        const d = new Date(this.employee.birthdate)
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        }
+      }
+      return '-'
+    },
+    computedAgeDisplay() {
+      const bDate = this.localFormData?.birthdate || this.employee?.birthdate
+      if (bDate) {
+        const birth = new Date(bDate)
+        if (!isNaN(birth.getTime())) {
+          const today = new Date()
+          let age = today.getFullYear() - birth.getFullYear()
+          const monthDiff = today.getMonth() - birth.getMonth()
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+            age--
+          }
+          return age >= 0 ? `${age} years old` : '-'
+        }
+      }
+      return this.employee?.age ? `${this.employee.age} years old` : '-'
+    },
+    formattedAge() {
+      return this.computedAgeDisplay
+    },
+    formattedGender() {
+      return this.employee?.gender || '-'
+    },
+    computedServiceLength() {
+      if (this.employee?.employed_for || this.employee?.service_length) {
+        return this.employee.employed_for || this.employee.service_length
+      }
+      if (this.employee?.date_hired || this.employee?.created_at) {
+        const hired = new Date(this.employee.date_hired || this.employee.created_at)
+        if (!isNaN(hired.getTime())) {
+          const now = new Date()
+          let years = now.getFullYear() - hired.getFullYear()
+          let months = now.getMonth() - hired.getMonth()
+          if (months < 0) {
+            years--
+            months += 12
+          }
+          return `${years}y , ${months}m`
+        }
+      }
+      return '-'
+    },
+    formattedBranch() {
+      return this.employee?.branch || this.employee?.company || '-'
+    },
+    formattedDepartment() {
+      return this.employee?.department || '-'
+    },
     hasPhoto() {
-      return !!(this.employee && this.employee.photo)
+      return !!(this.employee && this.employee.photo && !this.imageFailed)
     },
     computedImageSrc() {
-      return this.objectUrl
+      if (!this.employee || !this.employee.photo) return null
+      const photo = this.employee.photo
+      if (typeof photo === 'string') {
+        const trimmed = photo.trim()
+        if (!trimmed) return null
+        if (trimmed.startsWith('data:image/') || trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('blob:')) {
+          return trimmed
+        }
+        return `data:image/jpeg;base64,${trimmed}`
+      }
+      return null
     },
     isEditable() {
       return this.isEditMode && this.canUpdate
@@ -656,13 +361,17 @@ export default {
       }
       if (!base64) return
       try {
-        const dataUrl = `data:image/jpeg;base64,${base64}`
+        const dataUrl = (typeof base64 === 'string' && (base64.startsWith('data:image/') || base64.startsWith('http://') || base64.startsWith('https://') || base64.startsWith('blob:')))
+          ? base64
+          : `data:image/jpeg;base64,${base64}`
         const res = await fetch(dataUrl)
         const blob = await res.blob()
         this.objectUrl = URL.createObjectURL(blob)
+        this.isImageLoaded = true
+        this.imageFailed = false
       } catch (e) {
         this.objectUrl = null
-        this.imageFailed = true
+        this.imageFailed = false
       }
     },
     handleImageLoad() {

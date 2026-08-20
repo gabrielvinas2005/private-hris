@@ -43,87 +43,9 @@
 
       <!-- Main Content -->
       <div v-else-if="isAuthenticated && employeeData.id">
-        <el-card shadow="hover" class="mb-6">
-          <template #header>
-          <div class="flex justify-between items-start">
-            <div>
-              <h1 class="text-2xl font-bold text-slate-900">Employee 201 File</h1>
-              <p class="text-slate-600 mt-1">Complete employee profile and records</p>
-            </div>
-            <div class="flex space-x-3">
-                <el-button
-                  v-if="canUpdate && !isEditMode"
-                  type="primary"
-                  @click="enterEditMode">
-                  <el-icon class="mr-2"><Edit /></el-icon>
-                Edit PDS
-                </el-button>
-                <el-button
-                  v-if="isEditMode"
-                  type="success"
-                  @click="exitEditMode(true)">
-                  <el-icon class="mr-2"><Check /></el-icon>
-                Save & Exit
-                </el-button>
-                <el-button
-                  v-if="isEditMode"
-                  type="info"
-                  @click="exitEditMode(false)">
-                  <el-icon class="mr-2"><Close /></el-icon>
-                Cancel
-                </el-button>
-                <el-button
-                  type="warning"
-                  @click="showPDSPrintPreview">
-                  <el-icon class="mr-2"><Download /></el-icon>
-                Download PDS
-                </el-button>
-              </div>
-            </div>
-          </template>
-          
-          <div class="mt-4">
-            <el-alert
-              v-if="canUpdate"
-              :title="`${daysRemaining} day(s) before schedule of updating of 201 File closes.`"
-              type="warning"
-              :closable="false"
-              class="mb-2" />
-            <el-alert
-              v-else
-              title="Editing of 201 File is currently not available."
-              type="error"
-              :closable="false"
-              class="mb-2" />
-            <div class="text-sm text-slate-600">
-              <el-icon class="mr-1"><Clock /></el-icon>
-              Last Update: {{ lastUpdateDate }}
-            </div>
-          </div>
-        </el-card>
-
-        <!-- Print Preview -->
-        <div v-if="showPrint" class="mb-6">
-          <el-card shadow="never">
-            <div class="flex items-center justify-between mb-3">
-              <div class="text-base font-semibold">PDS Print Preview</div>
-              <div class="flex items-center gap-2">
-                <el-button size="small" type="primary" :disabled="!previewUrl" @click="downloadFromPreview">
-                  Download
-                </el-button>
-                <el-button size="small" @click="closePrint"><el-icon><Close /></el-icon></el-button>
-              </div>
-            </div>
-            <div v-if="previewUrl" class="border rounded overflow-hidden" style="height: 680px; max-width: 100%;">
-              <iframe :src="previewUrl" class="w-full h-full" style="max-width: 100%;"></iframe>
-            </div>
-            <div v-else class="text-center text-gray-500 py-10">Loading preview...</div>
-          </el-card>
-        </div>
-
-        <!-- Employee Profile Card -->
+        <!-- Standalone Employee Profile Card -->
         <EmployeeProfileCard 
-          :employee="employeeData" 
+          :employee="activeEmployeeData" 
           :address="addressData"
           :is-edit-mode="isEditMode"
           :can-update="canUpdate"
@@ -140,8 +62,79 @@
           class="mb-6"
         />
 
-        <!-- Main Content Tabs -->
-        <el-card shadow="hover">
+        <!-- Single Unified Main Container (Toolbar, Alerts, Print Preview & Tabs) -->
+        <el-card shadow="hover" class="mb-6">
+          <!-- Top Action Toolbar -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-200/80">
+            <div class="flex items-center space-x-2 text-xs text-slate-500">
+              <el-icon class="mr-1"><Clock /></el-icon>
+              <span>Last Update: <strong>{{ lastUpdateDate }}</strong></span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5">
+              <el-button
+                v-if="canUpdate && !isEditMode"
+                type="primary"
+                @click="enterEditMode">
+                <el-icon class="mr-2"><Edit /></el-icon>
+                Edit PDS
+              </el-button>
+              <el-button
+                v-if="isEditMode"
+                type="success"
+                @click="exitEditMode(true)">
+                <el-icon class="mr-2"><Check /></el-icon>
+                Save & Exit
+              </el-button>
+              <el-button
+                v-if="isEditMode"
+                type="info"
+                @click="exitEditMode(false)">
+                <el-icon class="mr-2"><Close /></el-icon>
+                Cancel
+              </el-button>
+              <el-button
+                type="warning"
+                @click="showPDSPrintPreview">
+                <el-icon class="mr-2"><Download /></el-icon>
+                Download PDS
+              </el-button>
+            </div>
+          </div>
+
+          <!-- Schedule Status Alert -->
+          <div class="mb-4">
+            <el-alert
+              v-if="canUpdate"
+              :title="`${daysRemaining} day(s) before schedule of updating of 201 File closes.`"
+              type="warning"
+              :closable="false"
+              class="mb-0" />
+            <el-alert
+              v-else
+              title="Editing of 201 File is currently not available."
+              type="error"
+              :closable="false"
+              class="mb-0" />
+          </div>
+
+          <!-- Embedded Print Preview -->
+          <div v-if="showPrint" class="mb-6 pb-4 border-b border-slate-200">
+            <div class="flex items-center justify-between mb-3">
+              <div class="text-base font-semibold text-slate-900">PDS Print Preview</div>
+              <div class="flex items-center gap-2">
+                <el-button size="small" type="primary" :disabled="!previewUrl" @click="downloadFromPreview">
+                  Download
+                </el-button>
+                <el-button size="small" @click="closePrint"><el-icon><Close /></el-icon></el-button>
+              </div>
+            </div>
+            <div v-if="previewUrl" class="border rounded-lg overflow-hidden" style="height: 680px; max-width: 100%;">
+              <iframe :src="previewUrl" class="w-full h-full" style="max-width: 100%;"></iframe>
+            </div>
+            <div v-else class="text-center text-gray-500 py-10">Loading preview...</div>
+          </div>
+
+          <!-- Main Content Tabs -->
           <el-tabs v-model="activeTab" type="border-card" class="employee-tabs">
             <el-tab-pane
                 v-for="tab in tabs"
@@ -149,6 +142,24 @@
               :label="tab.name"
               :name="tab.id">
               
+              <!-- Personal & Contact Information Tab -->
+              <PersonalInformation 
+                v-if="activeTab === 'personal'" 
+                :employee="employeeData"
+                :address="addressData"
+                :is-edit-mode="isEditMode"
+                :can-update="canUpdate"
+                :form-data="editFormData"
+                :gender-options="genderOptions"
+                :blood-type-options="bloodTypeOptions"
+                :civil-status-options="civilStatusOptions"
+                :religion-options="religionOptions"
+                :region-options="regionOptions"
+                :province-options="provinceOptions"
+                :city-options="cityOptions"
+                :barangay-options="barangayOptions"
+                @update:form-data="updateFormData" />
+
               <!-- Work Information Tab -->
               <WorkInformation 
                 v-if="activeTab === 'work'" 
@@ -277,6 +288,7 @@
 import { onMounted, onUnmounted, computed, ref } from 'vue'
 import MainLayout from '../../layout/MainLayout.vue'
 import EmployeeProfileCard from '../../components/201/EmployeeProfileCard.vue'
+import PersonalInformation from '../../components/201/PersonalInformation.vue'
 import WorkInformation from '../../components/201/WorkInformation.vue'
 import FamilyInformation from '../../components/201/FamilyInformation.vue'
 import EducationInformation from '../../components/201/EducationInformation.vue'
@@ -297,6 +309,7 @@ export default {
   components: {
     MainLayout,
     EmployeeProfileCard,
+    PersonalInformation,
     WorkInformation,
     FamilyInformation,
     EducationInformation,
@@ -482,6 +495,16 @@ export default {
       })
     }
 
+    const activeEmployeeData = computed(() => {
+      if (isEditMode.value) {
+        return {
+          ...employeeData,
+          ...editFormData
+        }
+      }
+      return employeeData
+    })
+
     onUnmounted(() => {
       cleanup()
       closePrint()
@@ -501,6 +524,7 @@ export default {
       activeTab,
       userData,
       employeeData,
+      activeEmployeeData,
       addressData,
       workInfo,
       payrollInfo,

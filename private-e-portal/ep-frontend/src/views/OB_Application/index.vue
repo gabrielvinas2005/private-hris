@@ -231,7 +231,7 @@ export default {
     return {
       breadcrumbs: [
         { name: 'Dashboard', path: '/dashboard' },
-        { name: 'Leave & Time Management', path: '/leave-time' },
+        { name: 'Time and Attendance', path: '/time-attendance' },
         { name: 'OB Application', path: '/ob-application' }
       ],
       state,

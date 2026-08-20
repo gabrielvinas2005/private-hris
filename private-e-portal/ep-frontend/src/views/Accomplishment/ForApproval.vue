@@ -181,7 +181,8 @@ export default {
       reviewLoading: false,
       reviewData: null,
       breadcrumbs: [
-        { name: 'Leave & Time', path: '/leave-time' },
+        { name: 'Dashboard', path: '/dashboard' },
+        { name: 'Time and Attendance', path: '/time-attendance' },
         { name: 'Accomplishment For Approval', path: '/accomplishment/for-approval' }
       ]
     }

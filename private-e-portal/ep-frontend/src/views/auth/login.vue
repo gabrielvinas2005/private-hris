@@ -209,6 +209,13 @@ export default {
   },
   async mounted() {
     this.company = await fetchCompanyPublic()
+    // Show session expiry message if redirected due to inactivity or max session limit
+    const reason = new URLSearchParams(window.location.search).get('reason')
+    if (reason === 'inactivity') {
+      this.errorMessage = 'Your session has expired due to inactivity. Please sign in again.'
+    } else if (reason === 'max_session') {
+      this.errorMessage = 'Your session has reached the 5-hour maximum limit. Please sign in again.'
+    }
   },
   methods: {
     async handleLogin() {
@@ -245,6 +252,7 @@ export default {
 
         if (payload.token) {
           localStorage.setItem('auth_token', payload.token)
+          localStorage.setItem('session_start_time', Date.now().toString())
         }
 
         if (payload.temp_token) {

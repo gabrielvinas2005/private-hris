@@ -12,7 +12,7 @@ export function useEmployee201File() {
     const loading = ref(false)
     const error = ref(null)
     const isAuthenticated = ref(false)
-    const activeTab = ref('work')
+    const activeTab = ref('personal')
 
     // User data
     const userData = reactive({
@@ -66,6 +66,7 @@ export function useEmployee201File() {
     ])
 
     const tabs = computed(() => [
+        { id: 'personal', name: 'Personal & Contact' },
         { id: 'work', name: 'Work Information' },
         { id: 'family', name: 'Family' },
         { id: 'education', name: 'Education' },

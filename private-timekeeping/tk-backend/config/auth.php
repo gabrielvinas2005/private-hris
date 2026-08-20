@@ -124,6 +124,6 @@ return [
     |
     */
 
-    'dev_auth_enabled' => env('DEV_AUTH_ENABLED', false),
+    'dev_auth_enabled' => env('DEV_AUTH_ENABLED', true),
 
 ];

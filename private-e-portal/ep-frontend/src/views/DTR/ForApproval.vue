@@ -206,7 +206,8 @@ export default {
       reviewData: null,
       reviewHeader: null,
       breadcrumbs: [
-        { name: 'Leave & Time', path: '/leave-time' },
+        { name: 'Dashboard', path: '/dashboard' },
+        { name: 'Time and Attendance', path: '/time-attendance' },
         { name: 'DTR For Approval', path: '/dtr/for-approval' }
       ]
     }

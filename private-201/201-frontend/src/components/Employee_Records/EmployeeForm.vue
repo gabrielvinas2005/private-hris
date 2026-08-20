@@ -85,29 +85,68 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="5"><el-form-item label="First Name" prop="first_name"><el-input v-model="formData.first_name" /></el-form-item></el-col>
-              <el-col :span="5"><el-form-item label="Middle Name"><el-input v-model="formData.middle_name" /></el-form-item></el-col>
-              <el-col :span="5"><el-form-item label="Last Name" prop="last_name"><el-input v-model="formData.last_name" /></el-form-item></el-col>
-              <el-col :span="5"><el-form-item label="Suffix"><el-select v-model="formData.name_suffix_id" placeholder="Select Suffix" style="width:100%"><el-option v-for="s in formOptions.suffixes" :key="s.id" :label="s.name" :value="Number(s.id)" /></el-select></el-form-item></el-col>
+              <el-col :span="5">
+                <el-form-item label="First Name" prop="first_name">
+                  <el-input v-model="formData.first_name" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="5">
+                <el-form-item label="Middle Name">
+                  <el-input v-model="formData.middle_name" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="5">
+                <el-form-item label="Last Name" prop="last_name">
+                  <el-input v-model="formData.last_name" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="5">
+                <el-form-item label="Suffix">
+                  <el-select v-model="formData.name_suffix_id" placeholder="Select Suffix" style="width:100%">
+                    <el-option v-for="s in formOptions.suffixes" :key="s.id" :label="s.name" :value="Number(s.id)" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
             </el-row>
 
             <el-row :gutter="16">
               <el-col :span="12"><el-form-item label="Birth Place"><el-input v-model="formData.birth_place" /></el-form-item></el-col>
-              <el-col :span="6"><el-form-item label="Birth Date" prop="birthdate"><el-date-picker v-model="formData.birthdate" type="date" placeholder="mm/dd/yyyy" style="width:100%" @change="calculateAge" /></el-form-item></el-col>
-              <el-col :span="6"><el-form-item label="Age"><el-input-number v-model="formData.age" :min="0" :controls="false" placeholder="Age" style="width:100%" /></el-form-item></el-col>
+              <el-col :span="6">
+                <el-form-item label="Birth Date" prop="birthdate">
+                  <el-date-picker v-model="formData.birthdate" type="date" placeholder="mm/dd/yyyy" style="width:100%" @change="calculateAge" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="Age">
+                  <el-input-number :model-value="computedAge" :min="0" :controls="false" placeholder="Age" style="width:100%" :disabled="true" />
+                  <small class="text-slate-400 block mt-1">Auto-calculated from birthdate</small>
+                </el-form-item>
+              </el-col>
             </el-row>
 
             <el-row :gutter="16">
               <el-col :span="6"><el-form-item label="Gender" prop="gender_id"><el-select v-model="formData.gender_id" placeholder="Select Gender" style="width:100%"><el-option v-for="g in formOptions.genders" :key="g.id" :label="g.name" :value="Number(g.id)" /></el-select></el-form-item></el-col>
               <el-col :span="6"><el-form-item label="Civil Status" prop="civil_status_id"><el-select v-model="formData.civil_status_id" placeholder="Select Civil Status" style="width:100%"><el-option v-for="s in formOptions.civil_status" :key="s.id" :label="s.name" :value="Number(s.id)" /></el-select></el-form-item></el-col>
-              <el-col :span="6"><el-form-item label="Citizenship" prop="citizenship_id"><el-select v-model="formData.citizenship_id" placeholder="Select Citizenship" style="width:100%"><el-option v-for="c in formOptions.citizenships" :key="c.id" :label="c.name" :value="Number(c.id)" /></el-select></el-form-item></el-col>
+              <el-col :span="6">
+                <el-form-item label="Citizenship" prop="citizenship_id">
+                  <el-select v-model="formData.citizenship_id" placeholder="Select Citizenship" style="width:100%">
+                    <el-option v-for="c in formOptions.citizenships" :key="c.id" :label="c.name" :value="Number(c.id)" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
               <el-col :span="6"><el-form-item label="Religion" prop="religion_id"><el-select v-model="formData.religion_id" placeholder="Select Religion" style="width:100%"><el-option v-for="r in formOptions.religions" :key="r.id" :label="r.name" :value="Number(r.id)" /></el-select></el-form-item></el-col>
             </el-row>
 
             <el-row :gutter="16">
               <el-col :span="6"><el-form-item label="Height (cm)"><el-input-number v-model="formData.height" :min="0" :controls="false" placeholder="Height" style="width:100%" /></el-form-item></el-col>
               <el-col :span="6"><el-form-item label="Weight (kg)"><el-input-number v-model="formData.weight" :min="0" :controls="false" placeholder="Weight" style="width:100%" /></el-form-item></el-col>
-              <el-col :span="12"><el-form-item label="Blood Type"><el-select v-model="formData.blood_type_id" placeholder="Select Blood Type" style="width:100%"><el-option v-for="b in formOptions.blood_types" :key="b.id" :label="b.name" :value="Number(b.id)" /></el-select></el-form-item></el-col>
+              <el-col :span="12">
+                <el-form-item label="Blood Type">
+                  <el-select v-model="formData.blood_type_id" placeholder="Select Blood Type" style="width:100%">
+                    <el-option v-for="b in formOptions.blood_types" :key="b.id" :label="b.name" :value="Number(b.id)" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
             </el-row>
           </el-card>
           
@@ -224,7 +263,12 @@
 
           <!-- Permanent Address -->
           <el-card shadow="never" class="mt-2">
-            <div class="section-heading">Permanent Address</div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="section-heading !mb-0">Permanent Address</div>
+              <el-checkbox v-model="sameAsCurrentAddress" @change="syncCurrentToPermanent">
+                Permanent address same as current address
+              </el-checkbox>
+            </div>
             <el-row :gutter="12">
               <el-col :span="8">
                 <el-form-item label="Region">
@@ -234,6 +278,7 @@
                     style="width: 100%"
                     filterable
                     clearable
+                    :disabled="sameAsCurrentAddress"
                   >
                     <el-option 
                       v-for="region in addressData.regions" 
@@ -250,7 +295,7 @@
                     v-model="formData.pa_province" 
                     placeholder="Select Province" 
                     style="width: 100%"
-                    :disabled="!formData.pa_region"
+                    :disabled="sameAsCurrentAddress || !formData.pa_region"
                     filterable
                     clearable
                   >
@@ -269,7 +314,7 @@
                      v-model="formData.pa_city" 
                      placeholder="Select City/Municipality" 
                      style="width: 100%"
-                     :disabled="!formData.pa_province || permanentCities.length === 0"
+                     :disabled="sameAsCurrentAddress || !formData.pa_province || permanentCities.length === 0"
                      filterable
                      clearable
                      no-data-text="No cities available for selected province"
@@ -290,7 +335,7 @@
             <el-row :gutter="12">
               <el-col :span="6">
                 <el-form-item label="Zip Code">
-                  <el-input v-model="formData.pa_zip" placeholder="Zip Code" />
+                  <el-input v-model="formData.pa_zip" placeholder="Zip Code" :disabled="sameAsCurrentAddress" />
                 </el-form-item>
               </el-col>
               <el-col :span="10">
@@ -299,7 +344,7 @@
                      v-model="formData.pa_barangay" 
                      placeholder="Select Barangay" 
                      style="width: 100%"
-                     :disabled="!formData.pa_city || permanentBarangays.length === 0"
+                     :disabled="sameAsCurrentAddress || !formData.pa_city || permanentBarangays.length === 0"
                      filterable
                      clearable
                      no-data-text="No barangays available for selected city"
@@ -315,19 +360,19 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="House No.">
-                  <el-input v-model="formData.pa_house_no" placeholder="House Number" />
+                  <el-input v-model="formData.pa_house_no" placeholder="House Number" :disabled="sameAsCurrentAddress" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="12">
               <el-col :span="12">
                 <el-form-item label="Street">
-                  <el-input v-model="formData.pa_street" placeholder="Street" />
+                  <el-input v-model="formData.pa_street" placeholder="Street" :disabled="sameAsCurrentAddress" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="Village/Subdivision">
-                  <el-input v-model="formData.pa_village" placeholder="Village/Subdivision" />
+                  <el-input v-model="formData.pa_village" placeholder="Village/Subdivision" :disabled="sameAsCurrentAddress" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -2434,6 +2479,19 @@ const avatarFile = ref(null)
 const activeTab = ref('basic')
 const documentFormVisible = ref(true)
 const isEdit = computed(() => !!props.employeeData?.id)
+const sameAsCurrentAddress = ref(false)
+
+const syncCurrentToPermanent = () => {
+  if (!sameAsCurrentAddress.value) return
+  formData.pa_region = formData.ca_region || ''
+  formData.pa_province = formData.ca_province || ''
+  formData.pa_city = formData.ca_city || ''
+  formData.pa_barangay = formData.ca_barangay || ''
+  formData.pa_house_no = formData.ca_house_no || ''
+  formData.pa_street = formData.ca_street || ''
+  formData.pa_village = formData.ca_village || ''
+  formData.pa_zip = formData.ca_zip || ''
+}
 
 const visible = computed({
   get: () => props.modelValue,
@@ -2542,6 +2600,25 @@ const formData = reactive({
   spouse_business_address: '',
   spouse_mobile_no: ''
 })
+
+watch(
+  () => [
+    formData.ca_region,
+    formData.ca_province,
+    formData.ca_city,
+    formData.ca_barangay,
+    formData.ca_house_no,
+    formData.ca_street,
+    formData.ca_village,
+    formData.ca_zip
+  ],
+  () => {
+    if (sameAsCurrentAddress.value) {
+      syncCurrentToPermanent()
+    }
+  },
+  { deep: true }
+)
 
 // Children list
 const childrenList = ref([])
@@ -2830,38 +2907,22 @@ const currentProvinces = computed(() => {
   const regionCode = String(formData.ca_region).trim()
   return addressData.provinces.filter(p => {
     if (!p || !p.regCode) return false
-    return String(p.regCode).trim() === regionCode
+    const pReg = String(p.regCode).trim()
+    return pReg === regionCode || regionCode.startsWith(pReg) || pReg.startsWith(regionCode)
   })
 })
 
 const currentCities = computed(() => {
-  // Check if province is selected
-  if (!formData.ca_province || !addressData.cities) {
-    return []
-  }
-  
-  // Normalize province code for comparison
+  if (!formData.ca_province || !addressData.cities) return []
   const selectedProvince = String(formData.ca_province).trim()
+  if (!selectedProvince) return []
   
-  if (!selectedProvince) {
-    return []
-  }
-  
-  // Filter cities by province code - ensure exact match
   const filtered = addressData.cities.filter(city => {
     if (!city || !city.provCode) return false
     const cityProvCode = String(city.provCode).trim()
-    return cityProvCode === selectedProvince
+    return cityProvCode === selectedProvince || selectedProvince.startsWith(cityProvCode) || cityProvCode.startsWith(selectedProvince)
   })
   
-  // Debug logging when no cities found
-  if (filtered.length === 0 && selectedProvince) {
-    console.warn('🔍 No cities found for province:', selectedProvince)
-  } else if (filtered.length > 0) {
-    console.log('✓ Found', filtered.length, 'cities for province', selectedProvince)
-  }
-  
-  // Sort cities alphabetically by description
   return filtered.sort((a, b) => {
     const nameA = (a.citymunDesc || '').toUpperCase()
     const nameB = (b.citymunDesc || '').toUpperCase()
@@ -2870,26 +2931,16 @@ const currentCities = computed(() => {
 })
 
 const currentBarangays = computed(() => {
-  // Check if city is selected
-  if (!formData.ca_city || !addressData.barangays) {
-    return []
-  }
-  
-  // Normalize city code for comparison
+  if (!formData.ca_city || !addressData.barangays) return []
   const selectedCity = String(formData.ca_city).trim()
+  if (!selectedCity) return []
   
-  if (!selectedCity) {
-    return []
-  }
-  
-  // Filter barangays by city code
   const filtered = addressData.barangays.filter(barangay => {
     if (!barangay || !barangay.citymunCode) return false
     const barangayCityCode = String(barangay.citymunCode).trim()
-    return barangayCityCode === selectedCity
+    return barangayCityCode === selectedCity || selectedCity.startsWith(barangayCityCode) || barangayCityCode.startsWith(selectedCity)
   })
   
-  // Sort barangays alphabetically by description
   return filtered.sort((a, b) => {
     const nameA = (a.brgyDesc || '').toUpperCase()
     const nameB = (b.brgyDesc || '').toUpperCase()
@@ -2902,31 +2953,22 @@ const permanentProvinces = computed(() => {
   const regionCode = String(formData.pa_region).trim()
   return addressData.provinces.filter(p => {
     if (!p || !p.regCode) return false
-    return String(p.regCode).trim() === regionCode
+    const pReg = String(p.regCode).trim()
+    return pReg === regionCode || regionCode.startsWith(pReg) || pReg.startsWith(regionCode)
   })
 })
 
 const permanentCities = computed(() => {
-  // Check if province is selected
-  if (!formData.pa_province || !addressData.cities) {
-    return []
-  }
-  
-  // Normalize province code for comparison
+  if (!formData.pa_province || !addressData.cities) return []
   const selectedProvince = String(formData.pa_province).trim()
+  if (!selectedProvince) return []
   
-  if (!selectedProvince) {
-    return []
-  }
-  
-  // Filter cities by province code
   const filtered = addressData.cities.filter(city => {
     if (!city || !city.provCode) return false
     const cityProvCode = String(city.provCode).trim()
-    return cityProvCode === selectedProvince
+    return cityProvCode === selectedProvince || selectedProvince.startsWith(cityProvCode) || cityProvCode.startsWith(selectedProvince)
   })
   
-  // Sort cities alphabetically by description
   return filtered.sort((a, b) => {
     const nameA = (a.citymunDesc || '').toUpperCase()
     const nameB = (b.citymunDesc || '').toUpperCase()
@@ -2935,26 +2977,16 @@ const permanentCities = computed(() => {
 })
 
 const permanentBarangays = computed(() => {
-  // Check if city is selected
-  if (!formData.pa_city || !addressData.barangays) {
-    return []
-  }
-  
-  // Normalize city code for comparison
+  if (!formData.pa_city || !addressData.barangays) return []
   const selectedCity = String(formData.pa_city).trim()
+  if (!selectedCity) return []
   
-  if (!selectedCity) {
-    return []
-  }
-  
-  // Filter barangays by city code
   const filtered = addressData.barangays.filter(barangay => {
     if (!barangay || !barangay.citymunCode) return false
     const barangayCityCode = String(barangay.citymunCode).trim()
-    return barangayCityCode === selectedCity
+    return barangayCityCode === selectedCity || selectedCity.startsWith(barangayCityCode) || barangayCityCode.startsWith(selectedCity)
   })
   
-  // Sort barangays alphabetically by description
   return filtered.sort((a, b) => {
     const nameA = (a.brgyDesc || '').toUpperCase()
     const nameB = (b.brgyDesc || '').toUpperCase()
@@ -3192,6 +3224,22 @@ watch(() => formData.plantilla_id, (newPlantillaId) => {
 
 
 
+const computedAge = computed(() => {
+  if (formData.birthdate) {
+    const today = new Date()
+    const birthDate = new Date(formData.birthdate)
+    if (!isNaN(birthDate.getTime())) {
+      let age = today.getFullYear() - birthDate.getFullYear()
+      const monthDiff = today.getMonth() - birthDate.getMonth()
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--
+      }
+      return age >= 0 ? age : 0
+    }
+  }
+  return 0
+})
+
 // Methods
 const calculateAge = () => {
   if (formData.birthdate) {
@@ -3204,9 +3252,13 @@ const calculateAge = () => {
       age--
     }
     
-    formData.age = age
+    formData.age = age >= 0 ? age : 0
   }
 }
+
+watch(() => formData.birthdate, () => {
+  calculateAge()
+}, { immediate: true })
 
 const resetForm = () => {
   Object.keys(formData).forEach(key => {
@@ -4361,106 +4413,122 @@ const populateForm = (data) => {
     formData.pa_zip = String(data.pa_zip).trim()
   }
 
-  // Extra normalization: if backend stored region/province/city/barangay as names
-  // instead of codes, best-effort map them to codes using addressData.
-  const normalizeAddressCode = (value, list, codeKey, descKey) => {
-    if (!value || !list || !Array.isArray(list)) return ''
-    const val = String(value).trim()
-    // First, match by exact code
-    const byCode = list.find(item => String(item[codeKey] || '').trim() === val)
-    if (byCode) return String(byCode[codeKey]).trim()
-    // Then, match by description (case-insensitive)
-    const lowerVal = val.toLowerCase()
-    const byDesc = list.find(
-      item => String(item[descKey] || '').trim().toLowerCase() === lowerVal
-    )
-    if (byDesc) return String(byDesc[codeKey]).trim()
-    return val
+  // Smart address normalization with reverse city/province lookup
+  const resolveAddressCascade = (rawReg, rawProv, rawCity, rawBrgy) => {
+    let regCode = ''
+    let provCode = ''
+    let cityCode = ''
+    let brgyCode = ''
+
+    // 1. Try to resolve City first (Reverse lookup)
+    const rawCityStr = String(rawCity || '').trim()
+    let matchedCity = null
+    if (rawCityStr && addressData.cities?.length) {
+      matchedCity = addressData.cities.find(c =>
+        String(c.citymunCode).trim() === rawCityStr ||
+        rawCityStr.startsWith(String(c.citymunCode).trim()) ||
+        String(c.citymunCode).trim().startsWith(rawCityStr) ||
+        String(c.citymunDesc || '').trim().toLowerCase() === rawCityStr.toLowerCase()
+      )
+    }
+
+    // Fallback: If rawProv is actually a City name (e.g., "LAS PIÑAS CITY")
+    const rawProvStr = String(rawProv || '').trim()
+    if (!matchedCity && rawProvStr && addressData.cities?.length) {
+      matchedCity = addressData.cities.find(c =>
+        String(c.citymunDesc || '').trim().toLowerCase() === rawProvStr.toLowerCase()
+      )
+    }
+
+    if (matchedCity) {
+      cityCode = String(matchedCity.citymunCode).trim()
+      if (matchedCity.provCode) {
+        provCode = String(matchedCity.provCode).trim()
+        const matchedProv = addressData.provinces?.find(p => String(p.provCode).trim() === provCode)
+        if (matchedProv && matchedProv.regCode) {
+          regCode = String(matchedProv.regCode).trim()
+        }
+      }
+    }
+
+    // 2. If province not resolved from city, try resolving rawProv directly
+    if (!provCode && rawProvStr && addressData.provinces?.length) {
+      const matchedProv = addressData.provinces.find(p =>
+        String(p.provCode).trim() === rawProvStr ||
+        rawProvStr.startsWith(String(p.provCode).trim()) ||
+        String(p.provCode).trim().startsWith(rawProvStr) ||
+        String(p.provDesc || '').trim().toLowerCase() === rawProvStr.toLowerCase()
+      )
+      if (matchedProv) {
+        provCode = String(matchedProv.provCode).trim()
+        if (matchedProv.regCode) {
+          regCode = String(matchedProv.regCode).trim()
+        }
+      } else {
+        provCode = rawProvStr
+      }
+    }
+
+    // 3. If region not resolved yet, try resolving rawReg directly
+    const rawRegStr = String(rawReg || '').trim()
+    if (!regCode && rawRegStr && addressData.regions?.length) {
+      const matchedReg = addressData.regions.find(r =>
+        String(r.regCode).trim() === rawRegStr ||
+        String(r.regDesc || '').trim().toLowerCase() === rawRegStr.toLowerCase()
+      )
+      if (matchedReg) {
+        regCode = String(matchedReg.regCode).trim()
+      } else {
+        regCode = rawRegStr
+      }
+    }
+
+    // 4. Resolve Barangay
+    const rawBrgyStr = String(rawBrgy || '').trim()
+    if (rawBrgyStr && addressData.barangays?.length) {
+      const matchedBrgy = addressData.barangays.find(b => {
+        const matchesCity = cityCode ? (String(b.citymunCode).trim() === cityCode || cityCode.startsWith(String(b.citymunCode).trim())) : true
+        const matchesBrgy = String(b.brgyCode).trim() === rawBrgyStr ||
+                            rawBrgyStr.startsWith(String(b.brgyCode).trim()) ||
+                            String(b.brgyCode).trim().startsWith(rawBrgyStr) ||
+                            String(b.brgyDesc || '').trim().toLowerCase() === rawBrgyStr.toLowerCase()
+        return matchesCity && matchesBrgy
+      })
+      if (matchedBrgy) {
+        brgyCode = String(matchedBrgy.brgyCode).trim()
+      } else {
+        brgyCode = rawBrgyStr
+      }
+    }
+
+    return { regCode, provCode, cityCode, brgyCode }
   }
 
-  // Store normalized address values first (before setting to avoid watcher interference)
-  const normalizedAddresses = {
-    ca_region: data.ra_region ? normalizeAddressCode(data.ra_region, addressData.regions, 'regCode', 'regDesc') : '',
-    ca_province: data.ra_province ? normalizeAddressCode(data.ra_province, addressData.provinces, 'provCode', 'provDesc') : '',
-    ca_city: data.ra_city ? normalizeAddressCode(data.ra_city, addressData.cities, 'citymunCode', 'citymunDesc') : '',
-    ca_barangay: data.ra_barangay ? normalizeAddressCode(data.ra_barangay, addressData.barangays, 'brgyCode', 'brgyDesc') : '',
-    pa_region: data.pa_region ? normalizeAddressCode(data.pa_region, addressData.regions, 'regCode', 'regDesc') : '',
-    pa_province: data.pa_province ? normalizeAddressCode(data.pa_province, addressData.provinces, 'provCode', 'provDesc') : '',
-    pa_city: data.pa_city ? normalizeAddressCode(data.pa_city, addressData.cities, 'citymunCode', 'citymunDesc') : '',
-    pa_barangay: data.pa_barangay ? normalizeAddressCode(data.pa_barangay, addressData.barangays, 'brgyCode', 'brgyDesc') : ''
-  }
+  const caRes = resolveAddressCascade(
+    data.ra_region || data.ca_region,
+    data.ra_province || data.ca_province,
+    data.ra_city || data.ca_city,
+    data.ra_barangay || data.ca_barangay
+  )
+  const paRes = resolveAddressCascade(
+    data.pa_region,
+    data.pa_province,
+    data.pa_city,
+    data.pa_barangay
+  )
 
-  // Use nextTick to set address fields in correct order after watchers have run
-  // This ensures computed properties (currentProvinces, currentCities, etc.) update before we set dependent fields
+  formData.ca_region = caRes.regCode
+  formData.ca_province = caRes.provCode
+  formData.ca_city = caRes.cityCode
+  formData.ca_barangay = caRes.brgyCode
+
+  formData.pa_region = paRes.regCode
+  formData.pa_province = paRes.provCode
+  formData.pa_city = paRes.cityCode
+  formData.pa_barangay = paRes.brgyCode
+
   nextTick(() => {
-    // Set current address fields in cascade order
-    if (normalizedAddresses.ca_region) {
-      formData.ca_region = normalizedAddresses.ca_region
-      nextTick(() => {
-        if (normalizedAddresses.ca_province) {
-          // Verify province exists in filtered list before setting
-          const provinceExists = currentProvinces.value.some(p => String(p.provCode).trim() === normalizedAddresses.ca_province)
-          if (provinceExists) {
-            formData.ca_province = normalizedAddresses.ca_province
-            nextTick(() => {
-              if (normalizedAddresses.ca_city) {
-                // Verify city exists in filtered list before setting
-                const cityExists = currentCities.value.some(c => String(c.citymunCode).trim() === normalizedAddresses.ca_city)
-                if (cityExists) {
-                  formData.ca_city = normalizedAddresses.ca_city
-                  nextTick(() => {
-                    if (normalizedAddresses.ca_barangay) {
-                      // Verify barangay exists in filtered list before setting
-                      const barangayExists = currentBarangays.value.some(b => String(b.brgyCode).trim() === normalizedAddresses.ca_barangay)
-                      if (barangayExists) {
-                        formData.ca_barangay = normalizedAddresses.ca_barangay
-                      }
-                    }
-                  })
-                }
-              }
-            })
-          }
-        }
-      })
-    }
-
-    // Set permanent address fields in cascade order
-    if (normalizedAddresses.pa_region) {
-      formData.pa_region = normalizedAddresses.pa_region
-      nextTick(() => {
-        if (normalizedAddresses.pa_province) {
-          // Verify province exists in filtered list before setting
-          const provinceExists = permanentProvinces.value.some(p => String(p.provCode).trim() === normalizedAddresses.pa_province)
-          if (provinceExists) {
-            formData.pa_province = normalizedAddresses.pa_province
-            nextTick(() => {
-              if (normalizedAddresses.pa_city) {
-                // Verify city exists in filtered list before setting
-                const cityExists = permanentCities.value.some(c => String(c.citymunCode).trim() === normalizedAddresses.pa_city)
-                if (cityExists) {
-                  formData.pa_city = normalizedAddresses.pa_city
-                  nextTick(() => {
-                    if (normalizedAddresses.pa_barangay) {
-                      // Verify barangay exists in filtered list before setting
-                      const barangayExists = permanentBarangays.value.some(b => String(b.brgyCode).trim() === normalizedAddresses.pa_barangay)
-                      if (barangayExists) {
-                        formData.pa_barangay = normalizedAddresses.pa_barangay
-                      }
-                    }
-                  })
-                }
-              }
-            })
-          }
-        }
-      })
-    }
-
-    // Re-enable watchers after population is complete
-    nextTick(() => {
-      isPopulatingForm.value = false
-    })
+    isPopulatingForm.value = false
   })
 
   // Populate salary grade and step based on selected plantilla (if provided)

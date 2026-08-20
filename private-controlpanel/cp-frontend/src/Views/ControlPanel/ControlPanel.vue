@@ -99,7 +99,7 @@ const allCards = [
     icon: 'Clock',
     submodules: [
       'Overtime Types', 'Holiday Types', 'Holidays', 'Leave Types', 
-      'Official Business Types', 'Time Keeping Setup', 'Biometric Setup', 'Approvers Setup'
+      'Official Business Types', 'Logging Options', 'Biometric Setup', 'Approvers Setup'
     ]
   },
   {
@@ -275,8 +275,8 @@ const allCards = [
   },
   {
     to: '/timekeeping-setup/time-keeping',
-    title: 'Time Keeping Setup',
-    description: 'Configure time tracking and attendance systems',
+    title: 'Logging Options',
+    description: 'Configure time in and attendance logging options',
     gradient: 'linear-gradient(135deg,#f59e0b,#f97316)'
   },
   {

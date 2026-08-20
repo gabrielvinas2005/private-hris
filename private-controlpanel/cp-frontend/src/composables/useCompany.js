@@ -51,7 +51,7 @@ export function useCompany() {
                     // ID is handled separately above
                     return
                 }
-                
+
                 if (key === 'logo') {
                     // Only append logo if it's a File object (new upload)
                     if (companyData[key] instanceof File) {
@@ -162,7 +162,7 @@ export function useCompany() {
         const company = result?.data?.[0] || primaryCompany.value
         const name = company?.name?.trim()
 
-        document.title = name ? `${name} - Control Panel` : 'Control Panel'
+        document.title = name ? `Control Panel - ${name}` : 'Control Panel'
 
         const logo = getLogoUrl(company)
         if (logo) {

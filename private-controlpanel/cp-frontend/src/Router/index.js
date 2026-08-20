@@ -160,6 +160,28 @@ const router = createRouter({
     routes
 })
 
+router.beforeEach((to, from, next) => {
+    const storedUser = localStorage.getItem('user_data')
+    if (storedUser) {
+        try {
+            const user = JSON.parse(storedUser)
+            const toBool = (val) => val === true || val === 1 || val === '1' || val === 'true'
+            const hasCpAccess = toBool(user?.with_cpm_access) || toBool(user?.is_admin)
+
+            if (!hasCpAccess) {
+                console.warn('Router Guard: Navigation blocked - user lacks Control Panel permissions')
+                localStorage.removeItem('auth_token')
+                localStorage.removeItem('user_data')
+                window.location.reload()
+                return
+            }
+        } catch (e) {
+            console.error('Router Guard error:', e)
+        }
+    }
+    next()
+})
+
 export default router
 
 

@@ -62,7 +62,7 @@ export async function applyCompanyBranding() {
   const data = await fetchCompanyPublic()
   const name = data?.name?.trim()
 
-  document.title = name ? `${name} - Applicant Portal` : 'Applicant Portal'
+  document.title = name ? `Applicant Portal - ${name}` : 'Applicant Portal'
 
   const logo = getCompanyLogo(data)
   if (logo) {

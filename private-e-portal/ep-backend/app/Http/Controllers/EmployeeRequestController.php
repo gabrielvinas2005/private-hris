@@ -979,6 +979,36 @@ class EmployeeRequestController extends Controller
                 $employee_info
             );
 
+            // Also update main employees record so changes persist immediately
+            $empUpdate = [];
+            if ($request->has('email')) $empUpdate['email'] = $request->email;
+            if ($request->has('mobile_no')) $empUpdate['mobile_no'] = $request->mobile_no;
+            if ($request->has('telephone_no')) $empUpdate['telephone_no'] = $request->telephone_no;
+            if ($request->has('gender_id') && $request->gender_id > 0) $empUpdate['gender_id'] = $request->gender_id;
+            if ($request->has('civil_status_id') && $request->civil_status_id > 0) $empUpdate['civil_status_id'] = $request->civil_status_id;
+            if ($request->has('religion_id') && $request->religion_id > 0) $empUpdate['religion_id'] = $request->religion_id;
+            if ($request->has('birth_place')) $empUpdate['birth_place'] = $request->birth_place;
+            if ($request->has('height')) $empUpdate['height'] = $request->height;
+            if ($request->has('weight')) $empUpdate['weight'] = $request->weight;
+            if ($request->has('ra_region')) $empUpdate['ra_region'] = $request->ra_region;
+            if ($request->has('ra_province')) $empUpdate['ra_province'] = $request->ra_province;
+            if ($request->has('ra_city')) $empUpdate['ra_city'] = $request->ra_city;
+            if ($request->has('ra_barangay')) $empUpdate['ra_barangay'] = $request->ra_barangay;
+            if ($request->has('ra_house_no')) $empUpdate['ra_house_no'] = $request->ra_house_no;
+            if ($request->has('ra_street')) $empUpdate['ra_street'] = $request->ra_street;
+            if ($request->has('ra_village')) $empUpdate['ra_village'] = $request->ra_village;
+            if ($request->has('pa_region')) $empUpdate['pa_region'] = $request->pa_region;
+            if ($request->has('pa_province')) $empUpdate['pa_province'] = $request->pa_province;
+            if ($request->has('pa_city')) $empUpdate['pa_city'] = $request->pa_city;
+            if ($request->has('pa_barangay')) $empUpdate['pa_barangay'] = $request->pa_barangay;
+            if ($request->has('pa_house_no')) $empUpdate['pa_house_no'] = $request->pa_house_no;
+            if ($request->has('pa_street')) $empUpdate['pa_street'] = $request->pa_street;
+            if ($request->has('pa_village')) $empUpdate['pa_village'] = $request->pa_village;
+
+            if (!empty($empUpdate)) {
+                DB::table('employees')->where('id', $employee_id)->update($empUpdate);
+            }
+
             // Save Children
             if ($request->has('children') && is_array($request->children)) {
                 DB::table('employee_children_temps')->where('request_id', $request_id)->delete();

@@ -69,10 +69,10 @@
                <div class="text-center">
                  <div class="relative w-24 h-24 mx-auto mb-4">
                    <!-- Show actual photo if available -->
-                   <img 
-                     v-if="employeeInfo.photo"
-                     :src="`data:image/jpeg;base64,${employeeInfo.photo}`"
-                     @error="handlePhotoError"
+                    <img 
+                      v-if="employeeInfo.photo"
+                      :src="getEmployeePhoto(employeeInfo.photo)"
+                      @error="handlePhotoError"
                      alt="Employee profile picture"
                      class="w-24 h-24 rounded-full object-cover border-2 border-slate-200"
                    >
@@ -182,7 +182,7 @@ export default {
     return {
       breadcrumbs: [
         { name: 'Dashboard', path: '/dashboard' },
-        { name: 'Leave & Time Management', path: '/leave-time' },
+        { name: 'Time and Attendance', path: '/time-attendance' },
         { name: 'DTR List', path: '/dtr' }
       ],
       loading: true,
@@ -443,7 +443,12 @@ export default {
 
     getEmployeePhoto(photo) {
       if (photo) {
-        return `data:image/jpeg;base64,${photo}`
+        if (typeof photo === 'string') {
+          if (photo.startsWith('data:image/') || photo.startsWith('http://') || photo.startsWith('https://') || photo.startsWith('blob:')) {
+            return photo
+          }
+          return `data:image/jpeg;base64,${photo}`
+        }
       }
       return '/dist/img/employee_profile.png'
     },

@@ -50,6 +50,11 @@ export const documentRequestApiService = {
     async cancelRequest(id) {
         const response = await apiClient.delete(`/document-requests/${id}`)
         return response.data
+    },
+
+    async updateStatus(id, status, remarks = null) {
+        const response = await apiClient.patch(`/document-requests/${id}/status`, { status, remarks })
+        return response.data
     }
 }
 
@@ -92,6 +97,56 @@ apiClient.interceptors.response.use(
 
 // DTR API methods
 export const dtrApiService = {
+    // Get today status summary
+    async getTodayStatus(userId) {
+        try {
+            const response = await apiClient.get(`/daily-time-records/today-status/${userId}`)
+            return response.data
+        } catch (error) {
+            console.error('Error fetching today status:', error)
+            throw error
+        }
+    },
+
+    // Perform web clock punch
+    async webClockPunch(payload) {
+        try {
+            const response = await apiClient.post('/daily-time-records/web-clock', payload)
+            return response.data
+        } catch (error) {
+            console.error('Error recording web clock punch:', error)
+            throw error
+        }
+    },
+
+    /**
+     * Fetch portal feature configuration from Control Panel backend.
+     * Returns { pass_slip_monthly_limit, enable_web_clock, require_selfie, enforce_geofence }.
+     * Falls back to safe defaults if the request fails so the portal always remains functional.
+     */
+    async getPortalTimekeepingSettings() {
+        const defaults = {
+            enable_web_clock: true,
+            enable_biometric: true,
+            require_selfie: true,
+            enforce_geofence: true,
+        }
+        try {
+            const cpBaseUrl = import.meta.env.VITE_CP_API_URL || 'http://localhost:8002/api'
+            const response = await axios.get(`${cpBaseUrl}/portal-settings/timekeeping`, { timeout: 5000 })
+            const data = response.data?.data || {}
+            return {
+                enable_web_clock: data.enable_web_clock ?? defaults.enable_web_clock,
+                enable_biometric: data.enable_biometric ?? defaults.enable_biometric,
+                require_selfie:   data.require_selfie   ?? defaults.require_selfie,
+                enforce_geofence: data.enforce_geofence ?? defaults.enforce_geofence,
+            }
+        } catch (error) {
+            console.warn('Portal settings fetch failed — using defaults:', error.message)
+            return defaults
+        }
+    },
+
     // Get DTR list for employee (by user ID)
     async getDTRList(userId) {
         try {

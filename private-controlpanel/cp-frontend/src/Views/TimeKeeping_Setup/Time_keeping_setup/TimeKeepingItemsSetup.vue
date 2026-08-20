@@ -3,8 +3,8 @@
     <template #header>
       <div class="page-header">
         <div>
-          <div class="title">Time Keeping Setup</div>
-          <p class="subtitle">Assign standard work days, work hours, and holiday pay preference per employment type.</p>
+          <div class="title">Logging Options</div>
+          <p class="subtitle">Configure time in and attendance logging options per employment type.</p>
         </div>
         <div class="header-actions">
           <el-button :icon="Refresh" text type="default" @click="handleRefresh" :loading="loading">Refresh</el-button>
@@ -19,7 +19,7 @@
           <div class="panel-header">
             <div>
               <h3>Employment Types</h3>
-              <p>Select an employment type to configure its default schedule.</p>
+              <p>Select an employment type to configure time in options.</p>
             </div>
             <el-tag size="small" type="info">{{ filteredEmploymentTypes.length }} Types</el-tag>
           </div>
@@ -46,10 +46,14 @@
                 </div>
                 <div class="type-metrics">
                   <template v-if="scheduleDisplay[type.id]">
-                    <el-tag size="small" type="info">{{ scheduleDisplay[type.id].work_days ?? 0 }} days/wk</el-tag>
-                    <el-tag size="small" type="warning">{{ scheduleDisplay[type.id].work_hours ?? 0 }} hrs/day</el-tag>
+                    <el-tag size="small" :type="scheduleDisplay[type.id].enable_web_clock ? 'success' : 'danger'">
+                      Web: {{ scheduleDisplay[type.id].enable_web_clock ? 'ON' : 'OFF' }}
+                    </el-tag>
+                    <el-tag size="small" :type="scheduleDisplay[type.id].enable_biometric ? 'primary' : 'info'">
+                      Bio: {{ scheduleDisplay[type.id].enable_biometric ? 'ON' : 'OFF' }}
+                    </el-tag>
                   </template>
-                  <span v-else class="no-config">No schedule set</span>
+                  <span v-else class="no-config">No config set</span>
                 </div>
               </div>
               <el-tag v-if="type.id === selectedEmploymentTypeId" type="success" size="small">Selected</el-tag>
@@ -66,58 +70,83 @@
           <div class="panel-header">
             <div>
               <h3>{{ activeEmploymentType?.name || 'Select an employment type' }}</h3>
-              <p v-if="activeEmploymentType">{{ activeEmploymentType.description || 'Configure default work schedule below.' }}</p>
+              <p v-if="activeEmploymentType">{{ activeEmploymentType.description || 'Configure time in and punch logging rules below.' }}</p>
               <p v-else>Please choose an employment type from the list to start configuring.</p>
             </div>
             <el-tag v-if="activeEmploymentType" type="info" size="small">{{ activeEmploymentType.category || 'Employment Type' }}</el-tag>
           </div>
 
-          <el-empty v-if="!hasSelection" description="Choose an employment type on the left to configure its schedule." />
+          <el-empty v-if="!hasSelection" description="Choose an employment type on the left to configure time in options." />
 
           <div v-else class="schedule-content">
+            <!-- Summary Overview Grid -->
             <div class="summary-grid">
               <div class="summary-card">
-                <span>Default Work Days</span>
-                <strong>{{ form.work_days || 0 }}</strong>
+                <span>Web Clock Terminal</span>
+                <strong :style="{ color: form.enable_web_clock ? '#16a34a' : '#dc2626' }">
+                  {{ form.enable_web_clock ? 'Enabled' : 'Disabled' }}
+                </strong>
               </div>
               <div class="summary-card">
-                <span>Work Hours / Day</span>
-                <strong>{{ form.work_hours || 0 }}</strong>
+                <span>Biometric Hardware</span>
+                <strong :style="{ color: form.enable_biometric ? '#2563eb' : '#6b7280' }">
+                  {{ form.enable_biometric ? 'Enabled' : 'Disabled' }}
+                </strong>
               </div>
               <div class="summary-card">
-                <span>Holiday Pay</span>
-                <strong>{{ form.with_holiday_pay ? 'With Pay' : 'No Pay' }}</strong>
+                <span>Selfie Photo</span>
+                <strong :style="{ color: form.require_selfie ? '#16a34a' : '#6b7280' }">
+                  {{ form.require_selfie ? 'Required' : 'Optional' }}
+                </strong>
+              </div>
+              <div class="summary-card">
+                <span>GPS Geofence</span>
+                <strong :style="{ color: form.enforce_geofence ? '#16a34a' : '#6b7280' }">
+                  {{ form.enforce_geofence ? 'Enforced' : 'Off' }}
+                </strong>
               </div>
             </div>
+
+            <!-- Time In / Logging Options Form -->
+            <el-divider content-position="left">
+              <span class="divider-label">Time In &amp; Attendance Logging Options</span>
+            </el-divider>
 
             <el-form label-position="top" class="schedule-form">
               <el-row :gutter="20">
                 <el-col :xs="24" :sm="12">
-                  <el-form-item label="Work Days per Week">
-                    <el-input-number v-model="form.work_days" :min="0" :max="7" controls-position="right" />
+                  <el-form-item label="Web Clock Terminal">
+                    <div class="toggle-row">
+                      <el-switch v-model="form.enable_web_clock" active-text="Enabled" inactive-text="Disabled" />
+                    </div>
+                    <div class="field-hint">Allow employees of this type to punch In/Out via the browser web clock terminal.</div>
                   </el-form-item>
                 </el-col>
                 <el-col :xs="24" :sm="12">
-                  <el-form-item label="Work Hours per Day">
-                    <el-input-number v-model="form.work_hours" :min="0" :max="24" :step="0.5" controls-position="right" />
+                  <el-form-item label="Biometric Device Logging">
+                    <div class="toggle-row">
+                      <el-switch v-model="form.enable_biometric" active-text="Enabled" inactive-text="Disabled" />
+                    </div>
+                    <div class="field-hint">Allow employees to log punches using physical biometric fingerprint or facial hardware devices.</div>
                   </el-form-item>
                 </el-col>
               </el-row>
+
               <el-row :gutter="20">
                 <el-col :xs="24" :sm="12">
-                  <el-form-item label="Holiday Pay Eligibility">
+                  <el-form-item label="Selfie Verification">
                     <div class="toggle-row">
-                      <el-switch v-model="form.with_holiday_pay" active-text="With Holiday Pay" inactive-text="No Holiday Pay" />
+                      <el-switch v-model="form.require_selfie" active-text="Required" inactive-text="Not Required" />
                     </div>
+                    <div class="field-hint">Require a live selfie photo when clocking via web terminal (anti-buddy punching).</div>
                   </el-form-item>
                 </el-col>
                 <el-col :xs="24" :sm="12">
-                  <el-form-item label="Notes">
-                    <el-alert
-                      title="Work days and hours will be applied to newly created schedules for this employment type."
-                      type="info"
-                      :closable="false"
-                    />
+                  <el-form-item label="GPS / Geofence Enforcement">
+                    <div class="toggle-row">
+                      <el-switch v-model="form.enforce_geofence" active-text="Enforced" inactive-text="Not Enforced" />
+                    </div>
+                    <div class="field-hint">Require GPS coordinates within designated company radius before web clock is allowed.</div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -164,9 +193,10 @@ const scheduleDisplay = computed(() => {
   employmentTypes.value.forEach(type => {
     if (type.id === selectedEmploymentTypeId.value) {
       map[type.id] = {
-        work_days: Number(form.value.work_days ?? 0),
-        work_hours: Number(form.value.work_hours ?? 0),
-        with_holiday_pay: !!form.value.with_holiday_pay
+        enable_web_clock: !!form.value.enable_web_clock,
+        enable_biometric: !!form.value.enable_biometric,
+        require_selfie:   !!form.value.require_selfie,
+        enforce_geofence: !!form.value.enforce_geofence
       }
     } else if (employmentTypeSchedules.value[type.id]) {
       map[type.id] = employmentTypeSchedules.value[type.id]
@@ -312,7 +342,7 @@ onMounted(fetchEmploymentTypes)
 }
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -328,7 +358,7 @@ onMounted(fetchEmploymentTypes)
   color: #6b7280;
 }
 .summary-card strong {
-  font-size: 22px;
+  font-size: 18px;
   margin-top: 4px;
   color: #111827;
 }
@@ -339,6 +369,19 @@ onMounted(fetchEmploymentTypes)
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.field-hint {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.divider-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .employment-panel :deep(.el-card__body) {

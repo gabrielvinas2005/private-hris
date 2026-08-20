@@ -8,12 +8,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Traits\ApiResponse;
+use App\Traits\GeneratesPdf;
 
 class BankRemittanceController extends Controller
 {
     use ApiResponse, GeneratesPdf;
-use App\Traits\GeneratesPdf;
-
     public function index()
     {
         try {

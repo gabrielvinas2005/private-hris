@@ -357,8 +357,8 @@ export default {
     return {
       breadcrumbs: [
         { name: 'Dashboard', path: '/dashboard' },
-        { name: 'Leave & Time Management', path: '/leave-time' },
-        { name: 'Leave Management', path: '/leaves' },
+        { name: 'Leave Management', path: '/leave-management' },
+        { name: 'Leave Application', path: '/leaves' },
         { name: 'Add Leave', path: '/leaves/add' }
       ],
       loading: true,

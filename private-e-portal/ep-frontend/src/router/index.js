@@ -4,6 +4,8 @@ import login from '../views/auth/login.vue';
 import dashboard from '../views/dashboard.vue';
 import ProfileRecords from '../views/profile-records.vue';
 import LeaveTime from '../views/leave-time.vue';
+import LeaveManagementHub from '../views/leave-management.vue';
+import TimeAttendanceHub from '../views/time-attendance.vue';
 import OvertimeScheduling from '../views/overtime-scheduling.vue';
 import PayrollCompensation from '../views/payroll-compensation.vue';
 import Employee201File from '../views/201-file/index.vue';
@@ -129,6 +131,16 @@ const routes = [
     {
         path: '/leave-time',
         component: LeaveTime,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/leave-management',
+        component: LeaveManagementHub,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/time-attendance',
+        component: TimeAttendanceHub,
         meta: { requiresAuth: true }
     },
     {

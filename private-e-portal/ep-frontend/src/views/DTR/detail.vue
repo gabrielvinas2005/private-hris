@@ -52,7 +52,7 @@
                   <!-- Show actual photo if available -->
                   <img 
                     v-if="employeeInfo.photo"
-                    :src="`data:image/jpeg;base64,${employeeInfo.photo}`"
+                    :src="getEmployeePhoto(employeeInfo.photo)"
                     @error="handlePhotoError"
                     alt="Employee profile picture"
                     class="w-24 h-24 rounded-full object-cover border-2 border-slate-200"
@@ -153,7 +153,7 @@ export default {
     return {
       breadcrumbs: [
         { name: 'Dashboard', path: '/dashboard' },
-        { name: 'Leave & Time Management', path: '/leave-time' },
+        { name: 'Time and Attendance', path: '/time-attendance' },
         { name: 'DTR List', path: '/dtr' },
         { name: 'Employee Daily Time Record', path: '/dtr/detail' }
       ],
@@ -273,6 +273,18 @@ export default {
         console.error('Error formatting date:', error)
         return 'N/A'
       }
+    },
+
+    getEmployeePhoto(photo) {
+      if (photo) {
+        if (typeof photo === 'string') {
+          if (photo.startsWith('data:image/') || photo.startsWith('http://') || photo.startsWith('https://') || photo.startsWith('blob:')) {
+            return photo
+          }
+          return `data:image/jpeg;base64,${photo}`
+        }
+      }
+      return '/dist/img/employee_profile.png'
     },
 
     handlePhotoError(event) {

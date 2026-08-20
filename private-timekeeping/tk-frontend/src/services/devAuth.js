@@ -1,21 +1,16 @@
-// Separate Dev Authentication Service
-// This service uses clean fetch to avoid header encoding issues
+import { API_BASE_URL } from '../config/api';
 
 export class DevAuthService {
     constructor() {
-        this.baseUrl = import.meta.env.VITE_API_URL || '/api';
+        this.baseUrl = API_BASE_URL;
     }
 
     // Check if dev auth should be used
     shouldUseDevAuth() {
-        // Only check in development environment
         if (import.meta.env.MODE !== 'development' && import.meta.env.MODE !== 'dev') {
             return false;
         }
-
-        // Check if dev auth is enabled via environment variable
-        const devAuthEnabled = import.meta.env.VITE_DEV_AUTH_ENABLED === 'true';
-        return devAuthEnabled;
+        return import.meta.env.VITE_DEV_AUTH_ENABLED !== 'false';
     }
 
     // Clean fetch for dev authentication (avoids header encoding issues)

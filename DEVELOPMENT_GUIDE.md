@@ -335,3 +335,37 @@ Before deploying or submitting a pull request for a new feature, verify it passe
 - [ ] **Shared Workflow Integration**: Approvals route through Control Panel's configurable approval engine rather than custom inline logic.
 - [ ] **Notification Triggers**: Submissions and approvals raise domain events that trigger In-App, Email, and SMS alerts.
 - [ ] **Cloud & On-Premise Ready**: All configuration parameters (DB, Mail, Storage, SMS) are externalized in `.env`.
+
+---
+
+## 🚀 Running Development Servers
+
+The repository includes a unified executable launcher (`start.sh` for Linux/macOS and `start.bat` for Windows) located at the root of the project.
+
+### Usage
+
+```bash
+# Interactive Mode (shows ASCII menu to pick services)
+./start.sh
+
+# Run specific module (Backend + Frontend)
+./start.sh 201         # 201 File Management
+./start.sh ep          # E-Portal (Employee Self-Service)
+./start.sh ap          # A-Portal (Approvals & Administration)
+./start.sh tk          # Timekeeping & Biometrics
+./start.sh pr          # Payroll Management
+./start.sh cp          # System Control Panel
+
+# Run all modules simultaneously
+./start.sh all
+
+# Run backends or frontends only
+./start.sh backend     # All PHP Artisan servers
+./start.sh frontend    # All Vite/NPM dev servers
+```
+
+On Windows:
+```cmd
+start.bat              :: Launches interactive launcher or module via parameter (e.g., start.bat ep)
+```
+

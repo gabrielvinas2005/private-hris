@@ -159,7 +159,8 @@ export default {
       detailLoading: false,
       detailData: null,
       breadcrumbs: [
-        { name: 'Leave & Time', path: '/leave-time' },
+        { name: 'Dashboard', path: '/dashboard' },
+        { name: 'Time and Attendance', path: '/time-attendance' },
         { name: 'Accomplishment Application', path: '/accomplishment/application' }
       ]
     }

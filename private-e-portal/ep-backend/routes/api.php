@@ -30,7 +30,8 @@ Route::post('/applicant-add/{id}/{plantilla_id}', 'ApplicantsController@store');
 Route::get('/applicant-registration', 'ApplicantsController@register');
 Route::post('/applicant-registration', 'ApplicantsController@register_store');
 
-// Temporary: 201-file route for testing (remove authentication)
+// Public routes (no authentication required)
+Route::get('/daily-time-records/today-status/{userId}', 'DailyTimeRecordController@getTodayStatus');
 Route::get('/201-files', 'EmployeeFileController@index');
 
 // Authentication routes
@@ -55,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/document-requests', [DocumentRequestController::class, 'index']);
     Route::post('/document-requests', [DocumentRequestController::class, 'store']);
     Route::delete('/document-requests/{id}', [DocumentRequestController::class, 'cancel']);
+    Route::patch('/document-requests/{id}/status', [DocumentRequestController::class, 'updateStatus']);
 });
 
 // Authentication routes
@@ -68,6 +70,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'photo' => $user->photo,
                 'employee_no' => $user->employee_no,
                 'is_applicant' => (bool) ($user->is_applicant ?? false),
                 'has_change_password' => (bool) ($user->has_change_password ?? false),
@@ -247,6 +250,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/pass-slips/{id}', 'PassSlipController@destroy');
 
     // Daily Time Record Routes
+    Route::post('/daily-time-records/web-clock', 'DailyTimeRecordController@webClock');
     Route::get('/daily-time-records/{id}', 'DailyTimeRecordController@index');
     Route::get('/daily-time-records/employee/{employee_no}', 'DailyTimeRecordController@getByEmployeeNo');
     Route::get('/daily-time-records/{id}/employee/{payroll_period_id}', 'DailyTimeRecordController@view');

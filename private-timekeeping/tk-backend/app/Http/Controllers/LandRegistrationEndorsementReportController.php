@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Traits\ApiResponse;
+use App\Traits\GeneratesPdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use \NumberFormatter;
@@ -10,8 +11,6 @@ use \NumberFormatter;
 class LandRegistrationEndorsementReportController extends Controller
 {
     use ApiResponse, GeneratesPdf;
-use App\Traits\GeneratesPdf;
-
     /**
      * Create a new controller instance.
      *

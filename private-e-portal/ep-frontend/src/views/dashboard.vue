@@ -22,6 +22,33 @@
       </div>
     </div>
 
+    <!-- Feature #4: Next-Day 1-Click Missed Log Resolution Banner -->
+    <div v-if="hasMissedLog" class="mb-6">
+      <div class="bg-gradient-to-r from-rose-50 to-amber-50 border border-rose-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-start gap-4">
+          <div class="w-11 h-11 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center flex-shrink-0 font-bold text-xl shadow-inner">
+            ⚠️
+          </div>
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-rose-600">Action Required — DTR Alert</span>
+            <h3 class="text-base font-bold text-slate-900 mt-0.5">Missed Log Warning Detected</h3>
+            <p class="text-xs text-slate-600 mt-1 max-w-xl">
+              You have an unclosed attendance record from your previous shift (missing clock out). File a DTR Correction now to keep your daily time records complete and accurate.
+            </p>
+          </div>
+        </div>
+        <button 
+          @click="fileMissedLogCorrection"
+          class="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-md transition-all duration-200 flex items-center justify-center gap-2 flex-shrink-0"
+        >
+          <span>1-Click File Correction</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
     <!-- Notifications banner (pending approvals / expirations / announcements count) -->
     <div v-if="hasNotifications" class="mb-6">
       <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
@@ -77,7 +104,7 @@
       <div
         v-if="canViewLeave"
         class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
-        @click="navigateToModule('leave-time')"
+        @click="navigateToModule('leave-management')"
       >
         <div class="flex items-center justify-between mb-3">
           <h3 class="font-semibold text-gray-900 text-sm">Leave Balance</h3>
@@ -155,7 +182,7 @@
         <div class="space-y-2">
           <div
             v-if="canViewLeave"
-            @click="navigateToModule('leave-time')"
+            @click="navigateToModule('leaves')"
             class="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors duration-200 cursor-pointer group"
           >
             <div class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-200">
@@ -406,7 +433,8 @@ export default {
       hasHrmAccess: false,
       hasHrpAccess: false,
       hasHrtAccess: false,
-      hasCpmAccess: false
+      hasCpmAccess: false,
+      hasMissedLog: false
     }
   },
   computed: {
@@ -500,70 +528,79 @@ export default {
       return num.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })
     },
 
+    applyMenuPermissions(menus) {
+      if (!Array.isArray(menus)) return
+      const normalize = (s) =>
+        String(s ?? '')
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, ' ')
+      const allowed = new Set()
+      for (const m of menus) {
+        if (m?.menu_key) allowed.add(normalize(m.menu_key))
+        if (m?.menu) allowed.add(normalize(m.menu))
+      }
+      const has = (label) => allowed.has(normalize(label))
+
+      this.canViewEmployeeRecord =
+        has('My Profile & Records') ||
+        has('employee_record') ||
+        has('Employee Records')
+      this.canViewLeave =
+        has('Leave & Time Management') ||
+        has('leave_management') ||
+        has('leave-time')
+      this.canViewOvertime =
+        has('Overtime Management') ||
+        has('overtime_management') ||
+        has('overtime-monitoring')
+      this.canViewPayslip = has('Payslip') || has('payslip')
+      this.canViewDtr =
+        has('Daily Time Record') || has('dtr') || has('daily time record')
+      this.canViewSaln = has('SALN') || has('saln')
+      this.canViewTravelOrder =
+        has('Travel Order') || has('travel_order') || has('official business') || has('ob')
+      this.canViewWfh =
+        has('WFH Application') || has('wfh') || has('wfh_application') || has('work from home')
+      this.canViewDocumentRequest =
+        has('Document Requests') || has('document_request') || has('document-requests')
+    },
+
     async loadMenuAccess() {
-      this.menuAccessLoaded = false
-      this.canViewEmployeeRecord = false
-      this.canViewLeave = false
-      this.canViewOvertime = false
-      this.canViewPayslip = false
-      this.canViewDtr = false
-      this.canViewSaln = false
-      this.canViewTravelOrder = false
-      this.canViewWfh = false
-      this.canViewDocumentRequest = false
+      // 1) Restore from cache synchronously first to prevent Quick Actions layout flash
+      try {
+        const cachedAccess = localStorage.getItem('user_tab_access')
+        if (cachedAccess) {
+          const parsed = JSON.parse(cachedAccess)
+          const menus = Array.isArray(parsed?.menus) ? parsed.menus : []
+          if (menus.length > 0) {
+            this.applyMenuPermissions(menus)
+            this.menuAccessLoaded = true
+          }
+        }
+      } catch (e) {}
+
       try {
         const ApiService = (await import('../services/api.js')).default
         await ApiService.initSanctum()
         const res = await ApiService.getUserTabAccess()
         const menus = res?.data?.menus
         if (Array.isArray(menus)) {
-          // Same normalization as MainLayout.vue `hasMenuAccess` (tab / submodule access)
-          const normalize = (s) =>
-            String(s ?? '')
-              .trim()
-              .toLowerCase()
-              .replace(/\s+/g, ' ')
-          const allowed = new Set()
-          for (const m of menus) {
-            if (m?.menu_key) allowed.add(normalize(m.menu_key))
-            if (m?.menu) allowed.add(normalize(m.menu))
-          }
-          const has = (label) => allowed.has(normalize(label))
-
-          this.canViewEmployeeRecord =
-            has('My Profile & Records') ||
-            has('employee_record') ||
-            has('Employee Records')
-          this.canViewLeave =
-            has('Leave & Time Management') ||
-            has('leave_management') ||
-            has('leave-time')
-          this.canViewOvertime =
-            has('Overtime Management') ||
-            has('overtime_management') ||
-            has('overtime-monitoring')
-          this.canViewPayslip = has('Payslip') || has('payslip')
-          this.canViewDtr =
-            has('Daily Time Record') || has('dtr') || has('daily time record')
-          this.canViewSaln = has('SALN') || has('saln')
-          this.canViewTravelOrder =
-            has('Travel Order') || has('travel_order') || has('official business') || has('ob')
-          this.canViewWfh =
-            has('WFH Application') || has('wfh') || has('wfh_application') || has('work from home')
-          this.canViewDocumentRequest =
-            has('Document Requests') || has('document_request') || has('document-requests')
+          localStorage.setItem('user_tab_access', JSON.stringify(res.data))
+          this.applyMenuPermissions(menus)
         }
       } catch (e) {
-        // On error, keep disabled (hide restricted cards).
-        this.canViewEmployeeRecord = false
-        this.canViewLeave = false
-        this.canViewOvertime = false
-        this.canViewPayslip = false
-        this.canViewDtr = false
-        this.canViewSaln = false
-        this.canViewTravelOrder = false
-        this.canViewWfh = false
-        this.canViewDocumentRequest = false
+        if (!this.menuAccessLoaded) {
+          this.canViewEmployeeRecord = false
+          this.canViewLeave = false
+          this.canViewOvertime = false
+          this.canViewPayslip = false
+          this.canViewDtr = false
+          this.canViewSaln = false
+          this.canViewTravelOrder = false
+          this.canViewWfh = false
+          this.canViewDocumentRequest = false
+        }
       } finally {
         this.menuAccessLoaded = true
       }
@@ -614,8 +651,17 @@ export default {
           this.dashboardData = { ...this.dashboardData, ...response.data }
         } else {
           console.error('Failed to load dashboard data:', response?.message || 'Unknown error')
-          this.$toast?.error('Failed to load dashboard data. Please try refreshing the page.')
         }
+
+        // Feature #4: Check for missed log warning in DTR
+        try {
+          const { dtrApiService } = await import('../services/apiService.js')
+          const dtrRes = await dtrApiService.getTodayStatus(userId)
+          const statusData = dtrRes?.data || dtrRes
+          if (statusData) {
+            this.hasMissedLog = Boolean(statusData.is_missed_log || statusData.status === 'Missed Log')
+          }
+        } catch (_) {}
       } catch (error) {
         console.error('Dashboard data loading failed:', error)
         if (error.response?.status === 419) {
@@ -624,6 +670,10 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+
+    fileMissedLogCorrection() {
+      this.$router.push('/time-attendance')
     },
 
     async load201FileData() {

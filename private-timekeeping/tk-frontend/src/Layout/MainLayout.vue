@@ -1,115 +1,349 @@
 <template>
-  <div class="layout" :class="{ collapsed }">
-    <aside class="sidebar">
-      <div class="brand-row">
-        <img
-          v-if="showLogo && companyLogoSrc"
-          class="brand-logo"
-          :src="companyLogoSrc"
-          :alt="companyName"
-          @error="onLogoError"
-        />
-        <div class="brand-text" style="padding-left: 10px;">
-          <h4 class="brand-title" :title="companyName">{{ companyName }}</h4>
-          <div class="brand-subtitle">Timekeeping Module</div>
+  <div class="flex min-h-screen bg-[#F3F5FA] text-slate-900 font-sans antialiased">
+    <!-- Sidebar Navigation -->
+    <aside :class="[
+      collapsed ? 'w-20' : 'w-64 sm:w-72',
+      'bg-white text-slate-700 border-slate-200/70 shadow-xl shadow-slate-200/50',
+      'h-screen sticky top-0 z-40 flex flex-col transition-all duration-300 ease-in-out border-r overflow-y-auto'
+    ]">
+      <!-- Sidebar Header -->
+      <div class="px-6 py-8 border-b border-slate-200/70">
+        <div class="flex flex-col items-center text-center space-y-3">
+          <div v-if="showLogo && companyLogoSrc" class="flex items-center justify-center overflow-hidden w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200/70">
+            <img :src="companyLogoSrc" :alt="companyName" class="object-contain w-full h-full" @error="onLogoError" />
+          </div>
+          <div v-else class="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4A6CFB] to-[#22308F] text-white font-bold text-lg tracking-tight shadow-lg shadow-[#3B5EFF]/30">
+            TK
+          </div>
+          <div v-if="!collapsed" class="min-w-0 w-full">
+            <h1 class="text-base font-bold tracking-tight text-slate-900 truncate">{{ companyName }}</h1>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 truncate mt-0.5">Timekeeping Module</p>
+          </div>
         </div>
-        <button class="collapse-btn" @click="collapsed = !collapsed" :title="collapsed ? 'Expand' : 'Collapse'">⟨⟩</button>
       </div>
-      <RouterLink to="/" class="menu-item" :class="{ active: $route.path === '/' }">
-          <el-icon><Grid /></el-icon>
-          <span class="label">Timekeeping</span>
+
+      <!-- Navigation Menu -->
+      <nav class="flex-1 px-3.5 py-5 space-y-1 overflow-y-auto sidebar-scroll">
+        <!-- Dashboard Link -->
+        <RouterLink
+          to="/"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path === '/'
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Grid /></el-icon>
+          <span v-if="!collapsed">Timekeeping</span>
         </RouterLink>
-      <nav class="menu">
-        <RouterLink v-if="can('Fix Schedule')" to="/fix-schedule" class="menu-item">
-          <el-icon><Timer /></el-icon>
-          <span class="label">Fix Schedule</span>
+
+        <!-- Menu Links -->
+        <RouterLink
+          v-if="can('Fix Schedule')"
+          to="/fix-schedule"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/fix-schedule')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Timer /></el-icon>
+          <span v-if="!collapsed">Fix Schedule</span>
         </RouterLink>
-        <RouterLink v-if="can('Shifting Schedule')" to="/shifting-schedule" class="menu-item">
-          <el-icon><User /></el-icon>
-          <span class="label">Shifting Schedule</span>
+
+        <RouterLink
+          v-if="can('Shifting Schedule')"
+          to="/shifting-schedule"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/shifting-schedule')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><User /></el-icon>
+          <span v-if="!collapsed">Shifting Schedule</span>
         </RouterLink>
-        <RouterLink v-if="can('Assign Fix Schedule')" to="/assign-fix-schedule" class="menu-item">
-          <el-icon><Timer /></el-icon>
-          <span class="label">Assign Fix Schedule</span>
+
+        <RouterLink
+          v-if="can('Assign Fix Schedule')"
+          to="/assign-fix-schedule"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/assign-fix-schedule')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Timer /></el-icon>
+          <span v-if="!collapsed">Assign Fix Schedule</span>
         </RouterLink>
-        <RouterLink v-if="can('Leave Credits')" to="/leave-credits" class="menu-item">
-          <el-icon><Timer /></el-icon>
-          <span class="label">Leave Credits</span>
+
+        <RouterLink
+          v-if="can('Leave Credits')"
+          to="/leave-credits"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/leave-credits')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Timer /></el-icon>
+          <span v-if="!collapsed">Leave Credits</span>
         </RouterLink>
-        <!-- Hidden - redundant with Leave Credit Card Monitoring
-        <RouterLink to="/leave-taken-monitoring" class="menu-item">
-          <el-icon><Timer /></el-icon>
-          <span class="label">Leave Taken Monitoring</span>
+
+        <RouterLink
+          v-if="can('Leave Credit Monitoring')"
+          to="/leave-credit-monitoring"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/leave-credit-monitoring')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Monitor /></el-icon>
+          <span v-if="!collapsed">Leave Credit Monitoring</span>
         </RouterLink>
-        -->
-        <RouterLink v-if="can('Leave Credit Monitoring')" to="/leave-credit-monitoring" class="menu-item">
-          <el-icon><Monitor /></el-icon>
-          <span class="label">Leave Credit Monitoring</span>
+
+        <RouterLink
+          v-if="can('Leave Monitoring')"
+          to="/leave-monitoring"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/leave-monitoring')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Monitor /></el-icon>
+          <span v-if="!collapsed">Leave Monitoring</span>
         </RouterLink>
-        <RouterLink v-if="can('Leave Monitoring')" to="/leave-monitoring" class="menu-item">
-          <el-icon><Monitor /></el-icon>
-          <span class="label">Leave Monitoring</span>
+
+        <RouterLink
+          v-if="can('OB Monitoring')"
+          to="/ob-monitoring"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/ob-monitoring')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Monitor /></el-icon>
+          <span v-if="!collapsed">OB Monitoring</span>
         </RouterLink>
-        <RouterLink v-if="can('OB Monitoring')" to="/ob-monitoring" class="menu-item">
-          <el-icon><Monitor /></el-icon>
-          <span class="label">OB Monitoring</span>
+
+        <RouterLink
+          v-if="can('Pass Slip Monitoring')"
+          to="/pass-slip-monitoring"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/pass-slip-monitoring')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Monitor /></el-icon>
+          <span v-if="!collapsed">Pass Slip Monitoring</span>
         </RouterLink>
-        <RouterLink v-if="can('Pass Slip Monitoring')" to="/pass-slip-monitoring" class="menu-item">
-          <el-icon><Monitor /></el-icon>
-          <span class="label">Pass Slip Monitoring</span>
+
+        <RouterLink
+          v-if="can('OT Monitoring')"
+          to="/ot-monitoring"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/ot-monitoring')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Monitor /></el-icon>
+          <span v-if="!collapsed">OT Monitoring</span>
         </RouterLink>
-        <RouterLink v-if="can('OT Monitoring')" to="/ot-monitoring" class="menu-item">
-          <el-icon><Monitor /></el-icon>
-          <span class="label">OT Monitoring</span>
+
+        <RouterLink
+          v-if="can('COC Monitoring')"
+          to="/coc-monitoring"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/coc-monitoring')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Monitor /></el-icon>
+          <span v-if="!collapsed">COC Monitoring</span>
         </RouterLink>
-        <RouterLink v-if="can('COC Monitoring')" to="/coc-monitoring" class="menu-item">
-          <el-icon><Monitor /></el-icon>
-          <span class="label">COC Monitoring</span>
+
+        <RouterLink
+          v-if="can('Work Suspension')"
+          to="/work-suspension"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/work-suspension')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Remove /></el-icon>
+          <span v-if="!collapsed">Work Suspension</span>
         </RouterLink>
-        <RouterLink v-if="can('Work Suspension')" to="/work-suspension" class="menu-item">
-          <el-icon><Remove /></el-icon>
-          <span class="label">Work Suspension</span>
+
+        <RouterLink
+          v-if="can('Biometrics Data')"
+          to="/biometrics-data"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/biometrics-data')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Timer /></el-icon>
+          <span v-if="!collapsed">Biometrics Data</span>
         </RouterLink>
-        <RouterLink v-if="can('Biometrics Data')" to="/biometrics-data" class="menu-item">
-          <el-icon><Timer /></el-icon>
-          <span class="label">Biometrics Data</span>
+
+        <RouterLink
+          v-if="can('Process Attendance')"
+          to="/process-attendance"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            route.path.startsWith('/process-attendance')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Timer /></el-icon>
+          <span v-if="!collapsed">Process Attendance</span>
         </RouterLink>
-        <RouterLink v-if="can('Process Attendance')" to="/process-attendance" class="menu-item">
-          <el-icon><Timer /></el-icon>
-          <span class="label">Process Attendance</span>
-        </RouterLink>
-        
-        <details v-if="hasReports" class="submenu" :open="true">
-          <summary class="submenu-summary" :class="{ active: isReportsActive }" @click.prevent="toggleReports">
-            <div class="menu-item" role="button" aria-expanded="openReports">
-              <el-icon><Setting /></el-icon>
-              <span class="label">Time Keeping Reports</span>
+
+        <!-- Reports Accordion -->
+        <div v-if="hasReports" class="pt-1">
+          <button
+            @click="toggleReports"
+            class="w-full flex items-center justify-between py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+            :class="[
+              collapsed ? 'justify-center px-0' : 'px-3.5',
+              isReportsActive ? 'text-[#3B5EFF] bg-[#3B5EFF]/[0.07] font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            ]"
+          >
+            <div class="flex items-center space-x-3 min-w-0">
+              <el-icon class="text-lg flex-shrink-0"><Setting /></el-icon>
+              <span v-if="!collapsed" class="truncate">Time Keeping Reports</span>
             </div>
-            <span v-if="!collapsed" class="chevron" :class="{ open: openReports }">▾</span>
-          </summary>
+            <svg v-if="!collapsed" class="w-4 h-4 transition-transform duration-200 flex-shrink-0" :class="{ 'rotate-180': openReports }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
           <el-collapse-transition>
-            <div v-show="!collapsed && openReports" class="submenu-items">
-              <RouterLink v-for="item in reportItems" :key="item.path" :to="item.path" class="submenu-item">
+            <div v-show="!collapsed && openReports" class="pl-3 pr-1 mt-1 space-y-1 border-l-2 border-slate-200/70 ml-4">
+              <RouterLink
+                v-for="item in reportItems"
+                :key="item.path"
+                :to="item.path"
+                class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all"
+                :class="[route.path === item.path ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"
+              >
                 <el-icon><OfficeBuilding /></el-icon>
-                <span class="label">{{ formatReportLabel(item.name) }}</span>
+                <span>{{ formatReportLabel(item.name) }}</span>
               </RouterLink>
             </div>
           </el-collapse-transition>
-        </details>
-       
-      
+        </div>
       </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="p-4 border-t border-slate-200/70 bg-slate-50/80">
+        <div class="flex items-center" :class="collapsed ? 'justify-center' : 'justify-between'">
+          <button 
+            @click="collapsed = !collapsed" 
+            class="p-2 transition rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-200/60"
+            :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+          >
+            <svg v-if="!collapsed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <div v-if="!collapsed" class="text-right">
+            <p class="text-xs font-medium text-slate-600">{{ companyName }}</p>
+            <p class="text-[11px] text-slate-400">v1.0.0</p>
+          </div>
+        </div>
+      </div>
     </aside>
-    <section class="content">
-      <header class="content-header">
-        <div class="header-content">
-          <slot name="header">Timekeeping</slot>
+
+    <!-- Main Content Area -->
+    <div class="flex flex-col flex-1 min-w-0">
+      <!-- Top Header -->
+      <header class="sticky top-0 z-30 px-4 py-3 border-b border-slate-200/70 shadow-sm bg-white/90 backdrop-blur sm:px-6">
+        <div class="mt-2 mb-2 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 class="text-xl font-bold tracking-tight text-slate-900">
+              <slot name="header">Timekeeping</slot>
+            </h2>
+            <p class="mt-0.5 text-sm text-slate-500">Attendance Processing, Shifts & Leave Monitoring</p>
+          </div>
+
+          <!-- Right Side Controls -->
+          <div class="flex flex-wrap items-center gap-3 lg:justify-end">
+            <!-- Theme Switcher Button -->
+            <button
+              @click="toggleTheme"
+              class="p-2 text-slate-500 transition-all duration-200 rounded-xl hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/10"
+              :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+              :aria-label="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+            >
+              <svg v-if="!isDarkMode" class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+              <svg v-else class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </button>
+
+            <!-- Portal Quick Link -->
+            <a
+              href="http://localhost:5171"
+              class="inline-flex items-center px-3.5 py-2 text-xs font-semibold rounded-xl transition-all space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700"
+            >
+              <svg class="w-4 h-4 text-[#3B5EFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span>Employee Portal</span>
+            </a>
+          </div>
         </div>
       </header>
-      <main>
-        <slot />
+
+      <!-- Main Slot Content -->
+      <main class="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto bg-[#F3F5FA]">
+        <div class="p-4 bg-white border border-slate-200/70 shadow-sm rounded-2xl sm:p-6">
+          <slot />
+        </div>
       </main>
-    </section>
+    </div>
   </div>
 </template>
 
@@ -171,7 +405,6 @@ const reportItems = computed(() => {
     if (path) {
       items.push({ name: key, path })
     }
-    // Heuristic: if any allowed item mentions 'tardiness', expose the tardiness reports tab
     if (!path && key.includes('tardiness')) {
       items.push({ name: 'tardiness reports', path: '/tardiness-reports' })
     }
@@ -179,33 +412,31 @@ const reportItems = computed(() => {
       hasTimeKeepingReports = true
     }
   }
-  // If user has generic "Time Keeping Reports" access, show Tardiness Reports by default
   if (hasTimeKeepingReports) {
     items.push({ name: 'tardiness reports', path: '/tardiness-reports' })
   }
-  // de-duplicate by path
   const seen = new Set()
   return items.filter(i => (seen.has(i.path) ? false : (seen.add(i.path), true)))
 })
 
 onMounted(async () => {
   fetchCompanies()
+  
+  // 1) Synchronously load cached access rights to prevent sidebar flash on refresh
+  const cacheRaw = localStorage.getItem('tk_allowed_menus')
+  if (cacheRaw) {
+    try {
+      const cache = JSON.parse(cacheRaw)
+      if (Array.isArray(cache.names) && cache.names.length > 0) {
+        allowed.value = new Set(cache.names)
+      }
+    } catch (_) {}
+  }
+
   try {
     const { getCurrentUser } = useAuth()
     const current = await getCurrentUser()
     if (current?.id) {
-      // 1) Try cached permissions first for instant display
-      const cacheRaw = localStorage.getItem('tk_allowed_menus')
-      if (cacheRaw) {
-        try {
-          const cache = JSON.parse(cacheRaw)
-          if (String(cache.userId) === String(current.id) && Array.isArray(cache.names)) {
-            allowed.value = new Set(cache.names)
-            // Do not return; continue to refresh in background to pick up new grants
-          }
-        } catch (_) {}
-      }
-      // 2) Fetch latest then cache (also updates UI if changed)
       const res = await authApi.getAccessRights(current.id, { visible_only: 1 })
       const payload = res?.data ?? res
       const tkMenus = payload?.hrp_menu || []
@@ -214,106 +445,51 @@ onMounted(async () => {
       try { localStorage.setItem('tk_allowed_menus', JSON.stringify({ userId: current.id, names })) } catch (_) {}
     }
   } catch (e) {
-    // fallback: show nothing rather than everything
-    allowed.value = new Set()
+    if (!cacheRaw) {
+      allowed.value = new Set()
+    }
   }
 })
 
-// Methods
 function toggleReports() { 
   openReports.value = !openReports.value 
 }
 
-// toggle via reactive route; no explicit handler needed here
 watchEffect(() => { openReports.value = isReportsActive.value })
 
 function formatReportLabel(name) {
-  // Title case and normalize spacing
   return String(name).replace(/\s+/g, ' ').trim().replace(/\b\w/g, c => c.toUpperCase())
 }
+
+const isDarkMode = ref(localStorage.getItem('theme') === 'dark')
+const toggleTheme = () => {
+  isDarkMode.value = !isDarkMode.value
+  localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light')
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+}
+onMounted(() => {
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark')
+  }
+})
 </script>
 
 <style scoped>
-.layout {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  min-height: 100vh;
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
 }
-.layout.collapsed { grid-template-columns: 72px 1fr; }
-.sidebar {
-  background: #ffffff;
-  border-right: 1px dashed #e6e6e6;
-  padding: 1.25rem;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow: auto;
-  scrollbar-gutter: stable both-edges;
-  display: flex;
-  flex-direction: column;
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
-.brand { margin: 0 0 1rem 0; }
-.brand-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; margin-bottom: 12px; }
-.brand-logo { height: 72px; width: auto; min-width: 40px; flex-shrink: 0; border-radius: 10px; object-fit: contain; }
-.brand-text { line-height: 1.1; }
-.brand-title { font-weight: 700; color: #0f172a; }
-.brand-subtitle { color: #94a3b8; font-size: 12px; }
-.collapse-btn { border: 1px solid #e5e7eb; background: #fff; border-radius: 8px; cursor: pointer; padding: 2px 6px; }
-.menu {
-  display: grid;
-  gap: 0.25rem;
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 4px;
 }
-.menu-item {
-  color: #334155;
-  text-decoration: none;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  display: grid;
-  grid-template-columns: 20px 1fr;
-  align-items: center;
-  column-gap: 8px;
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
 }
-.menu-item.router-link-active {
-  background: #eef2f7;
-  font-weight: 600;
-}
-.submenu { margin-top: 4px; }
-.menu-item:hover { background: #f8fafc; }
-.submenu summary { list-style: none; }
-.submenu-summary { list-style: none; display: grid; grid-template-columns: 1fr auto; align-items: center; }
-.submenu-summary.active { background: #eef2f7; border-radius: 8px; padding: 4px 6px; }
-.submenu { contain: layout paint; }
-.chevron { color: #94a3b8; transition: transform .15s ease; }
-.chevron.open { transform: rotate(180deg); }
-.submenu-summary .menu-item { display: grid; grid-auto-flow: column; align-items: center; gap: 8px; white-space: nowrap; }
-.submenu-items { display: grid; gap: 2px; margin-left: 10px; padding-left: 12px; border-left: 1px dashed #e6e6e6; }
-.submenu-item { color: #64748b; text-decoration: none; padding: 4px 6px; border-radius: 6px; display: grid; grid-template-columns: 20px 1fr; align-items: start; column-gap: 8px; }
-.submenu-item.router-link-active { background: #eef2f7; }
-.content {
-  background: #f8fafc;
-  height: 100vh;
-  overflow: auto;
-  scrollbar-gutter: stable both-edges;
-}
-.content-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px dashed #e6e6e6;
-  background: #ffffff;
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-main { padding: 1.5rem; }
-.layout.collapsed .label { display: none; }
-.layout.collapsed .submenu-items { display: none; }
-.layout.collapsed .brand-text { display: none; }
-
-.slide-fade-enter-active, .slide-fade-leave-active { transition: all .25s ease; }
-.slide-fade-enter-from, .slide-fade-leave-to { opacity: 0; transform: translateY(-6px); }
 </style>
-
-

@@ -299,7 +299,8 @@ export default {
       detailHeader: null,
       selectedApplication: null,
       breadcrumbs: [
-        { name: 'Leave & Time Management', path: '/leave-time' },
+        { name: 'Dashboard', path: '/dashboard' },
+        { name: 'Time and Attendance', path: '/time-attendance' },
         { name: 'DTR Application', path: '/dtr/application' }
       ]
     }

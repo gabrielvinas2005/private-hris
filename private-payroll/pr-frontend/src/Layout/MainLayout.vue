@@ -1,78 +1,119 @@
 <template>
-  <div class="layout" :class="{ collapsed }">
-    <aside class="sidebar" :class="{ collapsed }">
-      <div class="brand-row">
-        <img
-          v-if="showLogo && companyLogoSrc"
-          class="brand-logo"
-          :src="companyLogoSrc"
-          :alt="companyName"
-          @error="onLogoError"
-        />
-        <div class="brand-text" style="padding-left: 10px">
-          <h4 class="brand-title" :title="companyName">{{ companyName }}</h4>
-          <div class="brand-subtitle">Payroll Module</div>
+  <div class="flex min-h-screen bg-[#F3F5FA] text-slate-900 font-sans antialiased">
+    <!-- Sidebar Navigation -->
+    <aside :class="[
+      collapsed ? 'w-20' : 'w-64 sm:w-72',
+      'bg-white text-slate-700 border-slate-200/70 shadow-xl shadow-slate-200/50',
+      'h-screen sticky top-0 z-40 flex flex-col transition-all duration-300 ease-in-out border-r overflow-y-auto'
+    ]">
+      <!-- Sidebar Header -->
+      <div class="px-6 py-8 border-b border-slate-200/70">
+        <div class="flex flex-col items-center text-center space-y-3">
+          <div v-if="showLogo && companyLogoSrc" class="flex items-center justify-center overflow-hidden w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200/70">
+            <img :src="companyLogoSrc" :alt="companyName" class="object-contain w-full h-full" @error="onLogoError" />
+          </div>
+          <div v-else class="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4A6CFB] to-[#22308F] text-white font-bold text-lg tracking-tight shadow-lg shadow-[#3B5EFF]/30">
+            PR
+          </div>
+          <div v-if="!collapsed" class="min-w-0 w-full">
+            <h1 class="text-base font-bold tracking-tight text-slate-900 truncate">{{ companyName }}</h1>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 truncate mt-0.5">Payroll Module</p>
+          </div>
         </div>
-        <button
-          class="collapse-btn"
-          @click="collapsed = !collapsed"
-          :title="collapsed ? 'Expand' : 'Collapse'"
-        >
-          <ChevronRight :size="16" />
-        </button>
       </div>
-      <RouterLink
-        v-if="navVisible(PAYROLL_ROUTE_ACCESS.payroll)"
-        to="/"
-        class="menu-item"
-        :class="{ active: $route.path === '/' }"
-      >
-        <el-icon><LayoutDashboard /></el-icon>
-        <span class="label">Payroll</span>
-      </RouterLink>
-      <nav class="menu">
-        <div class="nav-section-label">Payroll</div>
+
+      <!-- Navigation Menu -->
+      <nav class="flex-1 px-3.5 py-5 space-y-1 overflow-y-auto sidebar-scroll">
+        <!-- Main Payroll Link -->
+        <RouterLink
+          v-if="navVisible(PAYROLL_ROUTE_ACCESS.payroll)"
+          to="/"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            $route.path === '/'
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
+        >
+          <el-icon class="text-lg flex-shrink-0"><Money /></el-icon>
+          <span v-if="!collapsed">Payroll Dashboard</span>
+        </RouterLink>
+
         <template v-if="showTimeKeepingNav">
           <RouterLink
             v-if="navVisible(PAYROLL_ROUTE_ACCESS['payroll-period'])"
             to="/payroll-period"
-            class="menu-item"
+            class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+            :class="[
+              collapsed ? 'justify-center px-0' : 'px-3.5',
+              $route.path.startsWith('/payroll-period')
+                ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            ]"
           >
-            <el-icon><CalendarClock /></el-icon>
-            <span class="label">Payroll Period</span>
+            <el-icon class="text-lg flex-shrink-0"><CalendarClock /></el-icon>
+            <span v-if="!collapsed">Payroll Period</span>
           </RouterLink>
+
           <RouterLink
             v-if="navVisible(PAYROLL_ROUTE_ACCESS['payroll-item-schedule'])"
             to="/payroll-item-schedule"
-            class="menu-item"
+            class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+            :class="[
+              collapsed ? 'justify-center px-0' : 'px-3.5',
+              $route.path.startsWith('/payroll-item-schedule')
+                ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            ]"
           >
-            <el-icon><ClipboardList /></el-icon>
-            <span class="label">Payroll Item Schedule</span>
+            <el-icon class="text-lg flex-shrink-0"><ClipboardList /></el-icon>
+            <span v-if="!collapsed">Payroll Item Schedule</span>
           </RouterLink>
+
           <RouterLink
             v-if="navVisible(PAYROLL_ROUTE_ACCESS['loan-application'])"
             to="/loan-application"
-            class="menu-item"
+            class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+            :class="[
+              collapsed ? 'justify-center px-0' : 'px-3.5',
+              $route.path.startsWith('/loan-application')
+                ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            ]"
           >
-            <el-icon><FileSignature /></el-icon>
-            <span class="label">Loan Application</span>
+            <el-icon class="text-lg flex-shrink-0"><FileSignature /></el-icon>
+            <span v-if="!collapsed">Loan Application</span>
           </RouterLink>
+
           <RouterLink
             v-if="navVisible(PAYROLL_ROUTE_ACCESS['income-deduction'])"
             to="/income-deduction"
-            class="menu-item"
+            class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+            :class="[
+              collapsed ? 'justify-center px-0' : 'px-3.5',
+              $route.path.startsWith('/income-deduction')
+                ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            ]"
           >
-            <el-icon><BanknoteArrowUp /></el-icon>
-            <span class="label">Income and Deduction</span>
+            <el-icon class="text-lg flex-shrink-0"><BanknoteArrowUp /></el-icon>
+            <span v-if="!collapsed">Income and Deduction</span>
           </RouterLink>
 
           <RouterLink
             v-if="navVisible(PAYROLL_ROUTE_ACCESS['hdmf-premium'])"
             to="/hdmf-premium"
-            class="menu-item"
+            class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+            :class="[
+              collapsed ? 'justify-center px-0' : 'px-3.5',
+              $route.path.startsWith('/hdmf-premium')
+                ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            ]"
           >
-            <el-icon><ReceiptText /></el-icon>
-            <span class="label">HDMF Premium</span>
+            <el-icon class="text-lg flex-shrink-0"><ReceiptText /></el-icon>
+            <span v-if="!collapsed">HDMF Premium</span>
           </RouterLink>
         </template>
 
@@ -80,313 +121,172 @@
           <RouterLink
             v-if="navVisible(PAYROLL_ROUTE_ACCESS['payroll-process'])"
             to="/payroll-process"
-            class="menu-item"
+            class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+            :class="[
+              collapsed ? 'justify-center px-0' : 'px-3.5',
+              $route.path.startsWith('/payroll-process')
+                ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            ]"
           >
-            <el-icon><Money /></el-icon>
-            <span class="label">Payroll Process</span>
+            <el-icon class="text-lg flex-shrink-0"><Money /></el-icon>
+            <span v-if="!collapsed">Payroll Process</span>
           </RouterLink>
+
           <RouterLink
             v-if="navVisible(PAYROLL_ROUTE_ACCESS['cos-payroll'])"
             to="/cos-payroll"
-            class="menu-item"
+            class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+            :class="[
+              collapsed ? 'justify-center px-0' : 'px-3.5',
+              $route.path.startsWith('/cos-payroll')
+                ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            ]"
           >
-            <el-icon><Toolbox /></el-icon>
-            <span class="label">COS Payroll</span>
+            <el-icon class="text-lg flex-shrink-0"><Toolbox /></el-icon>
+            <span v-if="!collapsed">COS Payroll</span>
           </RouterLink>
         </template>
 
         <RouterLink
           v-if="showBenefitsSection"
           to="/payroll-benefits"
-          class="menu-item"
-          :class="{ active: isBenefitsActive }"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            collapsed ? 'justify-center px-0' : 'px-3.5',
+            isBenefitsActive
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          ]"
         >
-          <el-icon><Gift /></el-icon>
-          <span class="label">Payroll Benefits</span>
+          <el-icon class="text-lg flex-shrink-0"><Gift /></el-icon>
+          <span v-if="!collapsed">Payroll Benefits</span>
         </RouterLink>
-        <div class="nav-section-label" v-if="showReportsSection">Reports</div>
-        <details v-if="showReportsSection" class="submenu" :open="true">
-          <summary
-            class="submenu-summary"
-            :class="{ active: isReportsActive }"
-            @click.prevent="toggleReports"
-          >
-            <div class="menu-item" role="button" aria-expanded="openReports">
-              <el-icon><FileBarChart2 /></el-icon>
-              <span class="label">Payroll Reports</span>
-            </div>
-            <span
-              v-if="!collapsed"
-              class="chevron"
-              :class="{ open: openReports }"
-              >▾</span
-            >
-          </summary>
-          <el-collapse-transition>
-            <div v-show="openReports" class="submenu-items">
-              <RouterLink
-                v-if="
-                  navVisible(PAYROLL_ROUTE_ACCESS['payroll-summary-report'])
-                "
-                to="/payroll-summary-report"
-                class="submenu-item"
-                ><el-icon><FileBarChart2 /></el-icon
-                ><span class="label">Payroll Summary reports</span></RouterLink
-              >
 
-              <!-- DISABLED AS PER REQUEST OF THE CLIENT ON THE  -->
-              <!-- <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['payroll-summary-detailed-report'])"
-                to="/payroll-summary-detailed-report"
-                class="submenu-item"
-                ><el-icon><FileBarChart2 /></el-icon
-                ><span class="label"
-                  >Payroll Summary with Detailed Deduction Report</span
-                ></RouterLink
-              > -->
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['payslip-report'])"
-                to="/payslip-report"
-                class="submenu-item"
-                ><el-icon><Receipt /></el-icon
-                ><span class="label">Payslip Report</span></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['loyalty-award-report'])"
-                to="/loyalty-award-report"
-                class="submenu-item"
-                ><el-icon><Award /></el-icon
-                ><span class="label">Loyalty Award Report</span></RouterLink
-              >
-              <RouterLink
-                v-if="
-                  navVisible(
-                    PAYROLL_ROUTE_ACCESS['payroll-communication-macco-report'],
-                  )
-                "
-                to="/payroll-communication-macco-report"
-                class="submenu-item"
-                ><el-icon><MessageSquare /></el-icon
-                ><span class="label"
-                  >Payroll Communication Macco Report</span
-                ></RouterLink
-              >
-              <RouterLink
-                v-if="
-                  navVisible(PAYROLL_ROUTE_ACCESS['bank-remittance-report'])
-                "
-                to="/bank-remittance-report"
-                class="submenu-item"
-                ><el-icon><Building2 /></el-icon
-                ><span class="label">Bank Remittance Report</span></RouterLink
-              >
-              <RouterLink
-                v-if="
-                  navVisible(
-                    PAYROLL_ROUTE_ACCESS['philhealth-remittance-report'],
-                  )
-                "
-                to="/philhealth-remittance-report"
-                class="submenu-item"
-                ><el-icon><FileText /></el-icon
-                ><span class="label"
-                  >Philhealth Remittance Report</span
-                ></RouterLink
-              >
-              <RouterLink
-                v-if="
-                  navVisible(
-                    PAYROLL_ROUTE_ACCESS['pag-ibig-contribution-report'],
-                  )
-                "
-                to="/pag-ibig-contribution-report"
-                class="submenu-item"
-                ><el-icon><ReceiptText /></el-icon
-                ><span class="label"
-                  >Pag Ibig Contribution Report</span
-                ></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['pag-ibig-loan-report'])"
-                to="/pag-ibig-loan-report"
-                class="submenu-item"
-                ><el-icon><FileSignature /></el-icon
-                ><span class="label">Pag Ibig Loan Report</span></RouterLink
-              >
-              <RouterLink
-                v-if="
-                  navVisible(PAYROLL_ROUTE_ACCESS['gsis-remittance-report'])
-                "
-                to="/gsis-remittance-report"
-                class="submenu-item"
-                ><el-icon><FileText /></el-icon
-                ><span class="label">GSIS Remittance Report</span></RouterLink
-              >
-              <RouterLink
-                v-if="
-                  navVisible(PAYROLL_ROUTE_ACCESS['overtime-payment-report'])
-                "
-                to="/overtime-payment-report"
-                class="submenu-item"
-                ><el-icon><Clock /></el-icon
-                ><span class="label">Overtime Payment Report</span></RouterLink
-              >
-              <RouterLink
-                v-if="
-                  navVisible(
-                    PAYROLL_ROUTE_ACCESS['uniform-clothing-allowance-report'],
-                  )
-                "
-                to="/uniform-clothing-allowance-report"
-                class="submenu-item"
-                ><el-icon><Shirt /></el-icon
-                ><span class="label"
-                  >Uniform & Clothing Allowance Report</span
-                ></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['hazard-pay-report'])"
-                to="/hazard-pay-report"
-                class="submenu-item"
-                ><el-icon><Shield /></el-icon
-                ><span class="label"
-                  >Hazard Pay Allowance Report</span
-                ></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['extra-bonus-report'])"
-                to="/extra-bonus-report"
-                class="submenu-item"
-                ><el-icon><Gift /></el-icon
-                ><span class="label"
-                  >Extra Bonus Payroll Report</span
-                ></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['rata-payroll-report'])"
-                to="/rata-payroll-report"
-                class="submenu-item"
-                ><el-icon><DollarSign /></el-icon
-                ><span class="label">Rata Payroll Report</span></RouterLink
-              >
-              <RouterLink
-                v-if="
-                  navVisible(
-                    PAYROLL_ROUTE_ACCESS['monetization-payroll-report'],
-                  )
-                "
-                to="/monetization-payroll-report"
-                class="submenu-item"
-                ><el-icon><Wallet /></el-icon
-                ><span class="label"
-                  >Monetization Payroll Report</span
-                ></RouterLink
-              >
-              <RouterLink
-                v-if="
-                  navVisible(PAYROLL_ROUTE_ACCESS['mid-year-bonus-report-hub'])
-                "
-                to="/mid-year-bonus-report-hub"
-                class="submenu-item"
-                ><el-icon><Gift /></el-icon
-                ><span class="label">Mid Year Bonus Reports</span></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['year-end-bonus-report'])"
-                to="/year-end-bonus-report"
-                class="submenu-item"
-                ><el-icon><Sparkles /></el-icon
-                ><span class="label">Year end Bonus Report</span></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['subsistence-report'])"
-                to="/subsistence-report"
-                class="submenu-item"
-                ><el-icon><FileText /></el-icon
-                ><span class="label">SUBSISTENCE Report</span></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['landbank-text-report'])"
-                to="/landbank-text-report"
-                class="submenu-item"
-                ><el-icon><FileType /></el-icon
-                ><span class="label">Landbank Text Report</span></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['atm-letter-landbank'])"
-                to="/atm-letter-landbank"
-                class="submenu-item"
-                ><el-icon><FileText /></el-icon
-                ><span class="label">ATM Letter for Landbank</span></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['bir-form-2305'])"
-                to="/bir-form-2305"
-                class="submenu-item"
-                ><el-icon><FileCheck /></el-icon
-                ><span class="label">BIR Form 2305</span></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['gsis-member-info'])"
-                to="/gsis-member-info"
-                class="submenu-item"
-                ><el-icon><UserCircle /></el-icon
-                ><span class="label"
-                  >GSIS Member Information Sheet</span
-                ></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['pagibig-mdf'])"
-                to="/pag-ibig-mdf"
-                class="submenu-item"
-                ><el-icon><FileSpreadsheet /></el-icon
-                ><span class="label">Pag-IBIG MDF</span></RouterLink
-              >
-              <RouterLink
-                v-if="navVisible(PAYROLL_ROUTE_ACCESS['philhealth-pmrf'])"
-                to="/philhealth-pmrf"
-                class="submenu-item"
-                ><el-icon><FileSpreadsheet /></el-icon
-                ><span class="label">PhilHealth PMRF</span></RouterLink
-              >
+        <!-- Reports Accordion -->
+        <div v-if="showReportsSection" class="pt-1">
+          <button
+            @click="toggleReports"
+            class="w-full flex items-center justify-between py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+            :class="[
+              collapsed ? 'justify-center px-0' : 'px-3.5',
+              isReportsActive ? 'text-[#3B5EFF] bg-[#3B5EFF]/[0.07] font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            ]"
+          >
+            <div class="flex items-center space-x-3 min-w-0">
+              <el-icon class="text-lg flex-shrink-0"><FileBarChart2 /></el-icon>
+              <span v-if="!collapsed" class="truncate">Payroll Reports</span>
+            </div>
+            <svg v-if="!collapsed" class="w-4 h-4 transition-transform duration-200 flex-shrink-0" :class="{ 'rotate-180': openReports }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <el-collapse-transition>
+            <div v-show="!collapsed && openReports" class="pl-3 pr-1 mt-1 space-y-1 border-l-2 border-slate-200/70 ml-4">
+              <RouterLink v-if="navVisible(PAYROLL_ROUTE_ACCESS['payroll-summary-report'])" to="/payroll-summary-report" class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all" :class="[route.path === '/payroll-summary-report' ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"><el-icon><FileBarChart2 /></el-icon><span>Payroll Summary</span></RouterLink>
+              <RouterLink v-if="navVisible(PAYROLL_ROUTE_ACCESS['payslip-report'])" to="/payslip-report" class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all" :class="[route.path === '/payslip-report' ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"><el-icon><Receipt /></el-icon><span>Payslip Report</span></RouterLink>
+              <RouterLink v-if="navVisible(PAYROLL_ROUTE_ACCESS['loyalty-award-report'])" to="/loyalty-award-report" class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all" :class="[route.path === '/loyalty-award-report' ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"><el-icon><Award /></el-icon><span>Loyalty Award</span></RouterLink>
+              <RouterLink v-if="navVisible(PAYROLL_ROUTE_ACCESS['payroll-communication-macco-report'])" to="/payroll-communication-macco-report" class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all" :class="[route.path === '/payroll-communication-macco-report' ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"><el-icon><MessageSquare /></el-icon><span>Communication Macco</span></RouterLink>
+              <RouterLink v-if="navVisible(PAYROLL_ROUTE_ACCESS['bank-remittance-report'])" to="/bank-remittance-report" class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all" :class="[route.path === '/bank-remittance-report' ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"><el-icon><Building2 /></el-icon><span>Bank Remittance</span></RouterLink>
+              <RouterLink v-if="navVisible(PAYROLL_ROUTE_ACCESS['philhealth-remittance-report'])" to="/philhealth-remittance-report" class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all" :class="[route.path === '/philhealth-remittance-report' ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"><el-icon><FileText /></el-icon><span>PhilHealth Remittance</span></RouterLink>
+              <RouterLink v-if="navVisible(PAYROLL_ROUTE_ACCESS['pag-ibig-contribution-report'])" to="/pag-ibig-contribution-report" class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all" :class="[route.path === '/pag-ibig-contribution-report' ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"><el-icon><ReceiptText /></el-icon><span>Pag-IBIG Contribution</span></RouterLink>
+              <RouterLink v-if="navVisible(PAYROLL_ROUTE_ACCESS['pag-ibig-loan-report'])" to="/pag-ibig-loan-report" class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all" :class="[route.path === '/pag-ibig-loan-report' ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"><el-icon><FileSignature /></el-icon><span>Pag-IBIG Loan</span></RouterLink>
+              <RouterLink v-if="navVisible(PAYROLL_ROUTE_ACCESS['gsis-remittance-report'])" to="/gsis-remittance-report" class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all" :class="[route.path === '/gsis-remittance-report' ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"><el-icon><FileText /></el-icon><span>GSIS Remittance</span></RouterLink>
+              <RouterLink v-if="navVisible(PAYROLL_ROUTE_ACCESS['overtime-payment-report'])" to="/overtime-payment-report" class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all" :class="[route.path === '/overtime-payment-report' ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"><el-icon><Clock /></el-icon><span>Overtime Payment</span></RouterLink>
+              <RouterLink v-if="navVisible(PAYROLL_ROUTE_ACCESS['uniform-clothing-allowance-report'])" to="/uniform-clothing-allowance-report" class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all" :class="[route.path === '/uniform-clothing-allowance-report' ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"><el-icon><Shirt /></el-icon><span>Uniform Allowance</span></RouterLink>
+              <RouterLink v-if="navVisible(PAYROLL_ROUTE_ACCESS['hazard-pay-report'])" to="/hazard-pay-report" class="flex items-center py-2 px-3 space-x-2.5 text-xs font-medium rounded-lg transition-all" :class="[route.path === '/hazard-pay-report' ? 'bg-[#3B5EFF] text-white font-semibold shadow-md shadow-[#3B5EFF]/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100']"><el-icon><FileText /></el-icon><span>Hazard Pay</span></RouterLink>
             </div>
           </el-collapse-transition>
-        </details>
+        </div>
       </nav>
-      <div class="user-section">
-        <div class="user-separator"></div>
-        <div class="user-info">
-          <div class="user-avatar">
-            <span v-if="!collapsed">{{ userInitials }}</span>
-            <el-icon v-else><User /></el-icon>
-          </div>
-          <div v-if="!collapsed" class="user-details">
-            <div class="user-name">{{ userDisplayName }}</div>
-            <div v-if="userDisplayEmail" class="user-email">
-              {{ userDisplayEmail }}
-            </div>
+
+      <!-- Sidebar Footer -->
+      <div class="p-4 border-t border-slate-200/70 bg-slate-50/80">
+        <div class="flex items-center" :class="collapsed ? 'justify-center' : 'justify-between'">
+          <button 
+            @click="collapsed = !collapsed" 
+            class="p-2 transition rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-200/60"
+            :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+          >
+            <svg v-if="!collapsed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <div v-if="!collapsed" class="text-right">
+            <p class="text-xs font-medium text-slate-600">{{ companyName }}</p>
+            <p class="text-[11px] text-slate-400">v1.0.0</p>
           </div>
         </div>
-        <button
-          class="sidebar-logout-btn"
-          @click="handleLogout"
-          :disabled="loading"
-        >
-          <el-icon><SwitchButton /></el-icon>
-          <span v-if="!collapsed">Logout</span>
-        </button>
       </div>
     </aside>
-    <section class="content">
-      <header class="content-header">
-        <div class="header-content">
-          <slot name="header">Payroll Module</slot>
+
+    <!-- Main Content Area -->
+    <div class="flex flex-col flex-1 min-w-0">
+      <!-- Top Header -->
+      <header class="sticky top-0 z-30 px-4 py-3 border-b border-slate-200/70 shadow-sm bg-white/90 backdrop-blur sm:px-6">
+        <div class="mt-2 mb-2 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 class="text-xl font-bold tracking-tight text-slate-900">
+              <slot name="header">Payroll Module</slot>
+            </h2>
+            <p class="mt-0.5 text-sm text-slate-500">Private Sector Payroll Computation & Statutory Remittance Management</p>
+          </div>
+
+          <!-- Right Side Controls -->
+          <div class="flex flex-wrap items-center gap-3 lg:justify-end">
+            <!-- Theme Switcher Button -->
+            <button
+              @click="toggleTheme"
+              class="p-2 text-slate-500 transition-all duration-200 rounded-xl hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/10"
+              :title="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+              :aria-label="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+            >
+              <svg v-if="!isDarkMode" class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+              <svg v-else class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </button>
+
+            <!-- User Info Badge -->
+            <div class="flex items-center px-3.5 py-1.5 border rounded-2xl space-x-2.5 bg-slate-50/80 border-slate-200/70">
+              <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-[#4A6CFB] to-[#22308F] text-white font-bold text-xs shadow-sm shadow-[#3B5EFF]/30">
+                {{ userInitials }}
+              </div>
+              <div class="text-left hidden sm:block">
+                <p class="text-xs font-semibold leading-tight truncate max-w-[120px] text-slate-800">{{ userDisplayName }}</p>
+                <p class="text-[10px] font-medium leading-tight truncate max-w-[120px] text-slate-500">{{ userDisplayEmail || 'Payroll Officer' }}</p>
+              </div>
+            </div>
+
+            <!-- Sign Out Button -->
+            <button
+              @click="handleLogout"
+              :disabled="loading"
+              class="flex items-center px-3 py-2 space-x-2 text-sm font-medium text-slate-600 transition-all duration-200 rounded-lg hover:text-red-600 hover:bg-red-50"
+            >
+              <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span class="hidden sm:inline">Sign Out</span>
+            </button>
+          </div>
         </div>
       </header>
-      <main>
-        <slot />
+
+      <!-- Main Slot Content -->
+      <main class="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto bg-[#F3F5FA]">
+        <div class="p-4 bg-white border border-slate-200/70 shadow-sm rounded-2xl sm:p-6">
+          <slot />
+        </div>
       </main>
-    </section>
+    </div>
   </div>
 </template>
 
@@ -449,7 +349,7 @@ const userInitials = computed(() => {
   if (user.value?.email) {
     return user.value.email[0].toUpperCase();
   }
-  return "?";
+  return "PR";
 });
 
 const route = useRoute();
@@ -490,14 +390,12 @@ const openReports = ref(false);
 const openBenefits = ref(false);
 const collapsed = ref(false);
 
-// Computed user display name
 const userDisplayName = computed(() => {
   if (user.value?.name) return user.value.name;
   if (user.value?.email) return user.value.email.split("@")[0];
-  return "User";
+  return "Payroll Officer";
 });
 
-// Computed user email
 const userDisplayEmail = computed(() => {
   return user.value?.email || "";
 });
@@ -527,14 +425,27 @@ function toggleBenefits() {
   openBenefits.value = !openBenefits.value;
 }
 
-// Logout handler
 const handleLogout = async () => {
   await logout();
-  // Dispatch event to trigger login modal in App.vue
   window.dispatchEvent(new CustomEvent("user-logout"));
 };
 
-// Auto-open submenu when navigating to a child route, but don't force-close on navigate away
+const isDarkMode = ref(localStorage.getItem('theme') === 'dark');
+const toggleTheme = () => {
+  isDarkMode.value = !isDarkMode.value;
+  localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light');
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+};
+onMounted(() => {
+  if (isDarkMode.value) {
+    document.documentElement.classList.add('dark');
+  }
+});
+
 watch(
   isReportsActive,
   (active) => {
@@ -552,364 +463,17 @@ watch(
 </script>
 
 <style scoped>
-.layout {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  min-height: 100vh;
-  transition: grid-template-columns 0.25s ease;
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
 }
-.layout.collapsed {
-  grid-template-columns: 76px 1fr;
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
-.sidebar {
-  background: #ffffff;
-  border-right: 1px dashed #e6e6e6;
-  padding: 1.25rem;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
-  overflow-x: visible;
-  scrollbar-gutter: stable both-edges;
-  display: flex;
-  flex-direction: column;
-  transition: padding 0.25s ease;
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 4px;
 }
-.sidebar.collapsed {
-  padding: 1rem 0.5rem;
-  align-items: center;
-}
-.brand {
-  margin: 0 0 1rem 0;
-}
-.brand-row {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  transition: gap 0.25s ease;
-}
-.sidebar.collapsed .brand-row {
-  grid-template-columns: auto;
-  justify-items: center;
-  gap: 6px;
-}
-.brand-logo {
-  height: 40px;
-  width: 40px;
-  min-width: 40px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  object-fit: contain;
-}
-.brand-text {
-  line-height: 1.1;
-  min-width: 0;
-  overflow: hidden;
-}
-.brand-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.brand-subtitle {
-  color: #94a3b8;
-  font-size: 11px;
-  white-space: nowrap;
-}
-.collapse-btn {
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  border-radius: 8px;
-  cursor: pointer;
-  padding: 2px 6px;
-  transition: transform 0.2s ease;
-  color: #000;
-}
-.sidebar.collapsed .collapse-btn {
-  transform: rotate(180deg);
-}
-.menu {
-  display: grid;
-  gap: 0.25rem;
-}
-.menu-item {
-  color: #334155;
-  text-decoration: none;
-  padding: 6px 8px;
-  border-radius: 8px;
-  display: grid;
-  grid-template-columns: 20px 1fr;
-  align-items: center;
-  column-gap: 8px;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
-}
-.menu-item.router-link-active {
-  background: #eef2f7;
-  font-weight: 600;
-}
-.submenu {
-  margin-top: 4px;
-}
-.menu-item:hover {
-  background: #f8fafc;
-}
-.submenu summary {
-  list-style: none;
-}
-.submenu-summary {
-  list-style: none;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-}
-.submenu-summary.active {
-  background: #eef2f7;
-  border-radius: 8px;
-  padding: 4px 6px;
-}
-.submenu {
-  contain: layout paint;
-}
-.chevron {
-  color: #94a3b8;
-  transition: transform 0.15s ease;
-}
-.chevron.open {
-  transform: rotate(180deg);
-}
-.submenu-summary .menu-item {
-  display: grid;
-  grid-auto-flow: column;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-.submenu-items {
-  display: grid;
-  gap: 2px;
-  margin-left: 10px;
-  padding-left: 12px;
-  border-left: 1px dashed #e6e6e6;
-}
-.submenu-item {
-  color: #64748b;
-  text-decoration: none;
-  padding: 5px 8px;
-  border-radius: 6px;
-  display: grid;
-  grid-template-columns: 20px 1fr;
-  align-items: center;
-  column-gap: 8px;
-  font-size: 12px;
-  white-space: normal;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.submenu-item.router-link-active {
-  background: #eef2f7;
-}
-.content {
-  background: #f8fafc;
-  height: 100vh;
-  overflow: auto;
-  scrollbar-gutter: stable both-edges;
-}
-.content-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px dashed #e6e6e6;
-  background: #ffffff;
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-main {
-  padding: 1.5rem;
-}
-.layout.collapsed .label,
-.layout.collapsed .brand-text,
-.layout.collapsed .brand-subtitle,
-.layout.collapsed .user-details,
-.layout.collapsed .submenu-items {
-  display: none;
-}
-.layout.collapsed .menu-item,
-.layout.collapsed .submenu-summary .menu-item,
-.layout.collapsed .submenu-item {
-  grid-template-columns: 1fr;
-  justify-items: center;
-  padding: 0.5rem;
-}
-.layout.collapsed .menu-item .el-icon,
-.layout.collapsed .submenu-item .el-icon {
-  margin: 0 auto;
-}
-.layout.collapsed .submenu-summary {
-  grid-template-columns: 1fr;
-  justify-items: center;
-}
-.layout.collapsed .submenu {
-  position: relative;
-  width: 100%;
-}
-.layout.collapsed .submenu-items {
-  position: absolute;
-  left: calc(100% + 8px);
-  top: 0;
-  display: none;
-  padding: 0.75rem;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
-  min-width: 230px;
-  z-index: 10;
-}
-.layout.collapsed .submenu:hover .submenu-items,
-.layout.collapsed .submenu:focus-within .submenu-items {
-  display: grid;
-}
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.25s ease;
-}
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-.user-section {
-  margin-top: auto;
-  padding-top: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
-}
-.user-separator {
-  border-top: 1px dashed #e6e6e6;
-  margin: 0 -1.25rem;
-}
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-.user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #eef2f7;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #1e3a5f;
-  font-size: 12px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-.user-avatar .el-icon {
-  font-size: 18px;
-}
-.user-details {
-  flex: 1;
-  min-width: 0;
-}
-.user-name {
-  font-weight: 600;
-  color: #0f172a;
-  font-size: 14px;
-  line-height: 1.4;
-}
-.user-email {
-  color: #64748b;
-  font-size: 12px;
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.sidebar-logout-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 16px;
-  background: #ffffff;
-  color: #dc2626;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-.sidebar-logout-btn:hover:not(:disabled) {
-  background: #fef2f2;
-  border-color: #dc2626;
-}
-.sidebar-logout-btn:disabled {
-  background: #f3f4f6;
-  color: #9ca3af;
-  cursor: not-allowed;
-  border-color: #e5e7eb;
-}
-.sidebar-logout-btn .el-icon {
-  color: #dc2626;
-  font-size: 16px;
-}
-.sidebar-logout-btn:disabled .el-icon {
-  color: #9ca3af;
-}
-.layout.collapsed .user-info {
-  justify-content: center;
-  width: auto;
-  margin: 0 auto;
-}
-.layout.collapsed .user-avatar {
-  margin: 0 auto;
-}
-.layout.collapsed .sidebar-logout-btn {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  min-width: 0;
-  border-radius: 999px;
-  border-color: transparent;
-  box-shadow: 0 0 0 1px #e5e7eb;
-  align-self: center;
-}
-.layout.collapsed .sidebar-logout-btn span {
-  display: none;
-}
-.layout.collapsed .user-section {
-  align-items: center;
-}
-.nav-section-label {
-  font-size: 10px;
-  font-weight: 500;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 10px 8px 4px;
-}
-
-.layout.collapsed .nav-section-label {
-  display: none;
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
 }
 </style>

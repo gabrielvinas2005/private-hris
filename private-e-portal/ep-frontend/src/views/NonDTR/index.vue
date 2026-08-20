@@ -491,7 +491,7 @@ export default {
     const router = useRouter()
     const breadcrumbs = [
       { name: 'Dashboard', path: '/dashboard' },
-      { name: 'Leave & Time Management', path: '/leave-time' },
+      { name: 'Time and Attendance', path: '/time-attendance' },
       { name: 'COS Accomplishment Report', path: '/review-dtr' }
     ]
 

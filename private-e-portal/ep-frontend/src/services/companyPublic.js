@@ -61,7 +61,7 @@ export async function applyCompanyBranding() {
   const data = await fetchCompanyPublic()
   const name = data?.name?.trim()
 
-  document.title = name ? `${name} - HRMP` : 'Employee Portal'
+  document.title = name ? `Employee Portal - ${name}` : 'Employee Portal'
 
   const logo = getCompanyLogo(data)
   if (logo) {

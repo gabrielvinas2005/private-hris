@@ -174,9 +174,29 @@ class WFHAttendanceController extends Controller
                 'wfh_location' => 'nullable|string|max:255',
             ]);
 
-            // Always use current date
             $today = now()->format('Y-m-d');
-            $isFriday = Carbon::parse($today)->isFriday();
+
+            // --- Schedule Gate: always resolve schedule from fix_schedules_details ---
+            $scheduleDetail = $this->getEmployeeScheduleForDate($employeeId, $today);
+
+            if ($scheduleDetail) {
+                // Block clock-in on scheduled rest days
+                if ((int) $scheduleDetail->is_restday === 1) {
+                    return $this->errorResponse(
+                        'Today is a scheduled rest day. Portal clock-in is not available.',
+                        400
+                    );
+                }
+
+                // Block portal clock-in when schedule is on-site (is_wfh = 0)
+                if ((int) $scheduleDetail->is_wfh === 0) {
+                    return $this->errorResponse(
+                        'Your schedule today requires on-site attendance. Please use the company hardware attendance machine.',
+                        403
+                    );
+                }
+            }
+            // --- End Schedule Gate ---
 
             // Get employee's work_schedule_id
             $employee = DB::table('employees')
@@ -186,23 +206,10 @@ class WFHAttendanceController extends Controller
 
             $workScheduleId = $employee->work_schedule_id ?? 0;
 
-            // Validation: ensure there is an approved WFH application for today ONLY if it is not Friday
-            if (!$isFriday) {
-                $hasApprovedWfh = DB::table('wfh_application')
-                    ->where('employee_id', $employeeId)
-                    ->where('cancelled', 0)
-                    ->where('disapproved', 0)
-                    ->where('disapproved_2', 0)
-                    ->where('disapproved_3', 0)
-                    ->where('approved_3', 1) // Fully approved by all levels
-                    ->whereDate('start_date', '<=', $today)
-                    ->whereDate('end_date', '>=', $today)
-                    ->exists();
-
-                if (!$hasApprovedWfh) {
-                    return $this->errorResponse('You do not have an approved WFH application for today.', 400);
-                }
-            }
+            // Tag source based on schedule (wfh_portal when is_wfh=1, web_clock as fallback)
+            $entrySource = ($scheduleDetail && (int) $scheduleDetail->is_wfh === 1)
+                ? 'wfh_portal'
+                : 'web_clock';
 
             // Check if already timed in today
             $existingRecord = DB::table('time_data')
@@ -212,49 +219,48 @@ class WFHAttendanceController extends Controller
                 ->first();
 
             if ($existingRecord && $existingRecord->am_in) {
-                return $this->errorResponse('You have already timed in today', 400);
+                return $this->errorResponse('You have already timed in today.', 400);
             }
 
             $currentTime = now()->format('H:i:s');
 
             if ($existingRecord) {
-                // Update existing record
                 DB::table('time_data')
                     ->where('id', $existingRecord->id)
                     ->update([
-                        'am_in' => $currentTime,
-                        'work_schedule_id' => $workScheduleId, // Add this
-                        'wfh_reason' => $data['wfh_reason'] ?? '',
-                        'wfh_location' => $data['wfh_location'] ?? '',
-                        'manual_entry_source' => 'wfh_portal',
-                        'entry_timestamp' => now(),
-                        'updated_at' => now()
+                        'am_in'                => $currentTime,
+                        'work_schedule_id'     => $workScheduleId,
+                        'wfh_reason'           => $data['wfh_reason'] ?? '',
+                        'wfh_location'         => $data['wfh_location'] ?? '',
+                        'manual_entry_source'  => $entrySource,
+                        'entry_timestamp'      => now(),
+                        'updated_at'           => now(),
                     ]);
 
                 $recordId = $existingRecord->id;
             } else {
-                // Create new record
                 $recordId = DB::table('time_data')->insertGetId([
-                    'employee_id' => $employeeId,
-                    'payroll_period_id' => $this->getCurrentPayrollPeriodId(),
-                    'work_schedule_id' => $workScheduleId, // Add this
-                    'date' => $today,
-                    'am_in' => $currentTime,
-                    'is_wfh' => 1,
-                    'wfh_reason' => $data['wfh_reason'] ?? '',
-                    'wfh_location' => $data['wfh_location'] ?? '',
-                    'manual_entry_source' => 'wfh_portal',
-                    'entry_timestamp' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now()
+                    'employee_id'          => $employeeId,
+                    'payroll_period_id'    => $this->getCurrentPayrollPeriodId(),
+                    'work_schedule_id'     => $workScheduleId,
+                    'date'                 => $today,
+                    'am_in'               => $currentTime,
+                    'is_wfh'              => 1,
+                    'wfh_reason'           => $data['wfh_reason'] ?? '',
+                    'wfh_location'         => $data['wfh_location'] ?? '',
+                    'manual_entry_source'  => $entrySource,
+                    'entry_timestamp'      => now(),
+                    'created_at'           => now(),
+                    'updated_at'           => now(),
                 ]);
             }
 
             return $this->successResponse([
-                'message' => 'Time in recorded successfully',
-                'time_in' => $currentTime,
-                'record_id' => $recordId,
-                'record' => DB::table('time_data')->where('id', $recordId)->first() // Add this to return the full record
+                'message'         => 'Time in recorded successfully',
+                'time_in'         => $currentTime,
+                'record_id'       => $recordId,
+                'entry_source'    => $entrySource,
+                'record'          => DB::table('time_data')->where('id', $recordId)->first(),
             ]);
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to record time in: ' . $e->getMessage(), 500);
@@ -411,18 +417,31 @@ class WFHAttendanceController extends Controller
     public function getTodayStatus($employeeId)
     {
         try {
-            // Always use current date
             $today = now()->format('Y-m-d');
-            $isFriday = Carbon::parse($today)->isFriday();
 
-            // Check if there is an approved WFH application for today (for non-Friday info)
+            // --- Always resolve schedule from fix_schedules_details ---
+            $scheduleDetail = $this->getEmployeeScheduleForDate($employeeId, $today);
+
+            $isWfhDay   = $scheduleDetail ? (int) $scheduleDetail->is_wfh === 1   : null;
+            $isRestDay  = $scheduleDetail ? (int) $scheduleDetail->is_restday === 1 : null;
+
+            // Determine working mode for the frontend
+            $workingMode = 'unknown';
+            if ($isRestDay) {
+                $workingMode = 'rest_day';
+            } elseif ($isWfhDay === true) {
+                $workingMode = 'wfh';
+            } elseif ($isWfhDay === false) {
+                $workingMode = 'onsite';
+            }
+
             $hasApprovedWfh = DB::table('wfh_application')
                 ->where('employee_id', $employeeId)
                 ->where('cancelled', 0)
                 ->where('disapproved', 0)
                 ->where('disapproved_2', 0)
                 ->where('disapproved_3', 0)
-                ->where('approved_3', 1) // Fully approved by all levels
+                ->where('approved_3', 1)
                 ->whereDate('start_date', '<=', $today)
                 ->whereDate('end_date', '>=', $today)
                 ->exists();
@@ -435,20 +454,24 @@ class WFHAttendanceController extends Controller
 
             if (!$record) {
                 return $this->successResponse([
-                    'status' => 'not_started',
-                    'message' => 'No attendance record for today',
-                    'record' => null,
-                    'has_approved_wfh' => $hasApprovedWfh
+                    'status'          => 'not_started',
+                    'message'         => 'No attendance record for today',
+                    'record'          => null,
+                    'has_approved_wfh'=> $hasApprovedWfh,
+                    'working_mode'    => $workingMode,
+                    'schedule_detail' => $scheduleDetail,
                 ]);
             }
 
             $status = $this->determineAttendanceStatus($record);
 
             return $this->successResponse([
-                'status' => $status,
-                'record' => $record,
-                'current_time' => now()->format('H:i:s'),
-                'has_approved_wfh' => $hasApprovedWfh
+                'status'          => $status,
+                'record'          => $record,
+                'current_time'    => now()->format('H:i:s'),
+                'has_approved_wfh'=> $hasApprovedWfh,
+                'working_mode'    => $workingMode,
+                'schedule_detail' => $scheduleDetail,
             ]);
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to get today\'s status: ' . $e->getMessage(), 500);
@@ -774,5 +797,44 @@ class WFHAttendanceController extends Controller
         }
 
         return 'partial';
+    }
+
+    /**
+     * Resolve today's fix_schedules_details row for an employee.
+     *
+     * Uses employees.work_schedule_id → fix_schedules_details
+     * day_id follows ISO-8601: 1=Monday … 7=Sunday (Carbon::dayOfWeekIso)
+     *
+     * @param  int|string  $employeeId
+     * @param  string      $date  Y-m-d
+     * @return object|null
+     */
+    private function getEmployeeScheduleForDate($employeeId, string $date): ?object
+    {
+        try {
+            $employee = DB::table('employees')
+                ->where('id', $employeeId)
+                ->select('work_schedule_id')
+                ->first();
+
+            if (!$employee || !$employee->work_schedule_id) {
+                return null;
+            }
+
+            // ISO day: 1 = Monday … 7 = Sunday
+            $dayId = Carbon::parse($date)->dayOfWeekIso;
+
+            return DB::table('fix_schedules_details')
+                ->where('fix_schedule_id', $employee->work_schedule_id)
+                ->where('day_id', $dayId)
+                ->first();
+        } catch (\Throwable $e) {
+            \Log::warning('WFHAttendanceController::getEmployeeScheduleForDate failed', [
+                'employee_id' => $employeeId,
+                'date'        => $date,
+                'error'       => $e->getMessage(),
+            ]);
+            return null;
+        }
     }
 }

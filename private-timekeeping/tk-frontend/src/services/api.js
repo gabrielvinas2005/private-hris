@@ -13,26 +13,21 @@ async function request(path, options = {}) {
 
   // Attach Authorization header from localStorage token if available
   try {
-    // Prefer real auth token; fallback to dev auth token
     const rawAuthToken = localStorage.getItem('auth_token');
     const rawDevToken = localStorage.getItem('dev_auth_token');
 
     let token = null;
-    if (rawAuthToken) {
+    const extractToken = (raw) => {
+      if (!raw) return null;
       try {
-        const parsed = JSON.parse(rawAuthToken);
-        token = parsed?.token || rawAuthToken;
+        const parsed = JSON.parse(raw);
+        return parsed?.token || raw;
       } catch (_) {
-        token = rawAuthToken;
+        return raw;
       }
-    } else if (rawDevToken) {
-      try {
-        const parsed = JSON.parse(rawDevToken);
-        token = parsed?.token || rawDevToken;
-      } catch (_) {
-        token = rawDevToken;
-      }
-    }
+    };
+
+    token = extractToken(rawDevToken) || extractToken(rawAuthToken);
 
     if (token) {
       opts.headers = { ...opts.headers, 'Authorization': `Bearer ${token}` };

@@ -32,15 +32,18 @@ class DevAuth
             return $next($request);
         }
 
-        // Only reach here if user is NOT authenticated yet
-        // Start session early to ensure session ID is available
-        if (!$request->hasSession()) {
-            $request->setLaravelSession(app('session.store'));
+        // Only reach here if user is NOT authenticated
+        // Safely start session if available
+        if ($request->hasSession()) {
+            try {
+                $session = $request->session();
+                if (!$session->isStarted()) {
+                    $session->start();
+                }
+            } catch (\Throwable $e) {
+                // Ignore session start errors in stateless API requests
+            }
         }
-        
-        // Force start session to make sure it's persisted
-        $session = $request->session();
-        $session->start();
 
         // Check if SharedAuth is handling the request (has shared auth parameters)
         $employeeNo = $request->get('employee_no');
@@ -79,12 +82,16 @@ class DevAuth
         }
 
         // Log in the admin user automatically (ONLY ONCE per session)
-        // Auth::login() with 'true' parameter sets "remember me" cookie
-        // This ensures the session persists across requests
         Auth::login($adminUser, true);
         
-        // Save the session explicitly to ensure it's written
-        $session->save();
+        // Save the session explicitly if available
+        if ($request->hasSession()) {
+            try {
+                $request->session()->save();
+            } catch (\Throwable $e) {
+                // Ignore
+            }
+        }
 
         return $next($request);
     }

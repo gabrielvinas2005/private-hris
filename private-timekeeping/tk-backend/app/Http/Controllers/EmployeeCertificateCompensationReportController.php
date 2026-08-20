@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Traits\GeneratesPdf;
 use \NumberFormatter;
 
 class EmployeeCertificateCompensationReportController extends Controller
 {
     use ApiResponse, GeneratesPdf;
-use App\Traits\GeneratesPdf;
 
     /**
      * Create a new controller instance.

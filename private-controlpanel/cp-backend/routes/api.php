@@ -22,6 +22,10 @@ Route::post('/applicant-add/{id}/{plantilla_id}', 'ApplicantsController@store');
 Route::get('/applicant-registration', 'ApplicantsController@register');
 Route::post('/applicant-registration', 'ApplicantsController@register_store');
 
+// Public portal-facing config — Employee Portal reads this to configure Time & Attendance features
+Route::get('/portal-settings/timekeeping', 'TimeKeepingSetupController@getPortalConfig');
+
+
 
 Route::get('/shared-auth-session', function () {
     $token = session('api_token');

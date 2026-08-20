@@ -5,7 +5,12 @@ import apiService from '../Services/api.js'
 export function useTimekeepingSetup() {
     const employmentTypes = ref([])
     const selectedEmploymentTypeId = ref(null)
-    const form = ref({ work_days: 0, work_hours: 0, with_holiday_pay: false })
+    const form = ref({
+        enable_web_clock: true,
+        enable_biometric: true,
+        require_selfie: true,
+        enforce_geofence: true,
+    })
     const loading = ref(false)
     const saving = ref(false)
     const employmentTypeSchedules = ref({})
@@ -14,9 +19,10 @@ export function useTimekeepingSetup() {
 
     function normalizeSchedule(data = {}) {
         return {
-            work_days: Number(data.work_days ?? 0),
-            work_hours: Number(data.work_hours ?? 0),
-            with_holiday_pay: data.with_holiday_pay === true || data.with_holiday_pay === 1 || data.with_holiday_pay === '1'
+            enable_web_clock: data.enable_web_clock === true || data.enable_web_clock === 1 || data.enable_web_clock === '1' || data.enable_web_clock == null,
+            enable_biometric: data.enable_biometric === true || data.enable_biometric === 1 || data.enable_biometric === '1' || data.enable_biometric == null,
+            require_selfie:   data.require_selfie === true || data.require_selfie === 1 || data.require_selfie === '1' || data.require_selfie == null,
+            enforce_geofence: data.enforce_geofence === true || data.enforce_geofence === 1 || data.enforce_geofence === '1' || data.enforce_geofence == null,
         }
     }
 
@@ -29,15 +35,17 @@ export function useTimekeepingSetup() {
 
     function applyScheduleToForm(typeId) {
         if (!typeId) {
-            form.value.work_days = 0
-            form.value.work_hours = 0
-            form.value.with_holiday_pay = false
+            form.value.enable_web_clock = true
+            form.value.enable_biometric = true
+            form.value.require_selfie   = true
+            form.value.enforce_geofence = true
             return
         }
         const schedule = employmentTypeSchedules.value[typeId] || normalizeSchedule()
-        form.value.work_days = schedule.work_days
-        form.value.work_hours = schedule.work_hours
-        form.value.with_holiday_pay = schedule.with_holiday_pay
+        form.value.enable_web_clock = schedule.enable_web_clock
+        form.value.enable_biometric = schedule.enable_biometric
+        form.value.require_selfie   = schedule.require_selfie
+        form.value.enforce_geofence = schedule.enforce_geofence
     }
 
     async function fetchEmploymentTypes() {
@@ -58,9 +66,10 @@ export function useTimekeepingSetup() {
                 const scheduleMap = {}
                 types.forEach(type => {
                     scheduleMap[type.id] = normalizeSchedule({
-                        work_days: type.tk_work_days,
-                        work_hours: type.tk_work_hours,
-                        with_holiday_pay: type.tk_with_holiday_pay
+                        enable_web_clock: type.tk_enable_web_clock,
+                        enable_biometric: type.tk_enable_biometric,
+                        require_selfie:   type.tk_require_selfie,
+                        enforce_geofence: type.tk_enforce_geofence,
                     })
                 })
                 employmentTypeSchedules.value = scheduleMap
@@ -98,9 +107,10 @@ export function useTimekeepingSetup() {
             saving.value = true
             const payload = {
                 employment_type_id: selectedEmploymentTypeId.value,
-                work_days: form.value.work_days,
-                work_hours: form.value.work_hours,
-                with_holiday_pay: form.value.with_holiday_pay
+                enable_web_clock:   form.value.enable_web_clock,
+                enable_biometric:   form.value.enable_biometric,
+                require_selfie:     form.value.require_selfie,
+                enforce_geofence:   form.value.enforce_geofence,
             }
             const res = await apiService.saveTimekeepingSetup(payload)
             if (res.success) {
@@ -130,4 +140,3 @@ export function useTimekeepingSetup() {
         save
     }
 }
-

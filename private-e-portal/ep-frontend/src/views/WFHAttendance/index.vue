@@ -55,7 +55,7 @@ export default {
     return {
       breadcrumbs: [
         { name: 'Dashboard', path: '/dashboard' },
-        { name: 'Leave & Time Management', path: '/leave-time' },
+        { name: 'Time and Attendance', path: '/time-attendance' },
         { name: 'WFH Attendance', path: '/wfh-attendance' }
       ],
       loading: true,

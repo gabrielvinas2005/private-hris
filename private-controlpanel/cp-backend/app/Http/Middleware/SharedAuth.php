@@ -55,6 +55,13 @@ class SharedAuth
             Log::info('Control Panel SharedAuth - User found:', ['user' => $user]);
 
             if ($user) {
+                // Check if user has Control Panel access permission
+                $hasCpAccess = !empty($user->with_cpm_access) || !empty($user->is_admin);
+                if (!$hasCpAccess) {
+                    Log::warning('Control Panel SharedAuth - User lacks Control Panel permissions:', ['email' => $email]);
+                    return $next($request);
+                }
+
                 // Log in the user automatically
                 $userModel = \App\User::find($user->id);
                 if ($userModel) {

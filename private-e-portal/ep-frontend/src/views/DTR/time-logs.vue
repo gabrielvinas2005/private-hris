@@ -182,7 +182,7 @@ export default {
     return {
       breadcrumbs: [
         { name: 'Dashboard', path: '/dashboard' },
-        { name: 'Leave & Time Management', path: '/leave-time' },
+        { name: 'Time and Attendance', path: '/time-attendance' },
         { name: 'DTR Application', path: '/dtr/application' },
         { name: 'New Application', path: '/dtr/time-logs' }
       ],
