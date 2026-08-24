@@ -36,7 +36,7 @@ const payrollItems =[
   { to: '/payroll-setup/tax-table-setup', label: 'Tax Table Setup', gradient: 'linear-gradient(135deg,#3b82f6,#22d3ee)', desc: 'Employee benefits configuration' },
   { to: '/payroll-setup/HDMF Table Setup', label: 'Income and Deductions', gradient: 'linear-gradient(135deg,#10b981,#06b6d4)', desc: 'Employee benefits configuration' },
   { to: '/payroll-setup/Philhealth Table Setup', label: 'Philhealth Table Setup', gradient: 'linear-gradient(135deg,#f59e0b,#f97316)', desc: 'Employee benefits configuration' },
-  { to: '/payroll-setup/GSIS Table Setup', label: 'GSIS Table Setup', gradient: 'linear-gradient(135deg,#7c3aed,#4f46e5)', desc: 'Employee benefits configuration' },
+  { to: '/payroll-setup/SSS Table Setup', label: 'SSS Table Setup', gradient: 'linear-gradient(135deg,#7c3aed,#4f46e5)', desc: 'Employee benefits configuration' },
   { to: '/payroll-setup/Salary Step Setup', label: 'Salary Step Setup', gradient: 'linear-gradient(135deg,#60a5fa,#22d3ee)', desc: 'Employee benefits configuration' },
 { to: '/payroll-setup/salary-grade-setup', label: 'Salary Grade Setup', gradient: 'linear-gradient(135deg,#0ea5e9,#22d3ee)', desc: 'Employee benefits configuration' },
 { to: '/payroll-setup/income-setup', label: 'Income Setup', gradient: 'linear-gradient(135deg,#a855f7,#ec4899)', desc: 'Employee benefits configuration' },

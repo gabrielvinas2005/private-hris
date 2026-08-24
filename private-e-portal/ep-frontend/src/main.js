@@ -31,15 +31,41 @@ axios.interceptors.response.use(
     response => response,
     error => {
         if (error.response?.status === 401) {
+            // Token was revoked (e.g. another user logged in on this account)
+            const wasLoggedIn = !!localStorage.getItem('auth_token')
             localStorage.removeItem('auth_token')
             localStorage.removeItem('temp_token')
             localStorage.removeItem('user_data')
             localStorage.removeItem('user_tab_access')
+            if (wasLoggedIn) {
+                // Broadcast logout to all tabs
+                localStorage.setItem('ep_logout_event', Date.now().toString())
+                localStorage.removeItem('ep_logout_event')
+            }
             router.push('/login')
         }
         return Promise.reject(error)
     }
 )
+
+// ─── Cross-tab session synchronization ───────────────────────────────────────
+// Listens for auth changes across browser tabs.
+// When another tab logs out, or a different user logs in (revoking this token),
+// redirect this tab to /login immediately.
+window.addEventListener('storage', (event) => {
+    if (event.key === 'ep_logout_event' && event.newValue) {
+        // Another tab triggered a logout; clear and redirect this tab too
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('temp_token')
+        localStorage.removeItem('user_data')
+        localStorage.removeItem('user_tab_access')
+        router.push('/login')
+    }
+    if (event.key === 'auth_token' && !event.newValue) {
+        // auth_token was removed in another tab (logout or forced signout)
+        router.push('/login')
+    }
+})
 
 const app = createApp(App)
 

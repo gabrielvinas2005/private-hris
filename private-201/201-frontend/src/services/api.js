@@ -60,6 +60,11 @@ export const authApi = {
     refreshToken: () => api.post('/refresh')
 }
 
+// HR Overview Dashboard API
+export const hrOverviewApi = {
+    getOverview: () => api.get('/hr-overview')
+}
+
 // Access Rights - controls what menus/tabs a user can see
 export const accessRightsApi = {
     // Get enabled menus per module for a given user
@@ -954,5 +959,13 @@ export const newlyHiredAndPromotedApi = {
     generateExcel: () =>
         api.post('/newly-hired-and-promotions/excel', {}, { responseType: 'blob' }),
 }
+
+// Announcement API functions for HR Overview & Management
+export const announcementApi = {
+    getAnnouncements: () => api.get('/announcements'),
+    createAnnouncement: (data) => api.post('/announcements', data),
+    getAnnouncementEmployees: () => api.get('/announcements/employees')
+}
+
 export default api
 

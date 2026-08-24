@@ -141,7 +141,7 @@ class UsersController extends Controller
 
                         $now = new DateTime();
                         $date_verified = $now->format('Y-m-d H:i:s');
-                        $password = Str::random(8);
+                        $password = $request->input('password') ?: 'Password@123';
                         $email = $emp_data2[0]->email;
 
                         $user = [
@@ -151,7 +151,7 @@ class UsersController extends Controller
                             'photo' => is_null($emp_data2[0]->photo) ? '' : $emp_data2[0]->photo,
                             'email_verified_at' => $date_verified,
                             'locked' => false,
-                            'has_change_password' => false,
+                            'has_change_password' => true,
                             'is_applicant' => false,
                             'is_encrypted' => true,
                         ];
@@ -195,6 +195,46 @@ class UsersController extends Controller
             return $this->successResponse(null, 'You have successfully added new users!');
         } catch (\Exception $e) {
             return $this->serverErrorResponse('Failed to add users: ' . $e->getMessage());
+        }
+    }
+
+    public function resetPassword(Request $request)
+    {
+        try {
+            $validator = validator($request->all(), [
+                'user_id' => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->validationErrorResponse($validator->errors());
+            }
+
+            $user = User::find($request->user_id);
+            if (!$user) {
+                return $this->errorResponse('User not found', 404);
+            }
+
+            $newPassword = $request->input('new_password') ?: 'Password@123';
+
+            $user->password = Hash::make($newPassword);
+            $user->has_change_password = true;
+            $user->save();
+
+            $data_audit = array(
+                'user_id' => Auth::user() ? Auth::user()->id : null,
+                'module'  => 'Control Panel',
+                'menu'    => 'Users List',
+                'activity' => 'Reset Password',
+                'description' => 'Reset password for user ID: ' . $user->id,
+            );
+
+            Audit::create($data_audit);
+
+            return $this->successResponse([
+                'new_password' => $newPassword
+            ], "Password reset successfully to: {$newPassword}");
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to reset password: ' . $e->getMessage());
         }
     }
 

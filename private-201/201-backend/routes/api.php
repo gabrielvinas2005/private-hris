@@ -24,6 +24,7 @@ Route::post('/applicant-registration', 'ApplicantsController@register_store');
 
 // Temporary: 201-file route for testing (remove authentication)
 Route::get('/201-files', 'EmployeeFileController@index');
+Route::get('/hr-overview', 'HROverviewController@index');
 
 // Authentication routes
 Route::post('/login', 'Api\AuthController@login');
@@ -55,6 +56,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Announcements
     Route::get('/announcements', 'AnnouncementController@index');
+    Route::post('/announcements', 'AnnouncementController@store');
+    Route::get('/announcements/employees', 'AnnouncementController@getEmployees');
 
     // Applicant Examination Routes
     Route::get('/applicant-examination-intro/{id}', 'ApplicantsController@examIntro');

@@ -51,22 +51,22 @@ function can(name) {
 }
 
 onMounted(async () => {
+  // 1) Synchronously load cached list for instant render with no flash
+  const cacheRaw = localStorage.getItem('tk_allowed_menus')
+  if (cacheRaw) {
+    try {
+      const cache = JSON.parse(cacheRaw)
+      if (Array.isArray(cache.names) && cache.names.length > 0) {
+        allowed.value = new Set(cache.names)
+      }
+    } catch (_) {}
+  }
+
   try {
     const { getCurrentUser } = useAuth()
     const current = await getCurrentUser()
     if (current?.id) {
-      // 1) Try cached list for instant render
-      const cacheRaw = localStorage.getItem('tk_allowed_menus')
-      if (cacheRaw) {
-        try {
-          const cache = JSON.parse(cacheRaw)
-          if (String(cache.userId) === String(current.id) && Array.isArray(cache.names)) {
-            allowed.value = new Set(cache.names)
-            // Continue to refresh in background
-          }
-        } catch (_) {}
-      }
-      // 2) Fetch latest then cache
+      // 2) Fetch latest then update cache
       const res = await authApi.getAccessRights(current.id, { visible_only: 1 })
       const payload = res?.data ?? res
       const tkMenus = payload?.hrp_menu || []
@@ -75,7 +75,9 @@ onMounted(async () => {
       try { localStorage.setItem('tk_allowed_menus', JSON.stringify({ userId: current.id, names })) } catch (_) {}
     }
   } catch (_) {
-    allowed.value = new Set()
+    if (!cacheRaw) {
+      allowed.value = new Set()
+    }
   }
 })
 

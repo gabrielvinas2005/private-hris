@@ -17,8 +17,8 @@
         <!-- Card -->
         <div class="overflow-hidden border shadow-2xl bg-white/95 backdrop-blur-md rounded-2xl border-white/20">
           <!-- Brand header strip -->
-          <div class="px-8 pt-10 pb-6 text-center bg-gradient-to-b from-blue-50/80 to-transparent">
-            <div v-if="companyLogo" class="inline-flex items-center justify-center w-28 h-28 mb-5 overflow-hidden bg-white border border-slate-200 shadow-md rounded-2xl">
+          <div class="px-8 pt-10 pb-6 text-center ">
+            <div v-if="companyLogo" class="inline-flex items-center justify-center w-28 h-28 mb-5 overflow-hidden rounded-2xl">
               <img
                 :src="companyLogo"
                 :alt="company.name ? `${company.name} logo` : 'Company logo'"

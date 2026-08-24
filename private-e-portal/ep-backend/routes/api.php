@@ -1,4 +1,8 @@
 <?php
+use App\Http\Controllers\DocumentRequestController;
+use App\Http\Controllers\TrainingRecordController;
+use App\Http\Controllers\DownloadablesController;
+
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -26,7 +30,8 @@ Route::post('/applicant-add/{id}/{plantilla_id}', 'ApplicantsController@store');
 Route::get('/applicant-registration', 'ApplicantsController@register');
 Route::post('/applicant-registration', 'ApplicantsController@register_store');
 
-// Temporary: 201-file route for testing (remove authentication)
+// Public routes (no authentication required)
+Route::get('/daily-time-records/today-status/{userId}', 'DailyTimeRecordController@getTodayStatus');
 Route::get('/201-files', 'EmployeeFileController@index');
 
 // Authentication routes
@@ -34,6 +39,26 @@ Route::post('/login', 'Api\AuthController@login');
 Route::post('/register', 'Api\AuthController@register');
 Route::post('/verify-otp', 'Api\AuthController@verifyOtp');
 
+//Downloadables Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/downloadables', [DownloadablesController::class, 'index']);
+    Route::get('/downloadables/{id}/download', [DownloadablesController::class, 'download']);
+    Route::get('/downloadables/{id}/preview', [DownloadablesController::class, 'preview']);
+});
+
+//Training Records Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/training-records', [TrainingRecordController::class, 'index']);
+    Route::post('/training-records', [TrainingRecordController::class, 'store']);
+});
+
+//Document Request  
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/document-requests', [DocumentRequestController::class, 'index']);
+    Route::post('/document-requests', [DocumentRequestController::class, 'store']);
+    Route::delete('/document-requests/{id}', [DocumentRequestController::class, 'cancel']);
+    Route::patch('/document-requests/{id}/status', [DocumentRequestController::class, 'updateStatus']);
+});
 
 // Authentication routes
 // User authentication check route
@@ -46,6 +71,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'photo' => $user->photo,
                 'employee_no' => $user->employee_no,
                 'is_applicant' => (bool) ($user->is_applicant ?? false),
                 'has_change_password' => (bool) ($user->has_change_password ?? false),
@@ -225,6 +251,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/pass-slips/{id}', 'PassSlipController@destroy');
 
     // Daily Time Record Routes
+    Route::post('/daily-time-records/web-clock', 'DailyTimeRecordController@webClock');
     Route::get('/daily-time-records/{id}', 'DailyTimeRecordController@index');
     Route::get('/daily-time-records/employee/{employee_no}', 'DailyTimeRecordController@getByEmployeeNo');
     Route::get('/daily-time-records/{id}/employee/{payroll_period_id}', 'DailyTimeRecordController@view');

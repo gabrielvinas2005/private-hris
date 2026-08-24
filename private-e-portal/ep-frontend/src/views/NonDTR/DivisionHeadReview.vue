@@ -309,7 +309,7 @@ export default {
   setup() {
     const breadcrumbs = [
       { name: 'Dashboard', path: '/dashboard' },
-      { name: 'Leave & Time Management', path: '/leave-time' },
+      { name: 'Time and Attendance', path: '/time-attendance' },
       { name: 'COS Reports Review', path: '/division-head-non-dtr' }
     ]
 

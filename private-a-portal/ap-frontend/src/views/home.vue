@@ -415,7 +415,7 @@
           <div>
             <h4 class="mb-4">Contact</h4>
             <div class="space-y-2 text-gray-400">
-              <div>support@pttchris.com</div>
+              <div>support@privatehris.com</div>
               <div>+63 (02) 1234-5678</div>
               <div>Manila, Philippines</div>
             </div>

@@ -112,6 +112,9 @@ class WorkCancellationController extends Controller
             DB::table('work_cancellations')->updateOrInsert(['id' => $id], $data);
             DB::unprepared('SET IDENTITY_INSERT work_cancellations OFF');
 
+            // Sync work suspension remarks into time_data records across modules
+            $this->syncWorkSuspensionToTimeData($request->date_from, $request->date_to, $request->reason);
+
             //Save audit trail
             $data_audit = array(
                 'user_id' => Auth::user()->id,
@@ -126,6 +129,80 @@ class WorkCancellationController extends Controller
             return $this->successResponse(['id' => $id], 'Work cancellation saved successfully');
         } catch (\Exception $e) {
             return $this->serverErrorResponse('Failed to save work cancellation: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Helper to synchronize Work Suspension details into time_data records across all employees.
+     */
+    private function syncWorkSuspensionToTimeData($dateFrom, $dateTo, $reason)
+    {
+        try {
+            if (empty($dateFrom) || empty($dateTo)) return;
+
+            $startDate = \Carbon\Carbon::parse($dateFrom)->format('Y-m-d');
+            $endDate = \Carbon\Carbon::parse($dateTo)->format('Y-m-d');
+            $reasonText = $reason ?: 'Work Suspended';
+            $reasonStr = 'Work Suspended (' . $reasonText . ')';
+
+            $employees = DB::table('employees')
+                ->where('active', true)
+                ->where('is_employee', true)
+                ->get();
+
+            $current = \Carbon\Carbon::parse($startDate);
+            $end = \Carbon\Carbon::parse($endDate);
+
+            while ($current->lte($end)) {
+                $curDate = $current->format('Y-m-d');
+
+                foreach ($employees as $emp) {
+                    $record = DB::table('time_data')
+                        ->where('employee_id', $emp->id)
+                        ->whereDate('date', $curDate)
+                        ->first();
+
+                    if ($record) {
+                        $remarks = $record->remarks ? trim($record->remarks) : '';
+                        if (empty($remarks)) {
+                            $newRemarks = $reasonStr;
+                        } elseif (strpos($remarks, $reasonText) === false && strpos($remarks, 'Work Suspended') === false) {
+                            $newRemarks = $remarks . ' & ' . $reasonStr;
+                        } else {
+                            $newRemarks = $remarks;
+                        }
+
+                        $updateData = ['remarks' => $newRemarks];
+                        if (empty($record->am_in) && empty($record->pm_in)) {
+                            $updateData['absent'] = 0;
+                        }
+
+                        DB::table('time_data')
+                            ->where('id', $record->id)
+                            ->update($updateData);
+                    } else {
+                        $pp = DB::table('payroll_periods')
+                            ->whereDate('attendance_start_date', '<=', $curDate)
+                            ->whereDate('attendance_end_date', '>=', $curDate)
+                            ->first();
+
+                        DB::table('time_data')->insert([
+                            'employee_id' => $emp->id,
+                            'date' => $curDate,
+                            'payroll_period_id' => $pp ? $pp->id : 0,
+                            'work_hours' => 0,
+                            'late' => 0,
+                            'undertime' => 0,
+                            'absent' => 0,
+                            'remarks' => $reasonStr
+                        ]);
+                    }
+                }
+
+                $current->addDay();
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error syncing work suspension to time_data: ' . $e->getMessage());
         }
     }
 

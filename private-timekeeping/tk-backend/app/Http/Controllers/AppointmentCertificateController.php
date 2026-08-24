@@ -7,12 +7,11 @@ use Illuminate\Support\Facades\DB;
 use \NumberFormatter;
 use Svg\Tag\Rect;
 use App\Traits\ApiResponse;
+use App\Traits\GeneratesPdf;
 
 class AppointmentCertificateController extends Controller
 {
     use ApiResponse, GeneratesPdf;
-use App\Traits\GeneratesPdf;
-
     /**
      * Create a new controller instance.
      *

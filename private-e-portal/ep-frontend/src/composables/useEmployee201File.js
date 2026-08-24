@@ -12,7 +12,7 @@ export function useEmployee201File() {
     const loading = ref(false)
     const error = ref(null)
     const isAuthenticated = ref(false)
-    const activeTab = ref('work')
+    const activeTab = ref('personal')
 
     // User data
     const userData = reactive({
@@ -66,6 +66,7 @@ export function useEmployee201File() {
     ])
 
     const tabs = computed(() => [
+        { id: 'personal', name: 'Personal & Contact' },
         { id: 'work', name: 'Work Information' },
         { id: 'family', name: 'Family' },
         { id: 'education', name: 'Education' },
@@ -138,7 +139,7 @@ export function useEmployee201File() {
                 religionOptions.value = data.religions || []
                 employmentTypeOptions.value = data.employment_types || []
                 console.log('Employment types from API:', data.employment_types, 'Stored:', employmentTypeOptions.value)
-                
+
                 // Address dropdowns are already initialized from frontend assets
                 // No need to reload them from backend
 

@@ -27,7 +27,7 @@ class DailyTimeRecordController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except(['getTodayStatus']);
     }
 
     public function index($id)
@@ -260,12 +260,67 @@ class DailyTimeRecordController extends Controller
             $dtrPayrollPeriodIds = $this->getDtrIncludedPayrollPeriodIds($payroll_period);
             $displayPeriod = $this->normalizeDtrPayrollPeriodForDisplay($payroll_period);
 
+            // Auto-assign payroll_period_id to any unlinked time_data records within date range
+            if (!empty($payroll_period->attendance_start_date) && !empty($payroll_period->attendance_end_date)) {
+                DB::table('time_data')
+                    ->where('employee_id', $id)
+                    ->whereDate('date', '>=', $payroll_period->attendance_start_date)
+                    ->whereDate('date', '<=', $payroll_period->attendance_end_date)
+                    ->where(function ($q) {
+                        $q->where('payroll_period_id', 0)->orWhereNull('payroll_period_id');
+                    })
+                    ->update(['payroll_period_id' => $payroll_period_id]);
+
+                // Auto-sync active work cancellations into time_data records for this period
+                $periodCancellations = DB::table('work_cancellations')
+                    ->whereDate('date_from', '<=', $payroll_period->attendance_end_date)
+                    ->whereDate('date_to', '>=', $payroll_period->attendance_start_date)
+                    ->get();
+
+                foreach ($periodCancellations as $wc) {
+                    $wcStart = Carbon::parse($wc->date_from)->max(Carbon::parse($payroll_period->attendance_start_date));
+                    $wcEnd = Carbon::parse($wc->date_to)->min(Carbon::parse($payroll_period->attendance_end_date));
+                    $wcReasonStr = 'Work Suspended (' . ($wc->reason ?: 'Work Cancellation') . ')';
+
+                    $curr = $wcStart->copy();
+                    while ($curr->lte($wcEnd)) {
+                        $cDate = $curr->format('Y-m-d');
+                        $tRec = DB::table('time_data')
+                            ->where('employee_id', $id)
+                            ->whereDate('date', $cDate)
+                            ->first();
+
+                        if ($tRec) {
+                            if (empty($tRec->remarks) || (strpos($tRec->remarks, 'Work Suspended') === false && strpos($tRec->remarks, $wc->reason) === false)) {
+                                $nRem = empty($tRec->remarks) ? $wcReasonStr : ($tRec->remarks . ' & ' . $wcReasonStr);
+                                DB::table('time_data')->where('id', $tRec->id)->update([
+                                    'remarks' => $nRem,
+                                    'absent' => 0
+                                ]);
+                            }
+                        } else {
+                            DB::table('time_data')->insert([
+                                'employee_id' => $id,
+                                'date' => $cDate,
+                                'payroll_period_id' => $payroll_period_id,
+                                'work_hours' => 0,
+                                'late' => 0,
+                                'undertime' => 0,
+                                'absent' => 0,
+                                'remarks' => $wcReasonStr
+                            ]);
+                        }
+                        $curr->addDay();
+                    }
+                }
+            }
+
         // get daily time records
         $daily_time_records = DB::table('time_data as a')
             ->join('employees as b', 'a.employee_id', '=', 'b.id')
             ->leftJoin('departments as c', 'c.id', '=', 'b.department_id')
             ->leftJoin('positions as d', 'd.id', '=', 'b.position_id')
-            ->join('payroll_periods as e', 'e.id', '=', 'a.payroll_period_id')
+            ->leftJoin('payroll_periods as e', 'e.id', '=', 'a.payroll_period_id')
             ->join('employment_types as f', 'f.id', '=', 'b.employment_type_id')
             ->select(
                 'a.id',
@@ -323,9 +378,47 @@ class DailyTimeRecordController extends Controller
             $payroll_period
         );
 
+        $startDate = $displayPeriod['attendance_start_date'] ?? null;
+        $endDate = $displayPeriod['attendance_end_date'] ?? null;
+
+        $workCancellations = collect([]);
+        if ($startDate && $endDate) {
+            $workCancellations = DB::table('work_cancellations')
+                ->where('date_from', '<=', $endDate)
+                ->where('date_to', '>=', $startDate)
+                ->get();
+        }
+
         foreach ($daily_time_records as $record) {
             $record->attendance_start_date = $displayPeriod['attendance_start_date'] ?? $record->attendance_start_date;
             $record->attendance_end_date = $displayPeriod['attendance_end_date'] ?? $record->attendance_end_date;
+
+            $recordDate = $record->date ? Carbon::parse($record->date)->format('Y-m-d') : null;
+            if ($recordDate) {
+                $wcMatch = $workCancellations->first(function($wc) use ($recordDate) {
+                    return $recordDate >= $wc->date_from && $recordDate <= $wc->date_to;
+                });
+
+                if ($wcMatch) {
+                    $record->is_work_suspended = true;
+                    $record->work_suspension_reason = $wcMatch->reason;
+                    $record->work_suspension_with_pay = filter_var($wcMatch->with_pay ?? false, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) || (int)($wcMatch->with_pay ?? 0) === 1;
+
+                    $wcReasonStr = "Work Suspended (" . $wcMatch->reason . ")";
+                    if (empty($record->remarks)) {
+                        $record->remarks = $wcReasonStr;
+                    } elseif (strpos($record->remarks, $wcMatch->reason) === false && strpos($record->remarks, 'Work Suspended') === false) {
+                        $record->remarks = $record->remarks . ' & ' . $wcReasonStr;
+                    }
+
+                    // Zero out unexcused absence if employee had no punches during work suspension
+                    if (empty($record->am_in) && empty($record->pm_in)) {
+                        $record->absent = 0;
+                    }
+                } else {
+                    $record->is_work_suspended = false;
+                }
+            }
         }
 
         // get totals
@@ -957,12 +1050,9 @@ class DailyTimeRecordController extends Controller
         try {
             $request->validate([
                 'payroll_period_id' => 'required|integer|min:1',
-                'dtr_attachment' => 'required|file|max:10240',
+                'dtr_attachment'   => 'nullable|file|max:10240',
+                'attachment'       => 'nullable|file|max:10240',
             ]);
-
-            if (!$this->employeeHasDtrApprover($employeeId)) {
-                return $this->errorResponse('You cannot apply for DTR correction. No approver has been configured for DTR applications.', 400);
-            }
 
             $pending = DB::table('time_data_request')
                 ->where(['employee_id' => $employeeId, 'status' => 0])
@@ -984,15 +1074,20 @@ class DailyTimeRecordController extends Controller
                 return $this->errorResponse('Invalid payroll period selected for your employment type.', 400);
             }
 
-            $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xlsx', 'xls'];
-            $file = $request->file('dtr_attachment');
-            $extension = strtolower($file->getClientOriginalExtension());
+            $file = $request->file('dtr_attachment') ?? $request->file('attachment');
+            $fileName = null;
+            $extension = null;
 
-            if (!in_array($extension, $allowedExtensions)) {
-                return $this->errorResponse('Invalid file type. Allowed: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX.', 400);
+            if ($file) {
+                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xlsx', 'xls'];
+                $extension = strtolower($file->getClientOriginalExtension());
+
+                if (!in_array($extension, $allowedExtensions)) {
+                    return $this->errorResponse('Invalid file type. Allowed: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX.', 400);
+                }
+
+                $fileName = $file->getClientOriginalName();
             }
-
-            $fileName = $file->getClientOriginalName();
 
             $requestId = DB::table('time_data_request')->insertGetId([
                 'employee_id' => $employeeId,
@@ -1017,12 +1112,12 @@ class DailyTimeRecordController extends Controller
                 'updated_at' => now(),
             ]);
 
-            $storageName = 'DOCS_REQ' . $employeeId . $requestId . '_' . $fileName;
-            $filePath = Storage::disk('local')->getAdapter()->getPathPrefix() . 'employee_DTR_documents\\' . $storageName;
-
-            DB::table('time_data_request')->where('id', $requestId)->update(['path' => $filePath]);
-
-            $file->storeAs('employee_DTR_documents', $storageName);
+            if ($file && $fileName) {
+                $storageName = 'DOCS_REQ' . $employeeId . $requestId . '_' . $fileName;
+                $filePath = Storage::disk('local')->getAdapter()->getPathPrefix() . 'employee_DTR_documents\\' . $storageName;
+                DB::table('time_data_request')->where('id', $requestId)->update(['path' => $filePath]);
+                $file->storeAs('employee_DTR_documents', $storageName);
+            }
 
             return $this->successResponse(['id' => $requestId], 'DTR application submitted for approval.');
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -2094,11 +2189,33 @@ class DailyTimeRecordController extends Controller
 
     private function resolveEmployeeFromUserId($userId)
     {
-        return DB::table('users as u')
-            ->join('employees as e', 'e.employee_no', '=', 'u.employee_no')
-            ->select('e.id', 'e.employee_no')
-            ->where('u.id', $userId)
-            ->first();
+        if (is_numeric($userId)) {
+            // 1. Try matching users.id -> employee_no -> employees
+            $user = DB::table('users')->where('id', $userId)->first();
+            if ($user) {
+                if (!empty($user->employee_no)) {
+                    return DB::table('employees')
+                        ->select('id', 'employee_no', 'first_name', 'last_name')
+                        ->where('employee_no', $user->employee_no)
+                        ->first();
+                }
+                return null; // User account exists but has no linked employee (e.g. Administrator)
+            }
+
+            // 2. Fallback: User not found in users table, caller passed employees.id directly
+            return DB::table('employees')
+                ->select('id', 'employee_no', 'first_name', 'last_name')
+                ->where('id', $userId)
+                ->first();
+        } else {
+            // 3. Fallback: caller passed employee_no string directly
+            return DB::table('employees')
+                ->select('id', 'employee_no', 'first_name', 'last_name')
+                ->where('employee_no', $userId)
+                ->first();
+        }
+
+        return null;
     }
 
     private function employeeHasDtrApprover($employeeId)
@@ -3026,4 +3143,664 @@ class DailyTimeRecordController extends Controller
             })
             ->values();
     }
+
+    public function calculateAndUpdateRealtimeWorkHours($todayRecord)
+    {
+        if (!$todayRecord) {
+            return 0.0;
+        }
+
+        $dateStr = $todayRecord->date ?? Carbon::now('Asia/Manila')->format('Y-m-d');
+        $now = Carbon::now('Asia/Manila');
+        $isToday = ($dateStr === $now->format('Y-m-d'));
+
+        $totalSeconds = 0;
+
+        // Morning Session
+        if (!empty($todayRecord->am_in)) {
+            $amIn = Carbon::parse("{$dateStr} {$todayRecord->am_in}", 'Asia/Manila');
+            $amOut = null;
+            if (!empty($todayRecord->am_out)) {
+                $amOut = Carbon::parse("{$dateStr} {$todayRecord->am_out}", 'Asia/Manila');
+            } elseif ($isToday && empty($todayRecord->pm_in)) {
+                // Currently active AM session
+                $noon = Carbon::parse("{$dateStr} 12:00:00", 'Asia/Manila');
+                $amOut = $now->gt($noon) ? $noon : $now;
+            }
+
+            if ($amOut && $amOut->gt($amIn)) {
+                $totalSeconds += $amOut->diffInSeconds($amIn);
+            }
+        }
+
+        // Afternoon Session
+        if (!empty($todayRecord->pm_in)) {
+            $pmIn = Carbon::parse("{$dateStr} {$todayRecord->pm_in}", 'Asia/Manila');
+            $pmOut = null;
+            if (!empty($todayRecord->pm_out)) {
+                $pmOut = Carbon::parse("{$dateStr} {$todayRecord->pm_out}", 'Asia/Manila');
+            } elseif ($isToday) {
+                // Currently active PM session
+                $pmOut = $now;
+            }
+
+            if ($pmOut && $pmOut->gt($pmIn)) {
+                $totalSeconds += $pmOut->diffInSeconds($pmIn);
+            }
+        }
+
+        // Direct single shift: AM IN to PM OUT without middle punches
+        if (!empty($todayRecord->am_in) && !empty($todayRecord->pm_out) && empty($todayRecord->am_out) && empty($todayRecord->pm_in)) {
+            $start = Carbon::parse("{$dateStr} {$todayRecord->am_in}", 'Asia/Manila');
+            $end = Carbon::parse("{$dateStr} {$todayRecord->pm_out}", 'Asia/Manila');
+            if ($end->gt($start)) {
+                $grossSeconds = $end->diffInSeconds($start);
+                // Deduct 1 hr break if spanning across 12pm - 1pm
+                $noon = Carbon::parse("{$dateStr} 12:00:00", 'Asia/Manila');
+                $onePm = Carbon::parse("{$dateStr} 13:00:00", 'Asia/Manila');
+                if ($start->lt($noon) && $end->gt($onePm)) {
+                    $grossSeconds = max(0, $grossSeconds - 3600);
+                }
+                $totalSeconds = $grossSeconds;
+            }
+        }
+
+        $workHours = round($totalSeconds / 3600, 2);
+
+        // Update database table time_data if changed
+        if ((float)($todayRecord->work_hours ?? 0) !== (float)$workHours) {
+            DB::table('time_data')
+                ->where('id', $todayRecord->id)
+                ->update([
+                    'work_hours' => number_format($workHours, 2, '.', ''),
+                    'updated_at' => $now->format('Y-m-d H:i:s')
+                ]);
+            $todayRecord->work_hours = $workHours;
+        }
+
+        return $workHours;
+    }
+
+    public function getTodayStatus($userId)
+    {
+        try {
+            $user = null;
+            $employee = null;
+
+            if (is_numeric($userId)) {
+                // 1. Try finding user by users.id
+                $user = DB::table('users')->where('id', $userId)->first();
+                if ($user) {
+                    if (!empty($user->employee_no)) {
+                        $employee = DB::table('employees')->where('employee_no', $user->employee_no)->first();
+                    }
+                    // If user exists but has no employee_no (e.g. Administrator), $employee is intentionally null.
+                } else {
+                    // 2. User ID was not found in users table; check if caller passed an employee.id directly
+                    $employee = DB::table('employees')->where('id', $userId)->first();
+                    if ($employee) {
+                        $user = DB::table('users')->where('employee_no', $employee->employee_no)->first();
+                    }
+                }
+            } else {
+                // Caller passed an employee_no string directly (e.g., 'EMP-00001')
+                $employee = DB::table('employees')->where('employee_no', $userId)->first();
+                if ($employee) {
+                    $user = DB::table('users')->where('employee_no', $employee->employee_no)->first();
+                }
+            }
+
+            $today = Carbon::now('Asia/Manila')->format('Y-m-d');
+            $serverTime = Carbon::now('Asia/Manila')->format('Y-m-d H:i:s');
+
+            $todayRecord = null;
+            if ($employee) {
+                $todayRecord = DB::table('time_data')
+                    ->where('employee_id', $employee->id)
+                    ->where('date', $today)
+                    ->first();
+                if ($todayRecord) {
+                    $this->calculateAndUpdateRealtimeWorkHours($todayRecord);
+                }
+            }
+
+            // Schedule info from fix_schedules & fix_schedules_details
+            $scheduleName = 'Fixed Schedule (08:00 AM - 05:00 PM)';
+            $scheduleWindow = '08:00 AM - 05:00 PM';
+            $weeklyScheduleDetails = collect([]);
+            $todayScheduleDetail = null;
+            $todayDayId = Carbon::now('Asia/Manila')->dayOfWeekIso; // 1 = Mon ... 7 = Sun
+
+            if ($employee && !empty($employee->work_schedule_id)) {
+                $ws = DB::table('fix_schedules')->where('id', $employee->work_schedule_id)->first();
+                if ($ws) {
+                    $scheduleName = $ws->name ?? $scheduleName;
+                }
+
+                $weeklyScheduleDetails = DB::table('fix_schedules_details')
+                    ->where('fix_schedule_id', $employee->work_schedule_id)
+                    ->orderBy('day_id', 'asc')
+                    ->get();
+
+                $todayScheduleDetail = $weeklyScheduleDetails->firstWhere('day_id', $todayDayId);
+                if ($todayScheduleDetail && !empty($todayScheduleDetail->am_in) && !empty($todayScheduleDetail->pm_out)) {
+                    $scheduleWindow = Carbon::parse($todayScheduleDetail->am_in)->format('h:i A') . ' - ' . Carbon::parse($todayScheduleDetail->pm_out)->format('h:i A');
+                }
+            }
+
+            // Determine status
+            $status = 'Clocked Out';
+            $amIn  = $todayRecord->am_in ?? null;
+            $amOut = $todayRecord->am_out ?? null;
+            $pmIn  = $todayRecord->pm_in ?? null;
+            $pmOut = $todayRecord->pm_out ?? null;
+
+            // Check for Work Suspension / Cancellation today
+            $workSuspension = DB::table('work_cancellations')
+                ->whereDate('date_from', '<=', $today)
+                ->whereDate('date_to', '>=', $today)
+                ->first();
+
+            $isWorkSuspended = false;
+            $workSuspensionReason = null;
+            $workSuspensionWithPay = false;
+
+            if ($workSuspension) {
+                $isWorkSuspended = true;
+                $workSuspensionReason = $workSuspension->reason ?? 'Work Suspended';
+                $workSuspensionWithPay = filter_var($workSuspension->with_pay ?? false, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) || (int)($workSuspension->with_pay ?? 0) === 1;
+
+                if ($employee) {
+                    $wcRemarkStr = 'Work Suspended (' . $workSuspensionReason . ')';
+                    if (!$todayRecord) {
+                        $pp = DB::table('payroll_periods')
+                            ->whereDate('attendance_start_date', '<=', $today)
+                            ->whereDate('attendance_end_date', '>=', $today)
+                            ->first();
+
+                        $newId = DB::table('time_data')->insertGetId([
+                            'employee_id' => $employee->id,
+                            'date' => $today,
+                            'payroll_period_id' => $pp ? $pp->id : 0,
+                            'work_hours' => 0,
+                            'late' => 0,
+                            'undertime' => 0,
+                            'absent' => 0,
+                            'remarks' => $wcRemarkStr
+                        ]);
+
+                        $todayRecord = DB::table('time_data')->where('id', $newId)->first();
+                    } elseif (empty($todayRecord->remarks) || (strpos($todayRecord->remarks, 'Work Suspended') === false && strpos($todayRecord->remarks, $workSuspensionReason) === false)) {
+                        $newRem = empty($todayRecord->remarks) ? $wcRemarkStr : ($todayRecord->remarks . ' & ' . $wcRemarkStr);
+                        DB::table('time_data')->where('id', $todayRecord->id)->update([
+                            'remarks' => $newRem,
+                            'absent' => 0
+                        ]);
+                        $todayRecord->remarks = $newRem;
+                        $todayRecord->absent = 0;
+                    }
+                }
+            }
+
+            if ($todayRecord) {
+                $hasLeave = (float) ($todayRecord->leave ?? 0) > 0;
+                $hasOB    = (int) ($todayRecord->is_ob ?? 0) === 1;
+
+                if ($hasLeave) {
+                    $status = 'On Leave';
+                } elseif ($hasOB) {
+                    $status = 'On Travel';
+                } elseif ($isWorkSuspended && empty($amIn) && empty($pmIn)) {
+                    $status = 'Work Suspended';
+                } elseif (!empty($amIn) && empty($amOut)) {
+                    $status = 'Clocked In';
+                } elseif (!empty($pmIn) && empty($pmOut)) {
+                    $status = 'Clocked In';
+                }
+            } elseif ($isWorkSuspended) {
+                $status = 'Work Suspended';
+            }
+
+            // Check biometric raw log (gracefully handles missing connection or timeout)
+            $biometricLog = null;
+            $bioHost = config('database.connections.sqlsrv_bio.host');
+            if ($employee && !empty($employee->employee_no) && !empty($bioHost)) {
+                try {
+                    $biometricLog = DB::connection('sqlsrv_bio')
+                        ->table('biometric_logs')
+                        ->where('employee_no', $employee->employee_no)
+                        ->whereDate('punch_time', $today)
+                        ->orderBy('punch_time', 'asc')
+                        ->first();
+                } catch (\Exception $bioEx) {
+                    \Log::info('Biometric connection skip: ' . $bioEx->getMessage());
+                }
+            }
+
+            // Pass slips used count for current month
+            $startOfMonth = Carbon::now('Asia/Manila')->startOfMonth()->format('Y-m-d');
+            $endOfMonth = Carbon::now('Asia/Manila')->endOfMonth()->format('Y-m-d');
+            $passSlipsUsed = 0;
+            if ($employee) {
+                $passSlipsUsed = DB::table('pass_slips')
+                    ->where('employee_id', $employee->id)
+                    ->whereBetween('date', [$startOfMonth, $endOfMonth])
+                    ->whereIn('status', ['Approved', 'Pending', 'Approved Level 1', 'Approved Level 2'])
+                    ->count();
+            }
+
+            // Determine WFH vs On-Site setup for today
+            // Strict source of truth: fix_schedules_details (is_wfh = 1) OR an approved WFH application.
+            $wfhApp = null;
+            if ($employee) {
+                $wfhApp = DB::table('wfh_application')
+                    ->where('employee_id', $employee->id)
+                    ->where('cancelled', 0)
+                    ->where('disapproved', 0)
+                    ->where('disapproved_2', 0)
+                    ->where('disapproved_3', 0)
+                    ->where('approved_3', 1)
+                    ->whereDate('start_date', '<=', $today)
+                    ->whereDate('end_date', '>=', $today)
+                    ->first();
+            }
+
+            $isWfhToday = false;
+            $wfhSource = null;
+
+            if ($todayScheduleDetail && (int)($todayScheduleDetail->is_wfh ?? 0) === 1) {
+                $isWfhToday = true;
+                $wfhSource = 'Fixed WFH Schedule';
+            } elseif (!empty($wfhApp)) {
+                $isWfhToday = true;
+                $wfhSource = 'Approved WFH Application';
+            }
+
+            // Load configurable portal feature flags from time_keeping_setups.
+            // Try to match the employee's employment type first; fall back to any active row; then use hard defaults.
+            $portalConfig = null;
+            if ($employee && !empty($employee->employment_type_id)) {
+                $portalConfig = DB::table('time_keeping_setups')
+                    ->where('employment_type_id', $employee->employment_type_id)
+                    ->first();
+            }
+            if (!$portalConfig) {
+                $portalConfig = DB::table('time_keeping_setups')->first();
+            }
+
+            $requireSelfie        = isset($portalConfig->require_selfie)   ? (bool) $portalConfig->require_selfie   : true;
+            $enforceGeofence      = isset($portalConfig->enforce_geofence) ? (bool) $portalConfig->enforce_geofence : true;
+
+            // Automatically assign logging method based on employee setup
+            if ($isWfhToday) {
+                $setupType = 'wfh';
+                $loggingMethod = 'Web Clock / Selfie / GPS';
+                $enableWebClock = true;
+                $setupMessage = 'WFH Setup: Web Clock enabled with selfie verification & GPS location tracking.';
+            } else {
+                $setupType = 'on_site';
+                $loggingMethod = 'Office Biometric Terminal';
+                $enableWebClock = false;
+                $setupMessage = 'On-Site Setup: Assigned to office Biometric Terminal login (Lunch AM OUT 12:00 PM & PM IN 01:00 PM auto-recorded).';
+            }
+
+            // AUTO-RECORD LUNCH BREAK (AM OUT & PM IN) FOR ON-SITE EMPLOYEES
+            if ($setupType === 'on_site' && $todayRecord && !empty($amIn)) {
+                $nowTime = Carbon::now('Asia/Manila');
+                $lunchStart = Carbon::parse("{$today} 12:00:00", 'Asia/Manila');
+                $lunchEnd   = Carbon::parse("{$today} 13:00:00", 'Asia/Manila');
+                $updates = [];
+
+                if ($nowTime->gte($lunchStart) && empty($amOut)) {
+                    $amOut = '12:00:00';
+                    $updates['am_out'] = '12:00:00';
+                }
+
+                if ($nowTime->gte($lunchEnd) && empty($pmIn)) {
+                    $pmIn = '13:00:00';
+                    $updates['pm_in'] = '13:00:00';
+                }
+
+                if (!empty($updates)) {
+                    DB::table('time_data')
+                        ->where('id', $todayRecord->id)
+                        ->update($updates);
+                    // Re-calculate realtime work hours with updated lunch punches
+                    $todayRecord->am_out = $amOut;
+                    $todayRecord->pm_in = $pmIn;
+                    $this->calculateAndUpdateRealtimeWorkHours($todayRecord);
+                }
+            }
+
+            $isMissedLogToday = false;
+            if (!empty($pmIn) && empty($amOut) && !empty($amIn)) {
+                $isMissedLogToday = true;
+            } elseif (!empty($pmOut) && empty($pmIn)) {
+                $isMissedLogToday = true;
+            } elseif (!empty($amOut) && empty($amIn)) {
+                $isMissedLogToday = true;
+            } else {
+                $currentHour = (int) Carbon::now('Asia/Manila')->format('H');
+                if ($currentHour >= 19 && !empty($amIn) && empty($pmOut)) {
+                    $isMissedLogToday = true;
+                }
+            }
+
+            // Schedule Latiness & Unlogged Shift Warning Calculation
+            $scheduledAmInStr = '08:00:00';
+            $isRestDayToday = false;
+            if ($todayScheduleDetail) {
+                $isRestDayToday = (int)($todayScheduleDetail->is_restday ?? 0) === 1;
+                if (!empty($todayScheduleDetail->am_in)) {
+                    $scheduledAmInStr = $todayScheduleDetail->am_in;
+                }
+            }
+
+            $nowCarbon = Carbon::now('Asia/Manila');
+            $scheduledCarbon = Carbon::parse("{$today} {$scheduledAmInStr}", 'Asia/Manila');
+
+            $isLateForClockin = false;
+            $clockinLatenessMinutes = 0;
+            $scheduleWarningMessage = null;
+
+            if (!$isRestDayToday && $status !== 'On Leave' && $status !== 'On Travel' && !$isWorkSuspended) {
+                $firstPunch = $amIn ?: $pmIn;
+                if (empty($firstPunch)) {
+                    if ($nowCarbon->gt($scheduledCarbon)) {
+                        $isLateForClockin = true;
+                        $clockinLatenessMinutes = (int) $scheduledCarbon->diffInMinutes($nowCarbon);
+                        $formattedStart = $scheduledCarbon->format('h:i A');
+                        $scheduleWarningMessage = "Schedule Warning: You have NOT logged in according to your schedule today! Scheduled clock-in was at {$formattedStart} ({$clockinLatenessMinutes} mins ago). Please clock in immediately.";
+                    }
+                } else {
+                    $actualInCarbon = Carbon::parse("{$today} {$firstPunch}", 'Asia/Manila');
+                    if ($actualInCarbon->gt($scheduledCarbon)) {
+                        $minsLate = (int) $scheduledCarbon->diffInMinutes($actualInCarbon);
+                        if ($minsLate > 0) {
+                            $formattedStart = $scheduledCarbon->format('h:i A');
+                            $formattedActual = $actualInCarbon->format('h:i A');
+                            $scheduleWarningMessage = "Late Clock-In Notice: You logged in at {$formattedActual} (Scheduled start: {$formattedStart} — {$minsLate} mins late).";
+                        }
+                    }
+                }
+            }
+
+            return $this->successResponse([
+                'server_time'              => $serverTime,
+                'today_date'               => $today,
+                'employee_id'              => $employee->id ?? 0,
+                'employee_name'            => $user->name ?? ($employee ? ($employee->first_name . ' ' . $employee->last_name) : 'Employee'),
+                'status'                   => $status,
+                'schedule_name'            => $scheduleName,
+                'schedule_window'          => $scheduleWindow,
+                'scheduled_start_time'     => $scheduledCarbon->format('h:i A'),
+                'is_restday_today'         => $isRestDayToday,
+                'is_work_suspended'        => $isWorkSuspended,
+                'work_suspension_reason'   => $workSuspensionReason,
+                'work_suspension_with_pay' => $workSuspensionWithPay,
+                'is_late_for_clockin'      => $isLateForClockin,
+                'clockin_lateness_minutes' => $clockinLatenessMinutes,
+                'schedule_warning'         => $scheduleWarningMessage,
+                'am_in'                    => $amIn ? Carbon::parse($amIn)->format('h:i A') : null,
+                'am_out'                   => $amOut ? Carbon::parse($amOut)->format('h:i A') : null,
+                'pm_in'                    => $pmIn ? Carbon::parse($pmIn)->format('h:i A') : null,
+                'pm_out'                   => $pmOut ? Carbon::parse($pmOut)->format('h:i A') : null,
+                'work_hours'               => $todayRecord->work_hours ?? 0,
+                'is_late'                  => ($todayRecord->late ?? 0) > 0 || $isLateForClockin,
+                'is_undertime'             => ($todayRecord->undertime ?? 0) > 0,
+                'is_missed_log'            => $isMissedLogToday,
+                'has_biometric_today'      => !empty($biometricLog),
+                'biometric_time'           => $biometricLog ? Carbon::parse($biometricLog->punch_time)->format('h:i A') : null,
+                'pass_slips_used_this_month' => $passSlipsUsed,
+                // Setup & Assigned Logging Method
+                'setup_type'               => $setupType,
+                'logging_method'           => $loggingMethod,
+                'is_wfh_today'             => $isWfhToday,
+                'wfh_source'               => $wfhSource,
+                'setup_message'            => $setupMessage,
+                // Portal feature flags — configured from Control Panel → Timekeeping Setup
+                'enable_web_clock'         => $enableWebClock,
+                'enable_biometric'         => true,
+                'require_selfie'           => $requireSelfie,
+                'enforce_geofence'         => $enforceGeofence,
+                'work_cancellations'       => DB::table('work_cancellations')
+                    ->whereDate('date_from', '<=', Carbon::now('Asia/Manila')->addDays(30)->format('Y-m-d'))
+                    ->whereDate('date_to', '>=', Carbon::now('Asia/Manila')->subDays(30)->format('Y-m-d'))
+                    ->get()
+                    ->map(function($wc) {
+                        return [
+                            'id'        => $wc->id,
+                            'date_from' => Carbon::parse($wc->date_from)->format('Y-m-d'),
+                            'date_to'   => Carbon::parse($wc->date_to)->format('Y-m-d'),
+                            'reason'    => $wc->reason,
+                            'with_pay'  => filter_var($wc->with_pay ?? false, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) || (int)($wc->with_pay ?? 0) === 1
+                        ];
+                    })->values(),
+                'weekly_schedule'          => $weeklyScheduleDetails->map(function($item) {
+                    $win = 'Rest Day';
+                    if ((int)($item->is_restday ?? 0) === 0 && !empty($item->am_in) && !empty($item->pm_out)) {
+                        $win = Carbon::parse($item->am_in)->format('h:i A') . ' - ' . Carbon::parse($item->pm_out)->format('h:i A');
+                    }
+                    return [
+                        'day_id'      => (int) $item->day_id,
+                        'am_in'       => $item->am_in,
+                        'pm_out'      => $item->pm_out,
+                        'is_restday'  => (int) ($item->is_restday ?? 0) === 1,
+                        'is_wfh'      => (int) ($item->is_wfh ?? 0) === 1,
+                        'work_hours'  => $item->work_hours,
+                        'time_window' => $win,
+                    ];
+                })->values(),
+            ], 'Today attendance status fetched successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 500);
+        }
+    }
+
+
+    public function webClock(Request $request)
+    {
+        try {
+            $userId = $request->input('user_id');
+            $action = $request->input('action', 'in'); // 'in' or 'out'
+            $latitude = $request->input('latitude');
+            $longitude = $request->input('longitude');
+            $geofenceStatus = $request->input('geofence_status', 'within');
+            $reason = $request->input('reason');
+
+            $user = DB::table('users')->where('id', $userId)->first();
+            if (!$user) {
+                return $this->errorResponse('User not found', 404);
+            }
+
+            $employee = DB::table('employees')->where('employee_no', $user->employee_no)->first();
+            if (!$employee) {
+                return $this->errorResponse('Employee record not linked to user account', 400);
+            }
+
+            $today = Carbon::now('Asia/Manila')->format('Y-m-d');
+            $nowTime = Carbon::now('Asia/Manila')->format('H:i:s');
+            $nowFull = Carbon::now('Asia/Manila')->format('Y-m-d H:i:s');
+
+            $existing = DB::table('time_data')
+                ->where('employee_id', $employee->id)
+                ->where('date', $today)
+                ->first();
+
+            // Format WFH GPS Location string if coordinates provided
+            $wfhLocation = null;
+            if (!empty($latitude) && !empty($longitude)) {
+                $wfhLocation = "Lat: {$latitude}, Long: {$longitude}";
+            } elseif (!empty($reason)) {
+                $wfhLocation = $reason;
+            }
+
+            if ($action === 'in') {
+                if ($existing && !empty($existing->am_in) && empty($existing->am_out)) {
+                    return $this->errorResponse('You are already clocked in. Please clock out first.', 422);
+                }
+                if ($existing) {
+                    if (empty($existing->am_in)) {
+                        DB::table('time_data')->where('id', $existing->id)->update([
+                            'am_in' => $nowTime,
+                            'is_wfh' => 1,
+                            'wfh_location' => $wfhLocation ?? $existing->wfh_location,
+                            'manual_entry_source' => 'Web Clock (GPS Verified)',
+                            'remarks' => $reason ? "Web Clock In: {$reason}" : 'Web Clock In',
+                            'updated_at' => $nowFull
+                        ]);
+                    } else {
+                        DB::table('time_data')->where('id', $existing->id)->update([
+                            'pm_in' => $nowTime,
+                            'is_wfh' => 1,
+                            'wfh_location' => $wfhLocation ?? $existing->wfh_location,
+                            'manual_entry_source' => 'Web Clock (GPS Verified)',
+                            'remarks' => $reason ? "Web PM Clock In: {$reason}" : 'Web PM Clock In',
+                            'updated_at' => $nowFull
+                        ]);
+                    }
+                } else {
+                    DB::table('time_data')->insert([
+                        'employee_id' => $employee->id,
+                        'date' => $today,
+                        'am_in' => $nowTime,
+                        'is_wfh' => 1,
+                        'wfh_location' => $wfhLocation,
+                        'manual_entry_source' => 'Web Clock (GPS Verified)',
+                        'remarks' => $reason ? "Web Clock In: {$reason}" : 'Web Clock In',
+                        'created_at' => $nowFull,
+                        'updated_at' => $nowFull
+                    ]);
+                }
+            } else { // out
+                if ($existing) {
+                    if (!empty($existing->pm_in) && empty($existing->pm_out)) {
+                        DB::table('time_data')->where('id', $existing->id)->update([
+                            'pm_out' => $nowTime,
+                            'wfh_location' => $wfhLocation ?? $existing->wfh_location,
+                            'updated_at' => $nowFull
+                        ]);
+                    } elseif (!empty($existing->am_in) && empty($existing->am_out)) {
+                        DB::table('time_data')->where('id', $existing->id)->update([
+                            'am_out' => $nowTime,
+                            'wfh_location' => $wfhLocation ?? $existing->wfh_location,
+                            'updated_at' => $nowFull
+                        ]);
+                    } else {
+                        DB::table('time_data')->where('id', $existing->id)->update([
+                            'pm_out' => $nowTime,
+                            'wfh_location' => $wfhLocation ?? $existing->wfh_location,
+                            'updated_at' => $nowFull
+                        ]);
+                    }
+                } else {
+                    DB::table('time_data')->insert([
+                        'employee_id' => $employee->id,
+                        'date' => $today,
+                        'am_out' => $nowTime,
+                        'is_wfh' => 1,
+                        'wfh_location' => $wfhLocation,
+                        'manual_entry_source' => 'Web Clock (GPS Verified)',
+                        'remarks' => 'Web Clock Out (No prior clock-in)',
+                        'created_at' => $nowFull,
+                        'updated_at' => $nowFull
+                    ]);
+                }
+            }
+
+            $timeRecord = DB::table('time_data')
+                ->where('employee_id', $employee->id)
+                ->where('date', $today)
+                ->first();
+            if ($timeRecord) {
+                $this->syncTimeDataPayrollPeriodAndHours($timeRecord->id);
+            }
+
+            return $this->getTodayStatus($userId);
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 500);
+        }
+    }
+
+    private function syncTimeDataPayrollPeriodAndHours($timeDataId)
+    {
+        $row = DB::table('time_data')->where('id', $timeDataId)->first();
+        if (!$row) return;
+
+        $updates = [];
+
+        if (empty($row->payroll_period_id) || (int)$row->payroll_period_id === 0) {
+            $employee = DB::table('employees')->where('id', $row->employee_id)->first();
+            if ($employee) {
+                $employeeTypeId = (int)($employee->employment_type_id ?? 0);
+                $periodId = 0;
+
+                if (Schema::hasTable('payroll_period_Etype') && $employeeTypeId > 0) {
+                    $etypeColumns = $this->getPayrollPeriodEtypeColumns();
+                    $period = DB::table('payroll_periods as a')
+                        ->join('payroll_period_Etype as pet', 'pet.' . $etypeColumns['period'], '=', 'a.id')
+                        ->where('pet.' . $etypeColumns['employment'], $employeeTypeId)
+                        ->whereDate('a.attendance_start_date', '<=', $row->date)
+                        ->whereDate('a.attendance_end_date', '>=', $row->date)
+                        ->select('a.id')
+                        ->first();
+                    if ($period) {
+                        $periodId = (int)$period->id;
+                    }
+                }
+
+                if ($periodId === 0) {
+                    $period = DB::table('payroll_periods')
+                        ->whereDate('attendance_start_date', '<=', $row->date)
+                        ->whereDate('attendance_end_date', '>=', $row->date)
+                        ->select('id')
+                        ->first();
+                    if ($period) {
+                        $periodId = (int)$period->id;
+                    }
+                }
+
+                if ($periodId > 0) {
+                    $updates['payroll_period_id'] = $periodId;
+                }
+            }
+        }
+
+        $amIn = $row->am_in;
+        $amOut = $row->am_out;
+        $pmIn = $row->pm_in;
+        $pmOut = $row->pm_out;
+        $wh = 0;
+
+        if (!empty($amIn) && !empty($amOut)) {
+            $s = strtotime($row->date . ' ' . $amIn);
+            $e = strtotime($row->date . ' ' . $amOut);
+            if ($e > $s) $wh += ($e - $s) / 3600;
+        }
+
+        if (!empty($pmIn) && !empty($pmOut)) {
+            $s = strtotime($row->date . ' ' . $pmIn);
+            $e = strtotime($row->date . ' ' . $pmOut);
+            if ($e > $s) $wh += ($e - $s) / 3600;
+        }
+
+        if ($wh == 0 && !empty($amIn) && !empty($pmOut)) {
+            $s = strtotime($row->date . ' ' . $amIn);
+            $e = strtotime($row->date . ' ' . $pmOut);
+            if ($e > $s) {
+                $tot = $e - $s;
+                if ($tot > 18000) $tot -= 3600;
+                $wh = $tot / 3600;
+            }
+        }
+
+        if ($wh > 0) {
+            $updates['work_hours'] = round($wh, 2);
+        }
+
+        if (!empty($updates)) {
+            DB::table('time_data')->where('id', $timeDataId)->update($updates);
+        }
+    }
 }
+

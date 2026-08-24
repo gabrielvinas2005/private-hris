@@ -17,52 +17,49 @@ export function usePDSEdit(employeeId) {
     return `pds_draft_${id || 'unknown'}`
   }
 
-  // Initialize form data from employee data
+  // Initialize form data directly from database employee data
   const initializeFormData = (employeeData, addressData, workInfo, payrollInfo, familyInfo, children, educations, serviceRecords, workExperiences, eligibilities, trainings, voluntaryWorks, recognitions, skills, memberships, references) => {
-    // Load from localStorage first (if exists), otherwise use employee data
-    const savedDraft = loadDraftFromStorage()
-    if (savedDraft) {
-      Object.assign(editFormData, savedDraft)
-      ElMessage.info('Draft data restored from previous session')
-    } else {
-      // Initialize from employee data
-      Object.assign(editFormData, {
-        // Basic info
-        employee_no: employeeData.employee_no || '',
-        email: employeeData.email || '',
-        mobile_no: employeeData.mobile_no || '',
-        telephone_no: employeeData.telephone_no || '',
-        name_prefix_id: employeeData.name_prefix_id || 0,
-        first_name: employeeData.first_name || '',
-        middle_name: employeeData.middle_name || '',
-        last_name: employeeData.last_name || '',
-        name_suffix_id: employeeData.name_suffix_id || 0,
-        birth_place: employeeData.birth_place || '',
-        birthdate: employeeData.birthdate || '',
-        age: employeeData.age || 0,
-        height: employeeData.height || '',
-        weight: employeeData.weight || '',
-        gender_id: employeeData.gender_id || 0,
-        civil_status_id: employeeData.civil_status_id || 0,
-        citizenship_id: employeeData.citizenship_id || 0,
-        religion_id: employeeData.religion_id || 0,
-        blood_type_id: employeeData.blood_type_id || 0,
-        // Address - Residential
-        ra_house_no: employeeData.ra_house_no || '',
-        ra_village: employeeData.ra_village || '',
-        ra_street: employeeData.ra_street || '',
-        ra_barangay: addressData.ra_brgy || '',
-        ra_city: addressData.ra_city || '',
-        ra_province: addressData.ra_province || '',
-        ra_region: addressData.ra_region || '',
-        // Address - Permanent
-        pa_house_no: employeeData.pa_house_no || '',
-        pa_village: employeeData.pa_village || '',
-        pa_street: employeeData.pa_street || '',
-        pa_barangay: addressData.pa_brgy || '',
-        pa_city: addressData.pa_city || '',
-        pa_province: addressData.pa_province || '',
-        pa_region: addressData.pa_region || '',
+    // Clear any previous draft from storage so database values always take precedence
+    localStorage.removeItem(getStorageKey())
+
+    // Initialize directly from database employee data
+    Object.assign(editFormData, {
+      // Basic info
+      employee_no: employeeData.employee_no || '',
+      email: employeeData.email || '',
+      mobile_no: employeeData.mobile_no || '',
+      telephone_no: employeeData.telephone_no || '',
+      name_prefix_id: employeeData.name_prefix_id || 0,
+      first_name: employeeData.first_name || '',
+      middle_name: employeeData.middle_name || '',
+      last_name: employeeData.last_name || '',
+      name_suffix_id: employeeData.name_suffix_id || 0,
+      birth_place: employeeData.birth_place || '',
+      birthdate: employeeData.birthdate || employeeData.date_of_birth || '',
+      age: employeeData.age || 0,
+      height: employeeData.height || '',
+      weight: employeeData.weight || '',
+      gender_id: employeeData.gender_id || employeeData.sex_id || 0,
+      civil_status_id: employeeData.civil_status_id || 0,
+      citizenship_id: employeeData.citizenship_id || 0,
+      religion_id: employeeData.religion_id || 0,
+      blood_type_id: employeeData.blood_type_id || 0,
+      // Address - Residential
+      ra_house_no: employeeData.ra_house_no || '',
+      ra_village: employeeData.ra_village || '',
+      ra_street: employeeData.ra_street || '',
+      ra_barangay: addressData.ra_brgy || addressData.ra_barangay || employeeData.ra_barangay || '',
+      ra_city: addressData.ra_city || employeeData.ra_city || '',
+      ra_province: addressData.ra_province || employeeData.ra_province || '',
+      ra_region: addressData.ra_region || employeeData.ra_region || '',
+      // Address - Permanent
+      pa_house_no: employeeData.pa_house_no || '',
+      pa_village: employeeData.pa_village || '',
+      pa_street: employeeData.pa_street || '',
+      pa_barangay: addressData.pa_brgy || addressData.pa_barangay || employeeData.pa_barangay || '',
+      pa_city: addressData.pa_city || employeeData.pa_city || '',
+      pa_province: addressData.pa_province || employeeData.pa_province || '',
+      pa_region: addressData.pa_region || employeeData.pa_region || '',
         // Family
         father_name_prefix_id: employeeData.father_name_prefix_id || 0,
         father_first_name: employeeData.father_first_name || '',
@@ -119,7 +116,6 @@ export function usePDSEdit(employeeId) {
         references: references || []
       })
     }
-  }
 
   // Load draft from localStorage
   const loadDraftFromStorage = () => {
@@ -181,17 +177,11 @@ export function usePDSEdit(employeeId) {
   // Watch for changes and trigger autosave
   watch(editFormData, () => {
     if (isEditMode.value) {
-      // Debounce autosave - save after 2 seconds of no changes
+      // Debounce autosave - save to backend after 2 seconds of no changes
       clearTimeout(autosaveInterval.value)
       autosaveInterval.value = setTimeout(() => {
         autosave()
       }, 2000)
-      
-      // Debounce localStorage save to reduce lag (save after 500ms of no changes)
-      clearTimeout(localStorageTimeout.value)
-      localStorageTimeout.value = setTimeout(() => {
-        saveDraftToStorage()
-      }, 500)
     }
   }, { deep: true })
 
@@ -206,6 +196,7 @@ export function usePDSEdit(employeeId) {
     if (save) {
       // Final save before exiting
       await autosave()
+      localStorage.removeItem(getStorageKey())
       ElMessage.success('Changes saved successfully')
     } else {
       // Show modal confirmation before canceling

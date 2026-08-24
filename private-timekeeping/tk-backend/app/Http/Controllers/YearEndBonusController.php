@@ -8,12 +8,11 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\ApiResponse;
+use App\Traits\GeneratesPdf;
 
 class YearEndBonusController extends Controller
 {
     use ApiResponse, GeneratesPdf;
-use App\Traits\GeneratesPdf;
-
     /**
      * Create a new controller instance.
      *

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Auth;
 use App\Audit;
 use App\Traits\ApiResponse;
+use App\Traits\GeneratesPdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -12,8 +13,6 @@ use Illuminate\Support\Facades\Validator;
 class HazardPayController extends Controller
 {
     use ApiResponse, GeneratesPdf;
-use App\Traits\GeneratesPdf;
-
     public function index()
     {
         try {

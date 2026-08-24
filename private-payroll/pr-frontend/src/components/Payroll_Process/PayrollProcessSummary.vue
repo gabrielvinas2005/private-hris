@@ -320,8 +320,7 @@
               <th class="num-col">Absent</th>
               <th class="num-col">Preceding</th>
               <th class="num-col">Adj. OT</th>
-              <th class="num-col">GSIS</th>
-              <!-- <th class="num-col">SSS</th> -->
+              <th class="num-col">SSS</th>
               <th class="num-col">Pag-IBIG</th>
               <th class="num-col">PhilHealth</th>
               <th class="num-col">Tax</th>
@@ -379,11 +378,8 @@
               </td>
               <td class="num-td">{{ fc(row.adjustment_amount_ot_holiday) }}</td>
               <td class="num-td">
-                {{ fc(getDisplayGovtContribution(row, "gsis")) }}
+                {{ fc(getDisplayGovtContribution(row, "sss") || getDisplayGovtContribution(row, "gsis")) }}
               </td>
-              <!-- <td class="num-td">
-                {{ fc(getDisplayGovtContribution(row, "sss")) }}
-              </td> -->
               <td class="num-td">
                 {{ fc(getDisplayGovtContribution(row, "pagibig")) }}
               </td>

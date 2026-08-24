@@ -10,6 +10,7 @@ export function useApprovers() {
     // form state
     const formVisible = ref(false)
     const formLoading = ref(false)
+    const isDuplicateMode = ref(false)
     const form = reactive({
         id: 0,
         branch_id: null,
@@ -17,6 +18,7 @@ export function useApprovers() {
         division_id: null,
         section_id: null,
         type_id: null,
+        type_ids: [], // Multi-type selection support
         branch_approver_1: null,
         approver_1: null,
         approver_2: null,
@@ -110,11 +112,11 @@ export function useApprovers() {
 
             const response = res.data
             const headers = response.data || []
-            const subordinates = response.subordinates || []
+            const subordinatesData = response.subordinates || []
 
             // Group subordinates by approver_id and type
             const subordinatesByApprover = {}
-            subordinates.forEach(sub => {
+            subordinatesData.forEach(sub => {
                 if (!subordinatesByApprover[sub.id]) {
                     subordinatesByApprover[sub.id] = { office: [], section: [], division: [], branch: [] }
                 }
@@ -143,6 +145,7 @@ export function useApprovers() {
     async function openForm(id = 0) {
         formVisible.value = true
         formLoading.value = true
+        isDuplicateMode.value = false
         try {
             const res = await ApiService.getLeaveApproverForm(id)
             const payload = res?.data || {}
@@ -161,22 +164,19 @@ export function useApprovers() {
             form.division_approver_1 = toId(header.division_approver_id_1)
             form.section_approver_1 = toId(header.section_approver_id_1)
             form.type_id = toId(header.type_id)
+            form.type_ids = header.type_id ? [toId(header.type_id)] : []
 
             options.branches = normalizeIdNameList(payload.branches || [])
-            // payload.departments/sections are "all active" lists; still normalize as initial fallback
             options.departments = normalizeIdNameList(payload.departments || [])
             options.sections = normalizeIdNameList(payload.sections || [])
             options.approvers = normalizeIdNameList(payload.approvers || [])
             options.approverTypes = normalizeApproverTypes(payload.approver_types || [])
-            options.divisions = [] // Initialize empty, will be loaded when department is selected
+            options.divisions = []
 
-            // Load filtered options for the saved selection WITHOUT clearing selected values.
-            // (The regular load* functions clear dependent fields for user-driven changes.)
             if (form.branch_id) await loadDepartments(form.branch_id, { preserveSelection: true })
             if (form.department_id) await loadDivisions(form.department_id, { preserveSelection: true })
             if (form.division_id) await loadSections(form.division_id, { preserveSelection: true })
 
-            // Ensure current selections remain visible even if the option list doesn't include them.
             if (form.department_id && !options.departments.some(d => d.id === form.department_id)) {
                 options.departments.unshift({ id: form.department_id, name: 'Selected Office' })
             }
@@ -190,7 +190,6 @@ export function useApprovers() {
                 options.approverTypes.unshift({ id: form.type_id, name: 'Selected Type' })
             }
 
-            // prefill subordinate lists
             const mapDetail = (x) => ({
                 id: x.employee_id,
                 name: resolveEmployeeDisplayName(x),
@@ -202,13 +201,9 @@ export function useApprovers() {
             subordinates.section = (payload.approver_details_section || []).map(mapDetail)
             pendingOfficeSubordinates.value = []
         } catch (error) {
-            // Fallback: try to load basic data from other endpoints
             try {
-                // Try to get basic data from other API endpoints
                 const branchesRes = await ApiService.get('/branches')
-                if (branchesRes?.data) {
-                    options.branches = branchesRes.data
-                }
+                if (branchesRes?.data) options.branches = branchesRes.data
 
                 const employeesRes = await ApiService.get('/employees')
                 if (employeesRes?.data) {
@@ -216,16 +211,26 @@ export function useApprovers() {
                         employeesRes.data.filter(emp => emp.active && emp.is_employee)
                     )
                 }
-            } catch (fallbackError) {
-                // Silent fallback failure
-            }
-            // Ensure approverTypes is initialized even if not in payload
+            } catch (fallbackError) {}
             if (!options.approverTypes || options.approverTypes.length === 0) {
                 options.approverTypes = []
             }
         } finally {
             formLoading.value = false
         }
+    }
+
+    /** 1-Click Rule Duplication Helper */
+    async function duplicateApprover(row) {
+        if (!row || !row.id) return
+        await openForm(row.id)
+        isDuplicateMode.value = true
+        form.id = 0 // Reset ID so saving creates a brand-new rule
+        // Stage existing department subordinates for the new rule
+        if (subordinates.department && subordinates.department.length > 0) {
+            pendingOfficeSubordinates.value = subordinates.department.map(s => s.id)
+        }
+        ElMessage.info(`Cloning setup from ${row.department || 'selected office'}. Adjust parameters and save to create a new route.`)
     }
 
     async function loadDepartments(branchId, { preserveSelection = false } = {}) {
@@ -242,21 +247,17 @@ export function useApprovers() {
             options.departments = data
 
             if (!preserveSelection) {
-                // User-driven branch change: reset dependent fields
                 form.department_id = null
                 form.division_id = null
                 form.section_id = null
                 options.divisions = []
                 options.sections = []
             } else {
-                // Edit-mode: keep current selections
                 form.department_id = prevDepartmentId
                 form.division_id = prevDivisionId
                 form.section_id = prevSectionId
             }
-        } catch (error) {
-            // Silent error handling
-        }
+        } catch (error) {}
     }
     async function loadDivisions(departmentId, { preserveSelection = false } = {}) {
         try {
@@ -271,18 +272,14 @@ export function useApprovers() {
             options.divisions = data
 
             if (!preserveSelection) {
-                // User-driven department change
                 form.division_id = null
                 form.section_id = null
                 options.sections = []
             } else {
-                // Edit-mode
                 form.division_id = prevDivisionId
                 form.section_id = prevSectionId
             }
-        } catch (error) {
-            // Silent error handling
-        }
+        } catch (error) {}
     }
     async function loadSections(divisionId, { preserveSelection = false } = {}) {
         try {
@@ -296,49 +293,71 @@ export function useApprovers() {
             options.sections = data
 
             if (!preserveSelection) {
-                // User-driven division change
                 form.section_id = null
             } else {
-                // Edit-mode
                 form.section_id = prevSectionId
             }
-        } catch (error) {
-            // Silent error handling
-        }
+        } catch (error) {}
     }
 
     async function saveForm() {
         saving.value = true
         try {
-            const payload = {
-                branch_id: toInt(form.branch_id),
-                department_id: toInt(form.department_id),
-                division_id: toInt(form.division_id),
-                section_id: toInt(form.section_id),
-                type_id: form.type_id ? toInt(form.type_id) : null,
-                branch_approver_1: toInt(form.branch_approver_1),
-                division_approver_1: toInt(form.division_approver_1),
-                section_approver_1: toInt(form.section_approver_1),
-                approver_1: toInt(form.approver_1),
-                approver_2: toInt(form.approver_2),
-                approver_3: toInt(form.approver_3),
-                approver_4: toInt(form.approver_4),
+            const isEdit = form.id !== 0
+            const typeList = (form.type_ids && form.type_ids.length > 0) 
+                ? form.type_ids 
+                : (form.type_id ? [form.type_id] : [null])
+
+            let lastResult = null
+            let savedCount = 0
+
+            for (const tId of typeList) {
+                const payload = {
+                    branch_id: toInt(form.branch_id),
+                    department_id: toInt(form.department_id),
+                    division_id: toInt(form.division_id),
+                    section_id: toInt(form.section_id),
+                    type_id: tId ? toInt(tId) : null,
+                    branch_approver_1: toInt(form.branch_approver_1),
+                    division_approver_1: toInt(form.division_approver_1),
+                    section_approver_1: toInt(form.section_approver_1),
+                    approver_1: toInt(form.approver_1),
+                    approver_2: toInt(form.approver_2),
+                    approver_3: toInt(form.approver_3),
+                    approver_4: toInt(form.approver_4),
+                }
+
+                // If editing, use existing form.id for first type, 0 for additional types
+                const currentId = (savedCount === 0 && isEdit) ? form.id : 0
+                const res = await ApiService.saveLeaveApprover(currentId, payload)
+
+                if (!res?.success) {
+                    if (typeList.length === 1) {
+                        ElMessage.error(res?.message || 'Failed to save approver setup')
+                        return { success: false, errors: res?.errors }
+                    }
+                    continue
+                }
+
+                savedCount++
+                lastResult = res
+                const newId = (res && res.data && (res.data.id || res.data.data?.id)) || currentId
+
+                // Attach pending subordinates to each created header
+                if (newId && pendingOfficeSubordinates.value.length > 0) {
+                    await ApiService.addApproverSubordinates(newId, 2, { employee_id: pendingOfficeSubordinates.value })
+                }
             }
-            const id = form.id || 0
-            const res = await ApiService.saveLeaveApprover(id, payload)
-            if (!res?.success) {
-                ElMessage.error(res?.message || 'Failed to save approver setup')
-                return { success: false, errors: res?.errors }
-            }
-            const newId = (res && res.data && (res.data.id || res.data.data?.id)) || form.id
-            if (newId && pendingOfficeSubordinates.value.length > 0) {
-                await ApiService.addApproverSubordinates(newId, 2, { employee_id: pendingOfficeSubordinates.value })
-                pendingOfficeSubordinates.value = []
-            }
+
+            pendingOfficeSubordinates.value = []
             await fetchList()
             formVisible.value = false
-            const isEdit = id !== 0
-            ElMessage.success(isEdit ? 'Approver setup updated successfully!' : (res?.message || 'Approver setup saved successfully!'))
+
+            const successMsg = savedCount > 1 
+                ? `Created ${savedCount} approval rules across selected request types!`
+                : (isEdit ? 'Approver setup updated successfully!' : 'Approver setup saved successfully!')
+            
+            ElMessage.success(successMsg)
             return { success: true }
         } finally {
             saving.value = false
@@ -351,11 +370,9 @@ export function useApprovers() {
         await fetchList()
     }
 
-    // Load office (department) subordinates for current selection
     async function reloadOfficeSubordinates() {
         try {
             if (!form.id) return
-            // Reload current selections from the form endpoint (includes existing subordinates)
             const res = await ApiService.getLeaveApproverForm(form.id)
             const payload = res?.data || {}
             subordinates.department = (payload.approver_details || []).map(x => ({
@@ -366,11 +383,9 @@ export function useApprovers() {
         } catch {}
     }
 
-    // Load available subordinates for the selected department
     async function loadAvailableSubordinates() {
         try {
             if (!form.department_id) {
-                // Clear subordinates list if no department selected
                 subordinates.department = []
                 return
             }
@@ -384,26 +399,51 @@ export function useApprovers() {
             )
             const availableSubordinates = Array.isArray(res?.data) ? res.data : []
             
-            // Update the options.approvers to show only employees from this department
-            // This will filter the dropdown options for adding new subordinates
-            const allEmployees = options.approvers || []
-            const departmentEmployees = availableSubordinates.map(sub => ({
+            options.departmentEmployees = availableSubordinates.map(sub => ({
                 id: sub.id,
                 name: resolveEmployeeDisplayName(sub),
                 position: sub.position,
                 department: sub.department
             }))
-            
-            // Update the approvers list to show only department employees for subordinate selection
-            options.departmentEmployees = departmentEmployees
             newOfficeSubordinates.value = []
         } catch (error) {
-            console.error('Failed to load available subordinates:', error)
             options.departmentEmployees = []
         }
     }
 
-    // Add office (department) subordinates
+    /** 1-Click Auto-Add All Department Employees as Subordinates */
+    async function autoAddAllDepartmentSubordinates() {
+        if (!options.departmentEmployees || options.departmentEmployees.length === 0) {
+            ElMessage.warning('No available department employees found to auto-add.')
+            return
+        }
+
+        const existingIds = new Set(subordinates.department.map(s => s.id))
+        const newIdsToStage = []
+
+        options.departmentEmployees.forEach(emp => {
+            if (!existingIds.has(emp.id)) {
+                subordinates.department.push({ id: emp.id, name: emp.name, position: emp.position })
+                newIdsToStage.push(emp.id)
+            }
+        })
+
+        if (newIdsToStage.length === 0) {
+            ElMessage.info('All department employees are already included as subordinates.')
+            return
+        }
+
+        if (!form.id) {
+            const staged = new Set(pendingOfficeSubordinates.value)
+            newIdsToStage.forEach(id => staged.add(id))
+            pendingOfficeSubordinates.value = Array.from(staged)
+        } else {
+            await ApiService.addApproverSubordinates(form.id, 2, { employee_id: newIdsToStage })
+        }
+
+        ElMessage.success(`Added ${newIdsToStage.length} department employees as subordinates!`)
+    }
+
     async function addOfficeSubordinates() {
         if (newOfficeSubordinates.value.length === 0) return
         if (!form.id) {
@@ -432,13 +472,54 @@ export function useApprovers() {
         newOfficeSubordinates.value = []
     }
 
-    // Remove a single office subordinate
     async function removeOfficeSubordinate(employeeId) {
         if (!employeeId) return
         await ApiService.deleteApproverSubordinate(employeeId)
-        // Optimistically remove from local list
         subordinates.department = subordinates.department.filter(s => s.id !== employeeId)
     }
+
+    /** Compute Department Coverage & Gap Matrix */
+    const coverageMatrix = computed(() => {
+        const deptMap = {}
+        
+        rows.value.forEach(r => {
+            const dName = r.department || 'Unassigned Department'
+            if (!deptMap[dName]) {
+                deptMap[dName] = {
+                    department: dName,
+                    branch: r.branch || 'Main Agency',
+                    rules_count: 0,
+                    types: new Set(),
+                    approver_1_set: new Set(),
+                    approver_2_set: new Set(),
+                    approver_3_set: new Set(),
+                    subordinates_count: 0
+                }
+            }
+
+            deptMap[dName].rules_count++
+            if (r.approver_type) deptMap[dName].types.add(r.approver_type)
+            else deptMap[dName].types.add('Common / All Types')
+
+            if (r.approver_1) deptMap[dName].approver_1_set.add(r.approver_1)
+            if (r.approver_2) deptMap[dName].approver_2_set.add(r.approver_2)
+            if (r.approver_3) deptMap[dName].approver_3_set.add(r.approver_3)
+
+            deptMap[dName].subordinates_count += (r.office_subordinates?.length || 0)
+        })
+
+        return Object.values(deptMap).map(item => ({
+            ...item,
+            types_list: Array.from(item.types),
+            approver_1_list: Array.from(item.approver_1_set),
+            approver_2_list: Array.from(item.approver_2_set),
+            approver_3_list: Array.from(item.approver_3_set),
+            is_covered: item.rules_count > 0
+        }))
+    })
+
+    const coveredOfficesCount = computed(() => coverageMatrix.value.length)
+    const totalRoutesCount = computed(() => rows.value.length)
 
     const tableColumns = [
         { key: 'branch', label: 'Branch', minWidth: 160 },
@@ -463,9 +544,11 @@ export function useApprovers() {
         // form
         formVisible,
         formLoading,
+        isDuplicateMode,
         form,
         options,
         openForm,
+        duplicateApprover,
         loadDepartments,
         loadDivisions,
         loadSections,
@@ -478,8 +561,13 @@ export function useApprovers() {
         pendingOfficeSubordinates,
         reloadOfficeSubordinates,
         loadAvailableSubordinates,
+        autoAddAllDepartmentSubordinates,
         addOfficeSubordinates,
         removeOfficeSubordinate,
+        // analytics
+        coverageMatrix,
+        coveredOfficesCount,
+        totalRoutesCount,
     }
 }
 

@@ -4,14 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Traits\ApiResponse;
+use App\Traits\GeneratesPdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class GSISRemittanceController extends Controller
 {
     use ApiResponse, GeneratesPdf;
-use App\Traits\GeneratesPdf;
-
     public function index()
     {
         try {

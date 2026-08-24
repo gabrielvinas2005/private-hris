@@ -83,8 +83,13 @@ body {
 }
 
 @keyframes tk-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .tk-toast__body {
@@ -128,8 +133,13 @@ body {
 }
 
 @keyframes tk-toast-progress {
-  from { transform: scaleX(1); }
-  to { transform: scaleX(0); }
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
 }
 
 .tk-toast--success {
@@ -197,25 +207,33 @@ body {
 }
 
 /* Tooltip color variants to match button colors with white text */
-.tt-primary .el-popper__arrow::before, .tt-primary {
+.tt-primary .el-popper__arrow::before,
+.tt-primary {
   background-color: var(--el-color-primary) !important;
   color: #fff !important;
 }
-.tt-success .el-popper__arrow::before, .tt-success {
+
+.tt-success .el-popper__arrow::before,
+.tt-success {
   background-color: var(--el-color-success) !important;
   color: #fff !important;
 }
-.tt-warning .el-popper__arrow::before, .tt-warning {
+
+.tt-warning .el-popper__arrow::before,
+.tt-warning {
   background-color: var(--el-color-warning) !important;
   color: #fff !important;
 }
-.tt-danger .el-popper__arrow::before, .tt-danger {
+
+.tt-danger .el-popper__arrow::before,
+.tt-danger {
   background-color: var(--el-color-danger) !important;
   color: #fff !important;
 }
 
 /* Info tone for viewer list button tooltip */
-.tt-info .el-popper__arrow::before, .tt-info {
+.tt-info .el-popper__arrow::before,
+.tt-info {
   background-color: var(--el-color-info) !important;
   color: #fff !important;
   border: none !important;
@@ -224,7 +242,10 @@ body {
 }
 
 /* Remove outline/border/shadow on custom-colored tooltips */
-.tt-primary, .tt-success, .tt-warning, .tt-danger {
+.tt-primary,
+.tt-success,
+.tt-warning,
+.tt-danger {
   border: none !important;
   box-shadow: none !important;
   outline: none !important;

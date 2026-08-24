@@ -39,6 +39,7 @@ export function useAuth() {
                     };
 
                     localStorage.setItem('dev_auth_token', JSON.stringify(tokenData));
+                    localStorage.setItem('auth_token', JSON.stringify(tokenData));
                     user.value = userData;
 
                     ElMessage.success('Dev login successful! Redirecting to main page...');

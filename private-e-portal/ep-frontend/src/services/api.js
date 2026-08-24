@@ -11,7 +11,7 @@ const API_ROUTES = {
         sanctum: '/sanctum/csrf-cookie'
     },
     // Notification routes (using announcements only)
-    
+
     // Employee 201 File routes
     employee201: {
         get: (userId) => `/201-files/${userId}`,
@@ -25,7 +25,7 @@ const API_ROUTES = {
         deleteSchedule: (id) => `/update-201-schedule/${id}`,
         export: '/employee-file/export'
     },
-    
+
     // SALN routes
     saln: {
         get: (userId) => `/saln/${userId}`,
@@ -41,13 +41,13 @@ const API_ROUTES = {
         deleteBusinessInterest: (id) => `/business-interests/${id}`,
         deleteRelative: (id) => `/relatives/${id}`
     },
-    
+
     // Dashboard routes
     dashboard: {
         get: (userId) => `/dashboard/${userId}`,
         announcements: '/announcements'
     },
-    
+
     // Leave routes
     leave: {
         dashboard: (userId) => `/leaves/${userId}`,
@@ -68,7 +68,7 @@ const API_ROUTES = {
             downloadAttachment: (id) => `/leave-monetization-attachment-download/${id}`
         }
     },
-    
+
     // Official Business routes
     officialBusiness: {
         get: (userId) => `/official-business-applications/${userId}`,
@@ -93,7 +93,7 @@ const API_ROUTES = {
         printOfficialBusinessExcel: (id) => `/official-business-excel/${id}`,
         getEmployeeInfoForPickup: (userId) => `/employee-info-for-pickup/${userId}`
     },
-    
+
     // WFH Application routes
     wfhApplication: {
         list: '/wfh-applications',
@@ -104,14 +104,14 @@ const API_ROUTES = {
         approve: (id) => `/wfh-applications/${id}/approve`,
         disapprove: (id) => `/wfh-applications/${id}/disapprove`
     },
-    
+
     // Payslip routes
     payslip: {
         list: (userId) => `/payslips/${userId}`,
         details: (employeeId, payrollId) => `/payslips/${employeeId}/view/${payrollId}`,
         print: (employeeId, payrollId) => `/payslips/${employeeId}/print/${payrollId}`
     },
-    
+
     // Overtime routes
     overtime: {
         get: (userId) => `/overtime-applications/${userId}`,
@@ -130,7 +130,7 @@ const API_ROUTES = {
         authorizationFormWord: '/overtime-authorization-request-word',
         authorizationFormExcel: '/overtime-authorization-request-excel'
     },
-    
+
     // PDS routes
     pds: {
         download: (employeeId) => `/pds/${employeeId}/download`
@@ -149,7 +149,7 @@ class ApiService {
     }
 
     // Initialize Sanctum authentication (get CSRF cookie)
-   // In e_portal/ep-frontend/src/services/api.js, line 140:
+    // In e_portal/ep-frontend/src/services/api.js, line 140:
     async initSanctum() {
         if (this.isInitialized) return
 
@@ -479,13 +479,13 @@ class ApiService {
     }
 
     async saveOPCRRecalibration(opcrId, recalibrationLevel, data) {
-      return this.request(`/employee-opcr/${opcrId}/recalibrate`, {
-        method: 'POST',
-        body: JSON.stringify({
-          recalibration_level: recalibrationLevel,
-          ...data
+        return this.request(`/employee-opcr/${opcrId}/recalibrate`, {
+            method: 'POST',
+            body: JSON.stringify({
+                recalibration_level: recalibrationLevel,
+                ...data
+            })
         })
-      })
     }
 
     // Employee DPCR API methods
@@ -521,13 +521,13 @@ class ApiService {
     }
 
     async saveDPCRRecalibration(dpcrId, recalibrationLevel, data) {
-      return this.request(`/employee-dpcr/${dpcrId}/recalibrate`, {
-        method: 'POST',
-        body: JSON.stringify({
-          recalibration_level: recalibrationLevel,
-          ...data
+        return this.request(`/employee-dpcr/${dpcrId}/recalibrate`, {
+            method: 'POST',
+            body: JSON.stringify({
+                recalibration_level: recalibrationLevel,
+                ...data
+            })
         })
-      })
     }
 
     // Employee Non DTR (Contract of Service Accomplishment) methods
@@ -845,7 +845,7 @@ class ApiService {
     async downloadSALN(userId, params = {}) {
         await this.initSanctum()
         let url = `${this.baseURL}/saln-download/${userId}`
-        
+
         // Add query parameters if provided
         const queryParams = new URLSearchParams()
         if (params.complianceType) {
@@ -857,11 +857,11 @@ class ApiService {
         if (params.filing) {
             queryParams.append('filing', params.filing)
         }
-        
+
         if (queryParams.toString()) {
             url += '?' + queryParams.toString()
         }
-        
+
         const token = localStorage.getItem('auth_token')
         const res = await fetch(url, {
             method: 'GET',

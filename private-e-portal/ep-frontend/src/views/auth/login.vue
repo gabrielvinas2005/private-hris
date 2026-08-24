@@ -110,7 +110,7 @@
               </button>
             </form>
 
-            <div class="flex justify-between mt-5 text-xs">
+            <div class="flex justify-between mt-5 mb-10 text-xs">
               <a href="#" class="font-medium text-blue-600 transition-colors hover:text-blue-800">
                 Forgot Password?
               </a>
@@ -124,7 +124,7 @@
             </div>
           </div>
 
-          <!-- Footer -->
+          <!-- Footer
           <div v-if="hasCompanyDetails" class="px-8 py-5 space-y-3 border-t border-slate-100 bg-slate-50/50">
             <div v-if="company.address" class="flex items-start gap-2.5">
               <div class="flex items-center justify-center flex-shrink-0 w-7 h-7 bg-blue-50 rounded-lg">
@@ -156,6 +156,7 @@
               <img :src="companyLogo" :alt="company.name" class="object-contain w-7 h-7">
             </div>
           </div>
+           -->
         </div>
 
         <p class="mt-5 text-xs text-center text-slate-500">
@@ -208,6 +209,13 @@ export default {
   },
   async mounted() {
     this.company = await fetchCompanyPublic()
+    // Show session expiry message if redirected due to inactivity or max session limit
+    const reason = new URLSearchParams(window.location.search).get('reason')
+    if (reason === 'inactivity') {
+      this.errorMessage = 'Your session has expired due to inactivity. Please sign in again.'
+    } else if (reason === 'max_session') {
+      this.errorMessage = 'Your session has reached the 5-hour maximum limit. Please sign in again.'
+    }
   },
   methods: {
     async handleLogin() {
@@ -244,6 +252,8 @@ export default {
 
         if (payload.token) {
           localStorage.setItem('auth_token', payload.token)
+          localStorage.setItem('session_start_time', Date.now().toString())
+          sessionStorage.setItem('ep_just_logged_in', 'true')
         }
 
         if (payload.temp_token) {

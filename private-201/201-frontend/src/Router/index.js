@@ -78,7 +78,7 @@ const routes = [
     { path: '/', redirect: '/hr' },
 
     // ===== MAIN MODULE =====
-    { path: '/hr', name: 'hr', component: HRmodule, meta: { title: 'HR Module' } },
+    { path: '/hr', name: 'hr', component: HRmodule, meta: { title: 'Overview' } },
 
     // ===== EMPLOYEE MANAGEMENT ROUTES =====
     { path: '/employee-records', name: 'employee-records', component: EmployeeRecords },

@@ -48,16 +48,27 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Access Rights" width="150" fixed="right">
+      <el-table-column label="Actions" width="250" fixed="right">
         <template #default="{ row }">
-          <el-button 
-            size="small" 
-            type="warning"
-            @click="accessRights(row)"
-            icon="Key"
-          >
-            Access Rights
-          </el-button>
+          <div class="action-buttons">
+            <el-button 
+              size="small" 
+              type="warning"
+              @click="accessRights(row)"
+              :icon="Key"
+            >
+              Rights
+            </el-button>
+            <el-button 
+              size="small" 
+              type="danger"
+              plain
+              @click="resetPassword(row)"
+              :icon="RefreshRight"
+            >
+              Reset Pass
+            </el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -80,6 +91,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { Key, RefreshRight } from '@element-plus/icons-vue'
 
 const props = defineProps({
   users: {
@@ -96,7 +108,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['selection-change', 'access-rights', 'page-change', 'size-change'])
+const emit = defineEmits(['selection-change', 'access-rights', 'reset-password', 'page-change', 'size-change'])
 
 const selectedUsers = ref([])
 const currentPage = ref(1)
@@ -109,6 +121,10 @@ function handleSelectionChange(selection) {
 
 function accessRights(user) {
   emit('access-rights', user)
+}
+
+function resetPassword(user) {
+  emit('reset-password', user)
 }
 
 function handleSizeChange(newSize) {
@@ -159,6 +175,12 @@ function getStatusText(user) {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .user-info {

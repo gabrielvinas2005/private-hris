@@ -104,13 +104,13 @@
               <div class="bg-red-50 p-4 rounded-lg">
                 <h6 class="font-semibold text-red-800 mb-3">Deductions</h6>
                 <div class="space-y-2">
-                  <div class="flex justify-between">
+                  <div v-if="payroll.gsis" class="flex justify-between">
                     <span class="text-slate-600">GSIS:</span>
                     <span class="font-medium">₱{{ formatCurrency(payroll.gsis) }}</span>
                   </div>
                   <div class="flex justify-between">
                     <span class="text-slate-600">SSS:</span>
-                    <span class="font-medium">₱{{ formatCurrency(payroll.sss) }}</span>
+                    <span class="font-medium">₱{{ formatCurrency(payroll.sss || payroll.gsis) }}</span>
                   </div>
                   <div class="flex justify-between">
                     <span class="text-slate-600">Pag-ibig:</span>

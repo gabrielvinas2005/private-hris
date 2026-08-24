@@ -6,6 +6,12 @@ const isAuthenticated = ref(false)
 const user = ref(null)
 const token = ref(null)
 
+function hasControlPanelAccess(userData) {
+    if (!userData) return false;
+    const toBool = (v) => v === true || v === 1 || v === '1' || v === 'true';
+    return toBool(userData.with_cpm_access) || toBool(userData.is_admin);
+}
+
 // Check for shared authentication parameters
 async function checkSharedAuth() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -20,52 +26,51 @@ async function checkSharedAuth() {
     if (employeeNo && email && authToken && redirectFrom === 'e_portal') {
         console.log('Shared auth detected from E-Portal:', { employeeNo, email });
         
-        // Store token first
-        const sharedUser = {
-            employee_no: employeeNo,
-            email: email,
-            name: email.split('@')[0],
-            id: employeeNo
-        };
-        
-        // Store token
-        localStorage.setItem('user_data', JSON.stringify(sharedUser));
-        localStorage.setItem('auth_token', authToken);
-        token.value = authToken;
-        user.value = sharedUser;
-        isAuthenticated.value = true;
-        
         try {
-            // Verify token by trying to fetch real session or validate
-            // For Control Panel, you might need to call a specific API endpoint
-            // For now, we'll assume the token is valid if it exists
-            // You can add actual verification here if needed
+            // Verify user via backend profile endpoint to check CP access rights
+            localStorage.setItem('auth_token', authToken);
+            const verifyResponse = await apiService.getProfile();
             
-            console.log('Frontend auth state set up with E-Portal token');
-            
-            // Clean URL parameters
-            const url = new URL(window.location);
-            url.searchParams.delete('employee_no');
-            url.searchParams.delete('email');
-            url.searchParams.delete('auth_token');
-            url.searchParams.delete('redirect_from');
-            window.history.replaceState({}, '', url);
-            
-            console.log('URL cleaned of auth parameters');
-            return { success: true, verified: true };
+            if (verifyResponse.success && verifyResponse.data && verifyResponse.data.user) {
+                const verifiedUser = verifyResponse.data.user;
+                if (!hasControlPanelAccess(verifiedUser)) {
+                    console.warn('Shared auth denied: User lacks Control Panel permissions');
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user_data');
+                    token.value = null;
+                    user.value = null;
+                    isAuthenticated.value = false;
+                    return { success: false, verified: false, error: 'Access Denied' };
+                }
+
+                token.value = authToken;
+                user.value = verifiedUser;
+                isAuthenticated.value = true;
+                localStorage.setItem('user_data', JSON.stringify(verifiedUser));
+
+                // Clean URL parameters
+                const url = new URL(window.location);
+                url.searchParams.delete('employee_no');
+                url.searchParams.delete('email');
+                url.searchParams.delete('auth_token');
+                url.searchParams.delete('redirect_from');
+                window.history.replaceState({}, '', url);
+
+                return { success: true, verified: true };
+            }
         } catch (error) {
-            console.error('Token verification failed:', error);
-            // Clear invalid token
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('user_data');
-            token.value = null;
-            user.value = null;
-            isAuthenticated.value = false;
-            return { success: false, verified: false, error };
+            console.error('Token verification failed during shared auth:', error);
         }
+
+        // Clean invalid shared auth
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
+        token.value = null;
+        user.value = null;
+        isAuthenticated.value = false;
+        return { success: false, verified: false };
     }
     
-    console.log('No shared auth parameters found');
     return { success: false, verified: false };
 }
 
@@ -88,7 +93,7 @@ async function fetchRealTokenFromSession() {
             const data = await response.json();
             console.log('Session data received:', data);
             
-            if (data.token && data.user) {
+            if (data.token && data.user && hasControlPanelAccess(data.user)) {
                 // Store the real token and user data
                 token.value = data.token;
                 user.value = data.user;
@@ -106,24 +111,6 @@ async function fetchRealTokenFromSession() {
     } catch (error) {
         console.error('Error fetching shared auth token:', error);
     }
-    
-    // Fallback: set up basic shared auth if session fetch fails
-    console.log('Falling back to basic shared auth');
-    const urlParams = new URLSearchParams(window.location.search);
-    const employeeNo = urlParams.get('employee_no') || '1';
-    const email = urlParams.get('email') || 'admin@example.com';
-    
-    const sharedUser = {
-        employee_no: employeeNo,
-        email: email,
-        name: email.split('@')[0],
-        id: employeeNo
-    };
-    
-    user.value = sharedUser;
-    isAuthenticated.value = true;
-    localStorage.setItem('user_data', JSON.stringify(sharedUser));
-    localStorage.setItem('auth_token', 'shared_auth_' + Date.now());
     
     return false;
 }
@@ -150,9 +137,20 @@ async function initializeAuth() {
             const verifyResponse = await apiService.getProfile()
             
             if (verifyResponse.success && verifyResponse.data && verifyResponse.data.user) {
-                // Token is valid, set auth state
+                const fetchedUser = verifyResponse.data.user
+                if (!hasControlPanelAccess(fetchedUser)) {
+                    console.warn('Access denied: User does not have Control Panel permissions')
+                    localStorage.removeItem('auth_token')
+                    localStorage.removeItem('user_data')
+                    token.value = null
+                    user.value = null
+                    isAuthenticated.value = false
+                    return false
+                }
+
+                // Token is valid and user has CP access, set auth state
                 token.value = storedToken
-                user.value = JSON.parse(storedUser)
+                user.value = fetchedUser
                 isAuthenticated.value = true
                 console.log('Token verified - user authenticated:', user.value)
                 return true;
@@ -183,12 +181,17 @@ async function initializeAuth() {
     return false;
 }
 
+
 // Login function
 async function login(credentials) {
     try {
         const response = await apiService.login(credentials)
 
         if (response.success) {
+            if (!hasControlPanelAccess(response.data.user)) {
+                return { success: false, message: 'Access Denied: You do not have permission to access the Control Panel.' }
+            }
+
             // Store authentication data
             token.value = response.data.token
             user.value = response.data.user
@@ -218,6 +221,10 @@ async function logout() {
     } catch (error) {
         console.error('Logout error:', error)
     } finally {
+        // Broadcast logout to all other open CP tabs
+        localStorage.setItem('cp_logout_event', Date.now().toString())
+        localStorage.removeItem('cp_logout_event')
+
         // Clear authentication state
         token.value = null
         user.value = null
@@ -228,6 +235,32 @@ async function logout() {
         localStorage.removeItem('user_data')
     }
 }
+
+// ─── Cross-tab session synchronization ───────────────────────────────────────
+// Listen for logout events from any tab of this portal (cp_logout_event)
+// or from the Employee Portal (ep_logout_event), and also for raw token removal.
+if (typeof window !== 'undefined') {
+    window.addEventListener('storage', (event) => {
+        if (
+            (event.key === 'cp_logout_event' || event.key === 'ep_logout_event') &&
+            event.newValue
+        ) {
+            // Another tab triggered a logout — clear this tab's auth state
+            token.value = null
+            user.value = null
+            isAuthenticated.value = false
+            localStorage.removeItem('auth_token')
+            localStorage.removeItem('user_data')
+        }
+        if (event.key === 'auth_token' && !event.newValue && isAuthenticated.value) {
+            // auth_token was removed in another tab
+            token.value = null
+            user.value = null
+            isAuthenticated.value = false
+        }
+    })
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Check if user is authenticated
 const isLoggedIn = computed(() => isAuthenticated.value)

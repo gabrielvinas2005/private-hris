@@ -32,31 +32,39 @@ return [
      * Matches the request origin. `['*']` allows all origins. Wildcards can be used, eg `*.mydomain.com`
      */
     'allowed_origins' => [
+        'http://localhost:5171',
+        'http://127.0.0.1:5171',
+        'http://localhost:5172',
+        'http://127.0.0.1:5172',
         'http://localhost:5173',
         'http://127.0.0.1:5173',
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'http://localhost:8085',
-        'http://192.168.0.36:8085',
-        'http://localhost:4173',
-        'http://127.0.0.1:4173',
         'http://localhost:5174',
         'http://127.0.0.1:5174',
         'http://localhost:5175',
         'http://127.0.0.1:5175',
-        'http://localhost:8081',
-        'http://127.0.0.1:8081',
+        'http://localhost:5176',
+        'http://127.0.0.1:5176',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'http://localhost:8001',
+        'http://127.0.0.1:8001',
+        'http://localhost:8002',
+        'http://127.0.0.1:8002',
+        'http://localhost:8003',
+        'http://127.0.0.1:8003',
+        'http://localhost:8080',
+        'http://127.0.0.1:8080',
         'http://localhost:8082',
-        'http://127.0.0.1:8082',
-        '*'
+        'http://127.0.0.1:8082'
     ],
 
     /*
      * Patterns that can be used with `preg_match` to match the origin.
      */
     'allowed_origins_patterns' => [
-        '/^http:\/\/localhost:\d+$/',
-        '/^http:\/\/127\.0\.0\.1:\d+$/',
+        '#^http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$#'
     ],
 
     /*

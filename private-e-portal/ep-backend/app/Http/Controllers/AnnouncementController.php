@@ -70,26 +70,34 @@ class AnnouncementController extends Controller
 	public function store(Request $request)
 	{
 		try {
-			// Check if user has HR access
+			// Check if user has HR or Admin access
 			$user = Auth::user();
 			if (!$user) {
 				return $this->errorResponse('Unauthorized', 401);
 			}
 
-			// Check HR access
+			// Check HR or Admin access
 			$user_record = DB::table('users')
 				->where('employee_no', $user->employee_no)
 				->first();
 
-			$hasHRAccess = false;
+			$hasAccess = false;
 			if ($user_record) {
-				$hasHRAccess = (bool)($user_record->with_hrm_access ?? false) || (bool)($user_record->is_admin ?? false);
-			} else {
-				$hasHRAccess = (bool)($user->with_hrm_access ?? false) || (bool)($user->is_admin ?? false);
+				$hasAccess = (bool)($user_record->with_hrm_access ?? false) 
+					|| (bool)($user_record->is_admin ?? false)
+					|| ($user_record->user_type_id ?? null) == 1
+					|| in_array(strtolower($user_record->role ?? ''), ['admin', 'hr', 'administrator', 'hr_admin']);
+			}
+			
+			if (!$hasAccess) {
+				$hasAccess = (bool)($user->with_hrm_access ?? false) 
+					|| (bool)($user->is_admin ?? false)
+					|| ($user->user_type_id ?? null) == 1
+					|| in_array(strtolower($user->role ?? ''), ['admin', 'hr', 'administrator', 'hr_admin']);
 			}
 
-			if (!$hasHRAccess) {
-				return $this->errorResponse('Access denied. HR module access required.', 403);
+			if (!$hasAccess) {
+				return $this->errorResponse('Access denied. Admin or HR access required to make announcements.', 403);
 			}
 
 			// Validate request
@@ -133,26 +141,34 @@ class AnnouncementController extends Controller
 	public function getEmployees()
 	{
 		try {
-			// Check if user has HR access
+			// Check if user has HR or Admin access
 			$user = Auth::user();
 			if (!$user) {
 				return $this->errorResponse('Unauthorized', 401);
 			}
 
-			// Check HR access
+			// Check HR or Admin access
 			$user_record = DB::table('users')
 				->where('employee_no', $user->employee_no)
 				->first();
 
-			$hasHRAccess = false;
+			$hasAccess = false;
 			if ($user_record) {
-				$hasHRAccess = (bool)($user_record->with_hrm_access ?? false) || (bool)($user_record->is_admin ?? false);
-			} else {
-				$hasHRAccess = (bool)($user->with_hrm_access ?? false) || (bool)($user->is_admin ?? false);
+				$hasAccess = (bool)($user_record->with_hrm_access ?? false) 
+					|| (bool)($user_record->is_admin ?? false)
+					|| ($user_record->user_type_id ?? null) == 1
+					|| in_array(strtolower($user_record->role ?? ''), ['admin', 'hr', 'administrator', 'hr_admin']);
+			}
+			
+			if (!$hasAccess) {
+				$hasAccess = (bool)($user->with_hrm_access ?? false) 
+					|| (bool)($user->is_admin ?? false)
+					|| ($user->user_type_id ?? null) == 1
+					|| in_array(strtolower($user->role ?? ''), ['admin', 'hr', 'administrator', 'hr_admin']);
 			}
 
-			if (!$hasHRAccess) {
-				return $this->errorResponse('Access denied. HR module access required.', 403);
+			if (!$hasAccess) {
+				return $this->errorResponse('Access denied. Admin or HR access required.', 403);
 			}
 
 			$app_key = env("APP_KEY", "");

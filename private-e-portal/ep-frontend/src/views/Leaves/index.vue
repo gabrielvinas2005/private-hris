@@ -3,8 +3,8 @@
     <div class="w-full h-full max-w-[1400px] mx-auto px-2 md:px-4">
       <!-- Header Section -->
       <div class="mb-6">
-        <h1 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Leave & Time Management</h1>
-        <p class="text-slate-600 text-sm md:text-base">Manage your leave requests and work attendance</p>
+        <h1 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Leave Management</h1>
+        <p class="text-slate-600 text-sm md:text-base">Manage your leave applications and requests</p>
       </div>
 
       <!-- Leave Balance Cards (Top) -->
@@ -770,8 +770,8 @@ export default {
     return {
       breadcrumbs: [
         { name: 'Dashboard', path: '/dashboard' },
-        { name: 'Leave & Time Management', path: '/leave-time' },
-        { name: 'Leave Management', path: '/leaves' }
+        { name: 'Leave Management', path: '/leave-management' },
+        { name: 'Leave Application', path: '/leaves' }
       ],
       state,
       uiState,

@@ -1,6 +1,77 @@
 import axios from 'axios'
 import { currentConfig } from '../config/api.js'
 
+// Downloadables API methods
+export const downloadablesApiService = {
+    async getDownloadables() {
+        const response = await apiClient.get('/downloadables')
+        return response.data
+    },
+
+    async downloadFile(id, fileName) {
+        const response = await apiClient.get(`/downloadables/${id}/download`, {
+            responseType: 'blob'
+        })
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', fileName)
+        document.body.appendChild(link)
+        link.click()
+        link.parentElement.removeChild(link)
+    },
+
+    async previewFile(id) {
+        const response = await apiClient.get(`/downloadables/${id}/preview`, {
+            responseType: 'blob'
+        })
+        const contentType = response.headers['content-type'] || 'application/octet-stream'
+        const blob = new Blob([response.data], { type: contentType })
+        return {
+            url: window.URL.createObjectURL(blob),
+            contentType,
+            size: response.data.size
+        }
+    }
+}
+
+// Training Record API methods
+export const trainingRecordApiService = {
+    async getRecords() {
+        const response = await apiClient.get('/training-records')
+        return response.data
+    },
+
+    async createRecord(payload) {
+        const response = await apiClient.post('/training-records', payload)
+        return response.data
+    }
+}
+
+//Document Request API methods
+export const documentRequestApiService = {
+    async getRequests() {
+        const response = await apiClient.get('/document-requests')
+        return response.data
+    },
+
+    async submitRequest(payload) {
+        const response = await apiClient.post('/document-requests', payload)
+        return response.data
+    },
+
+    async cancelRequest(id) {
+        const response = await apiClient.delete(`/document-requests/${id}`)
+        return response.data
+    },
+
+    async updateStatus(id, status, remarks = null) {
+        const response = await apiClient.patch(`/document-requests/${id}/status`, { status, remarks })
+        return response.data
+    }
+}
+
+
 // Create axios instance with base configuration
 const apiClient = axios.create({
     baseURL: currentConfig.BASE_URL,
@@ -39,6 +110,56 @@ apiClient.interceptors.response.use(
 
 // DTR API methods
 export const dtrApiService = {
+    // Get today status summary
+    async getTodayStatus(userId) {
+        try {
+            const response = await apiClient.get(`/daily-time-records/today-status/${userId}`)
+            return response.data
+        } catch (error) {
+            console.error('Error fetching today status:', error)
+            throw error
+        }
+    },
+
+    // Perform web clock punch
+    async webClockPunch(payload) {
+        try {
+            const response = await apiClient.post('/daily-time-records/web-clock', payload)
+            return response.data
+        } catch (error) {
+            console.error('Error recording web clock punch:', error)
+            throw error
+        }
+    },
+
+    /**
+     * Fetch portal feature configuration from Control Panel backend.
+     * Returns { pass_slip_monthly_limit, enable_web_clock, require_selfie, enforce_geofence }.
+     * Falls back to safe defaults if the request fails so the portal always remains functional.
+     */
+    async getPortalTimekeepingSettings() {
+        const defaults = {
+            enable_web_clock: true,
+            enable_biometric: true,
+            require_selfie: true,
+            enforce_geofence: true,
+        }
+        try {
+            const cpBaseUrl = import.meta.env.VITE_CP_API_URL || 'http://localhost:8002/api'
+            const response = await axios.get(`${cpBaseUrl}/portal-settings/timekeeping`, { timeout: 5000 })
+            const data = response.data?.data || {}
+            return {
+                enable_web_clock: data.enable_web_clock ?? defaults.enable_web_clock,
+                enable_biometric: data.enable_biometric ?? defaults.enable_biometric,
+                require_selfie:   data.require_selfie   ?? defaults.require_selfie,
+                enforce_geofence: data.enforce_geofence ?? defaults.enforce_geofence,
+            }
+        } catch (error) {
+            console.warn('Portal settings fetch failed — using defaults:', error.message)
+            return defaults
+        }
+    },
+
     // Get DTR list for employee (by user ID)
     async getDTRList(userId) {
         try {

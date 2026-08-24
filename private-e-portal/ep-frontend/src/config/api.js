@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
     // Base API URL - can be overridden by environment variables
-    BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:8001/api',
+    BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
 
     // Timeout settings
     TIMEOUT: 30000,

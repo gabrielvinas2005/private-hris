@@ -143,7 +143,8 @@ export default {
       reviewData: null,
       reviewHeader: null,
       breadcrumbs: [
-        { name: 'Leave & Time Management', path: '/leave-time' },
+        { name: 'Dashboard', path: '/dashboard' },
+        { name: 'Time and Attendance', path: '/time-attendance' },
         { name: 'Rendered Service For Approval', path: '/service-rendered/for-approval' }
       ]
     }

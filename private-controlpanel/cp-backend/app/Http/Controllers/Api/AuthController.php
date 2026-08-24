@@ -51,8 +51,18 @@ class AuthController extends Controller
                     return $this->errorResponse('Account has expired', 401);
                 }
 
-                // For API testing, we'll create a simple token
-                // In production, you should use Laravel Sanctum
+                // Check Control Panel access permission
+                if (empty($user->with_cpm_access) && empty($user->is_admin)) {
+                    return $this->errorResponse('Access Denied: You do not have permission to access the Control Panel.', 403);
+                }
+
+                // Revoke all existing tokens to enforce single active session per user.
+                try {
+                    $user->tokens()->delete();
+                } catch (\Exception $revokeError) {
+                    \Illuminate\Support\Facades\Log::warning('Could not revoke existing tokens on CP login: ' . $revokeError->getMessage());
+                }
+
                 $token = $user->createToken('api-token')->plainTextToken ?? 
                         hash('sha256', $user->id . time() . config('app.key'));
 
@@ -65,6 +75,8 @@ class AuthController extends Controller
                         'employee_no' => $user->employee_no,
                         'is_applicant' => (bool) ($user->is_applicant ?? false),
                         'has_change_password' => (bool) ($user->has_change_password ?? false),
+                        'with_cpm_access' => (bool) ($user->with_cpm_access ?? false),
+                        'is_admin' => (bool) ($user->is_admin ?? false),
                     ],
                     'token' => $token,
                     'token_type' => 'Bearer',
@@ -117,6 +129,18 @@ class AuthController extends Controller
                         return $this->errorResponse('Account has expired', 401);
                     }
 
+                    // Check Control Panel access permission
+                    if (empty($user->with_cpm_access) && empty($user->is_admin)) {
+                        return $this->errorResponse('Access Denied: You do not have permission to access the Control Panel.', 403);
+                    }
+
+                    // Revoke all existing tokens to enforce single active session.
+                    try {
+                        $user->tokens()->delete();
+                    } catch (\Exception $revokeError) {
+                        \Illuminate\Support\Facades\Log::warning('Could not revoke existing tokens on CP login: ' . $revokeError->getMessage());
+                    }
+
                     $token = $user->createToken('api-token')->plainTextToken ??
                             hash('sha256', $user->id . time() . config('app.key'));
 
@@ -128,6 +152,8 @@ class AuthController extends Controller
                             'employee_no' => $user->employee_no,
                             'is_applicant' => (bool) ($user->is_applicant ?? false),
                             'has_change_password' => (bool) ($user->has_change_password ?? false),
+                            'with_cpm_access' => (bool) ($user->with_cpm_access ?? false),
+                            'is_admin' => (bool) ($user->is_admin ?? false),
                         ],
                         'token' => $token,
                         'token_type' => 'Bearer',
@@ -203,8 +229,10 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'employee_no' => $user->employee_no,
-                    'is_applicant' => $user->is_applicant,
+                    'is_applicant' => (bool) ($user->is_applicant ?? false),
                     'active' => $user->active,
+                    'with_cpm_access' => (bool) ($user->with_cpm_access ?? false),
+                    'is_admin' => (bool) ($user->is_admin ?? false),
                 ]
             ], 'Profile retrieved successfully');
 
@@ -276,6 +304,11 @@ class AuthController extends Controller
                 return $this->errorResponse('Account has expired', 401);
             }
 
+            // Check Control Panel access permission
+            if (empty($user->with_cpm_access) && empty($user->is_admin)) {
+                return $this->errorResponse('Access Denied: You do not have permission to access the Control Panel.', 403);
+            }
+
             // Log in the user
             Auth::login($user);
 
@@ -292,6 +325,8 @@ class AuthController extends Controller
                     'employee_no' => $user->employee_no,
                     'is_applicant' => (bool) ($user->is_applicant ?? false),
                     'has_change_password' => (bool) ($user->has_change_password ?? false),
+                    'with_cpm_access' => (bool) ($user->with_cpm_access ?? false),
+                    'is_admin' => (bool) ($user->is_admin ?? false),
                 ],
                 'token' => $token,
                 'token_type' => 'Bearer',

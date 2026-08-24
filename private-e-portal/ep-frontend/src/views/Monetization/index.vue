@@ -150,7 +150,7 @@ export default {
     return {
       breadcrumbs: [
         { name: 'Dashboard', path: '/dashboard' },
-        { name: 'Leave & Time Management', path: '/leave-time' },
+        { name: 'Leave Management', path: '/leave-management' },
         { name: 'Leave Monetization', path: '/leave-monetization' }
       ],
       state,

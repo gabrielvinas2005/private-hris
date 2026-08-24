@@ -281,7 +281,8 @@ export default {
       formDefaults: defaultForm(),
       form: defaultForm(),
       breadcrumbs: [
-        { name: 'Leave & Time Management', path: '/leave-time' },
+        { name: 'Dashboard', path: '/dashboard' },
+        { name: 'Time and Attendance', path: '/time-attendance' },
         { name: 'Service Rendered Application', path: '/service-rendered/application' }
       ],
       rules: {

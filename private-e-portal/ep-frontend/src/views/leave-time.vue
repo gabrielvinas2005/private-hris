@@ -280,12 +280,7 @@ export default {
     }
   },
   async mounted() {
-    await Promise.all([
-      this.loadCosAccomplishmentAccess(),
-      this.loadDtrApproverAccess(),
-      this.loadAccomplishmentApproverAccess(),
-      this.loadRenderedServiceApproverAccess()
-    ])
+    this.$router.replace('/leave-management')
   },
   methods: {
     async loadDtrApproverAccess() {

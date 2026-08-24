@@ -99,7 +99,7 @@ const allCards = [
     icon: 'Clock',
     submodules: [
       'Overtime Types', 'Holiday Types', 'Holidays', 'Leave Types', 
-      'Official Business Types', 'Time Keeping Setup', 'Biometric Setup', 'Approvers Setup'
+      'Official Business Types', 'Logging Options', 'Biometric Setup', 'Approvers Setup'
     ]
   },
   {
@@ -110,7 +110,7 @@ const allCards = [
     icon: 'Money',
     submodules: [
       'Salary Schedule Setup', 'Tax Table Setup', 'HDMF Table Setup', 'Philhealth Table Setup',
-      'GSIS Table Setup', 'Salary Step Setup', 'Salary Grade Setup', 'Income Setup',
+      'SSS Table Setup', 'Salary Step Setup', 'Salary Grade Setup', 'Income Setup',
       'Deduction Setup', 'Deduction Priority Setup', 'Payroll Interval Setup', 'Payroll Cut-off Setup',
       'Loyalty Award Setup', 'Uniform and Clothing Allowance Setup', 'RATA Positions Setup',
       'RATA Table Setup', 'Hazard Pay Setup', 'Overtime Tax Table Setup', 'Mid Year Bonus Table Setup',
@@ -275,8 +275,8 @@ const allCards = [
   },
   {
     to: '/timekeeping-setup/time-keeping',
-    title: 'Time Keeping Setup',
-    description: 'Configure time tracking and attendance systems',
+    title: 'Logging Options',
+    description: 'Configure time in and attendance logging options',
     gradient: 'linear-gradient(135deg,#f59e0b,#f97316)'
   },
   {
@@ -322,9 +322,9 @@ const allCards = [
     icon: 'Document'
   },
   {
-    to: '/payroll-setup/GSIS Table Setup',
-    title: 'GSIS Table Setup',
-    description: 'Configure Government Service Insurance System tables',
+    to: '/payroll-setup/SSS Table Setup',
+    title: 'SSS Table Setup',
+    description: 'Configure Social Security System tables and contributions',
     gradient: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
     icon: 'Document'
   },

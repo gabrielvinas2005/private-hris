@@ -30,11 +30,18 @@ class DashboardController extends Controller
     public function index($id)
     {
         try {
-            // Get employee ID from user
+            // Get employee ID, position, and department from user
             $employee = DB::table('users as u')
                 ->join('employees as e', 'e.employee_no', '=', 'u.employee_no')
+                ->leftJoin('positions as p', 'p.id', '=', 'e.position_id')
+                ->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
                 ->where('u.id', $id)
-                ->select('e.id as employee_id', 'e.employee_no')
+                ->select(
+                    'e.id as employee_id',
+                    'e.employee_no',
+                    'p.name as position',
+                    'd.name as department'
+                )
                 ->first();
 
             // Debug: Log the query result
@@ -61,15 +68,26 @@ class DashboardController extends Controller
             // Get overtime hours this month
             $overtimeHours = $this->getOvertimeHours($employeeId);
 
-            // Recent activity disabled per request
-            $recentActivity = [];
+            // Get latest payslip summary
+            $payslipSummary = $this->getLatestPayslipSummary($employeeId);
+
+            // Get recent announcements
+            $announcements = $this->getRecentAnnouncements($employeeId);
 
             return $this->successResponse([
+                'employee_info' => [
+                    'employee_id' => $employee->employee_id,
+                    'employee_no' => $employee->employee_no,
+                    'position' => $employee->position ?? null,
+                    'department' => $employee->department ?? null
+                ],
                 'leave_balance' => $leaveBalance,
                 'pending_requests' => $pendingRequests,
                 'work_hours' => $workHours,
                 'overtime_hours' => $overtimeHours,
-                'recent_activity' => $recentActivity
+                'payslip_summary' => $payslipSummary,
+                'announcements' => $announcements,
+                'recent_activity' => []
             ], 'Dashboard data retrieved successfully');
         } catch (\Exception $e) {
             return $this->serverErrorResponse('Failed to load dashboard data: ' . $e->getMessage());
@@ -203,7 +221,68 @@ class DashboardController extends Controller
         return round($overtimeHours, 1);
     }
 
-    // recent activity function removed per request
+    /**
+     * Get latest payslip summary for an employee
+     */
+    private function getLatestPayslipSummary($employeeId)
+    {
+        try {
+            $latest = DB::table('payroll_summaries as s')
+                ->join('payroll_periods as p', 'p.id', '=', 's.payroll_period_id')
+                ->join('payroll_intervals as i', 'i.id', '=', 'p.payroll_interval_id')
+                ->where('s.employee_id', $employeeId)
+                ->where('p.active', 1)
+                ->where('p.posted', 1)
+                ->orderBy('p.release_date', 'desc')
+                ->select(
+                    'p.release_date',
+                    'i.name as interval_name',
+                    's.gross_pay',
+                    's.total_deductions',
+                    's.net_pay'
+                )
+                ->first();
+
+            return $latest ? [
+                'release_date' => $latest->release_date,
+                'interval' => $latest->interval_name,
+                'gross_pay' => (float)$latest->gross_pay,
+                'total_deductions' => (float)$latest->total_deductions,
+                'net_pay' => (float)$latest->net_pay
+            ] : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get recent announcements for employee
+     */
+    private function getRecentAnnouncements($employeeId)
+    {
+        try {
+            $table = \Illuminate\Support\Facades\Schema::hasTable('announcements') ? 'announcements' : (\Illuminate\Support\Facades\Schema::hasTable('announcement') ? 'announcement' : null);
+            if (!$table) return [];
+
+            return DB::table($table)
+                ->select(
+                    'id',
+                    'Title as title',
+                    DB::raw("Event as content"),
+                    DB::raw("Creted_at as created_at")
+                )
+                ->where(function ($q) use ($employeeId) {
+                    $q->where('employee_id', $employeeId)
+                       ->orWhereNull('employee_id')
+                       ->orWhere('employee_id', 0);
+                })
+                ->orderBy(DB::raw('Creted_at'), 'desc')
+                ->limit(5)
+                ->get();
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
 
     /**
      * Get human readable time ago

@@ -85,8 +85,15 @@ class AuthController extends Controller
                     return $this->errorResponse('Account has expired', 401);
                 }
 
-                // For API testing, we'll create a simple token
-                // In production, you should use Laravel Sanctum
+                // Revoke all existing tokens to enforce single active session per user.
+                // If another browser/device is logged in, it will get a 401 on the next request.
+                try {
+                    /** @var \Laravel\Sanctum\HasApiTokens $user */
+                    $user->tokens()->delete();
+                } catch (\Exception $revokeError) {
+                    Log::warning('Could not revoke existing tokens on login: ' . $revokeError->getMessage());
+                }
+
                 try {
                     /** @var \Laravel\Sanctum\HasApiTokens $user */
                     $token = $user->createToken('api-token')->plainTextToken;
@@ -102,6 +109,7 @@ class AuthController extends Controller
                         'id' => $user->id,
                         'name' => $user->name,
                         'email' => $user->email,
+                        'photo' => $user->photo,
                         'employee_no' => $user->employee_no,
                         'is_applicant' => (bool) ($user->is_applicant ?? false),
                         'has_change_password' => (bool) ($user->has_change_password ?? false),
@@ -129,9 +137,9 @@ class AuthController extends Controller
                     // Send OTP via email - wrap in try-catch to handle email sending errors
                     try {
                         $userAccount = User::where('id', $user->id)->get();
-                        Log::info('Attempting to send OTP email to: ' . $user->email);
+                        Log::info('Attempting to send OTP email to: ' . $user->email . ' | DEV OTP CODE: ' . $otp);
                         Notification::send($userAccount, new EmailUserVerificationNotification($userAccount, $otp));
-                        Log::info('OTP email sent successfully to: ' . $user->email);
+                        Log::info('OTP email sent successfully to: ' . $user->email . ' | DEV OTP CODE: ' . $otp);
                     } catch (\Exception $emailError) {
                         // Log email error but don't fail the login
                         Log::error('Failed to send OTP email to ' . $user->email . ': ' . $emailError->getMessage());
@@ -191,6 +199,14 @@ class AuthController extends Controller
                     // Check if user has expired
                     if ($user->with_expiration && $user->expiration_date <= now()) {
                         return $this->errorResponse('Account has expired', 401);
+                    }
+
+                    // Revoke all existing tokens to enforce single active session.
+                    try {
+                        /** @var \Laravel\Sanctum\HasApiTokens $user */
+                        $user->tokens()->delete();
+                    } catch (\Exception $revokeError) {
+                        Log::warning('Could not revoke existing tokens on login: ' . $revokeError->getMessage());
                     }
 
                     try {
@@ -309,6 +325,7 @@ class AuthController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'photo' => $user->photo,
                     'employee_no' => $user->employee_no,
                     'is_applicant' => (bool) ($user->is_applicant ?? false),
                     'has_change_password' => (bool) ($user->has_change_password ?? false),
@@ -436,8 +453,9 @@ class AuthController extends Controller
             User::where('id', $user->id)->update(['otp_code' => $otpHash]);
 
             try {
-                $userAccount = User::where('id', $user->id)->get();
+                Log::info('Attempting to resend OTP email to: ' . $user->email . ' | DEV OTP CODE: ' . $otp);
                 Notification::send($userAccount, new EmailUserVerificationNotification($userAccount, $otp));
+                Log::info('Resent OTP email successfully to: ' . $user->email . ' | DEV OTP CODE: ' . $otp);
             } catch (\Exception $emailError) {
                 Log::error('Failed to send OTP email: ' . $emailError->getMessage());
 

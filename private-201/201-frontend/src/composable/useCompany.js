@@ -71,7 +71,7 @@ export function useCompany() {
     const company = result?.data?.[0] || primaryCompany.value
     const name = company?.name?.trim()
 
-    document.title = name ? `${name} - HRMP` : 'HR Module'
+    document.title = name ? `HR Module - ${name}` : 'HR Module'
 
     const logo = getLogoUrl(company)
     if (logo) {
