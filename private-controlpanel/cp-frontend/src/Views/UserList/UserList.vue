@@ -1,34 +1,32 @@
 <template>
   <MainLayout>
-    <template #header>
-      <div class="header">
-        <div class="title">User List</div>
-        <div class="header-actions">
-          <input v-model="query" class="search" placeholder="Search users..." />
-          <el-button type="primary" @click="showAddUserForm" icon="Plus">
-            Add Users
-          </el-button>
-        </div>
-      </div>
-    </template>
-
     <section class="toolbar">
       <div class="toolbar-left">
-        <el-select v-model="statusFilter" placeholder="Filter by status" clearable style="width: 180px">
+        <el-input 
+          v-model="query" 
+          placeholder="Search by name, email..." 
+          clearable 
+          style="width: 240px"
+          :prefix-icon="Search"
+        />
+        <el-select v-model="statusFilter" placeholder="Filter by status" clearable style="width: 160px">
           <el-option label="Active" value="active" />
           <el-option label="Locked" value="locked" />
           <el-option label="Expired" value="expired" />
         </el-select>
-        <el-select v-model="roleFilter" placeholder="Filter by role" clearable style="width: 150px">
+        <el-select v-model="roleFilter" placeholder="Filter by role" clearable style="width: 140px">
           <el-option label="Admin" value="admin" />
           <el-option label="User" value="user" />
         </el-select>
-        <el-button @click="toggleViewMode" :icon="viewMode === 'table' ? 'Grid' : 'List'">
+        <el-button @click="toggleViewMode" :icon="viewMode === 'table' ? Grid : List">
           {{ viewMode === 'table' ? 'Card View' : 'Table View' }}
         </el-button>
       </div>
       <div class="toolbar-right">
-        <el-button @click="refreshData" :loading="loading" icon="Refresh">
+        <el-button type="primary" @click="showAddUserForm" :icon="Plus" class="add-users-btn">
+          Add Users
+        </el-button>
+        <el-button @click="refreshData" :loading="loading" :icon="Refresh">
           Refresh
         </el-button>
       </div>
@@ -42,6 +40,7 @@
       :total-users="filteredUsers.length"
       @selection-change="handleSelectionChange"
       @access-rights="handleAccessRights"
+      @reset-password="resetUserPassword"
       @page-change="handlePageChange"
       @size-change="handleSizeChange"
     />
@@ -83,6 +82,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Refresh, Grid, List, Search } from '@element-plus/icons-vue'
 import MainLayout from '../../Layout/MainLayout.vue'
 import UserListTable from '../../components/UserList/UserListTable.vue'
 import UserCard from '../../components/UserList/UserCard.vue'
@@ -99,6 +99,7 @@ const {
   fetchUsers,
   fetchAvailableEmployees,
   addUsers,
+  resetUserPassword: resetPasswordComposable,
   filterUsers
 } = useUsers()
 
@@ -193,9 +194,33 @@ function toggleUserLock(user) {
   console.log('Toggle lock for user:', user)
 }
 
-function resetUserPassword(user) {
-  ElMessage.info('Password reset functionality will be available when backend route is implemented')
-  console.log('Reset password for user:', user)
+async function resetUserPassword(user) {
+  try {
+    const { value: newPassword } = await ElMessageBox.prompt(
+      `Enter new password for ${user.name || user.email} (Default: Password@123):`,
+      'Reset User Password',
+      {
+        confirmButtonText: 'Reset Password',
+        cancelButtonText: 'Cancel',
+        inputValue: 'Password@123',
+        inputPattern: /^.{6,}$/,
+        inputErrorMessage: 'Password must be at least 6 characters long'
+      }
+    )
+
+    if (newPassword) {
+      const res = await resetPasswordComposable(user.id, newPassword)
+      if (res.success) {
+        ElMessageBox.alert(
+          `Password for <strong>${user.name || user.email}</strong> has been successfully reset to: <code style="font-size: 15px; color: #409EFF; font-weight: bold;">${newPassword}</code>`,
+          'Password Reset Successful',
+          { dangerouslyUseHTMLString: true, type: 'success' }
+        )
+      }
+    }
+  } catch (action) {
+    // User cancelled prompt
+  }
 }
 
 function toggleViewMode() {

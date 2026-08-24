@@ -320,10 +320,10 @@ export default {
     },
     scheduleBannerTitle() {
       const map = {
-        wfh:      '🏠 Work-From-Home Day',
-        onsite:   '🏢 On-Site Day — Use Hardware Attendance Machine',
-        rest_day: '😴 Rest Day',
-        unknown:  'ℹ️ Schedule Not Configured'
+        wfh:      'Work-From-Home Day',
+        onsite:   'On-Site Day — Use Hardware Attendance Machine',
+        rest_day: 'Rest Day',
+        unknown:  'Schedule Not Configured'
       }
       return map[this.workingMode] ?? 'Loading Schedule...'
     },

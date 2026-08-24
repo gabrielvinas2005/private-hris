@@ -253,6 +253,7 @@ export default {
         if (payload.token) {
           localStorage.setItem('auth_token', payload.token)
           localStorage.setItem('session_start_time', Date.now().toString())
+          sessionStorage.setItem('ep_just_logged_in', 'true')
         }
 
         if (payload.temp_token) {

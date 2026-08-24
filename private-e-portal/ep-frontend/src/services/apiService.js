@@ -19,6 +19,19 @@ export const downloadablesApiService = {
         document.body.appendChild(link)
         link.click()
         link.parentElement.removeChild(link)
+    },
+
+    async previewFile(id) {
+        const response = await apiClient.get(`/downloadables/${id}/preview`, {
+            responseType: 'blob'
+        })
+        const contentType = response.headers['content-type'] || 'application/octet-stream'
+        const blob = new Blob([response.data], { type: contentType })
+        return {
+            url: window.URL.createObjectURL(blob),
+            contentType,
+            size: response.data.size
+        }
     }
 }
 

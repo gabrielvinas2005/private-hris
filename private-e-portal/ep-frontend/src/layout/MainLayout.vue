@@ -11,10 +11,10 @@
       <!-- Sidebar Header -->
       <div :class="[isDarkMode ? 'border-white/[0.06]' : 'border-slate-200/70', 'px-6 py-8 border-b']">
         <div class="flex flex-col items-center text-center space-y-3">
-          <div v-if="companyLogo" :class="[isDarkMode ? 'bg-white/10' : 'bg-slate-100 border border-slate-200/70', 'flex items-center justify-center overflow-hidden w-12 h-12 rounded-2xl']">
+          <div v-if="companyLogo" :class="[isDarkMode ? 'bg-white/10' : 'bg-slate-100 border border-slate-200/70', 'flex items-center justify-center overflow-hidden w-12 h-12 rounded-3xl']">
             <img :src="companyLogo" :alt="companyName" class="object-contain w-full h-full" />
           </div>
-          <div v-else class="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#4A6CFB] to-[#22308F] text-white font-bold text-lg tracking-tight shadow-lg shadow-[#3B5EFF]/30">
+          <div v-else class="flex items-center justify-center w-12 h-12 rounded-3xl bg-gradient-to-br from-[#4A6CFB] to-[#22308F] text-white font-bold text-lg tracking-tight shadow-lg shadow-[#3B5EFF]/30">
             HR
           </div>
           <div v-if="!isSidebarCollapsed" class="min-w-0 w-full">
@@ -657,7 +657,7 @@
       <div v-if="showLogoutGuardModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-slate-800 space-y-4">
           <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-xl">
-            ⚠️
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
           </div>
           <div>
             <h3 class="text-lg font-bold text-slate-900">Clock Out Before Signing Out?</h3>
@@ -917,8 +917,16 @@ export default {
       document.addEventListener(evt, this._boundResetInactivity, { passive: true })
     })
     this.resetInactivityTimer()
+
+    // Login Clock-In status reminder & real-time update listener
+    this.checkLoginClockReminder()
+    this._boundDtrUpdated = () => this.checkLoginClockReminder(true)
+    window.addEventListener('dtr-updated', this._boundDtrUpdated)
   },
   beforeUnmount() {
+    if (this._boundDtrUpdated) {
+      window.removeEventListener('dtr-updated', this._boundDtrUpdated)
+    }
     document.removeEventListener('click', this.handleClickOutside)
     window.removeEventListener('profile-photo-updated', this.handlePhotoUpdated)
     // Clear notification interval
@@ -939,6 +947,58 @@ export default {
     }
   },
   methods: {
+    async checkLoginClockReminder(isUpdateOnly = false) {
+      const userId = this.userData?.id || JSON.parse(localStorage.getItem('user_data') || '{}').id
+      if (!userId) return
+
+      try {
+        const { dtrApiService } = await import('../services/apiService.js')
+        const res = await dtrApiService.getTodayStatus(userId)
+        const statusData = res?.data || res
+
+        if (statusData) {
+          const isClockedIn = Boolean(
+            statusData.is_clocked_in ||
+            statusData.status === 'Clocked In' ||
+            (statusData.am_in && !statusData.am_out) ||
+            (statusData.pm_in && !statusData.pm_out)
+          )
+          localStorage.setItem('is_clocked_in', isClockedIn ? 'true' : 'false')
+
+          if (isUpdateOnly) return
+
+          const isJustLoggedIn = sessionStorage.getItem('ep_just_logged_in') === 'true'
+          const isRemindedThisSession = sessionStorage.getItem('login_clock_reminded') === 'true'
+
+          if (isJustLoggedIn || !isRemindedThisSession) {
+            sessionStorage.removeItem('ep_just_logged_in')
+            sessionStorage.setItem('login_clock_reminded', 'true')
+
+            const { useToast } = await import('vue-toastification')
+            const toast = useToast()
+
+            if (statusData.is_work_suspended || statusData.status === 'Work Suspended') {
+              const reason = statusData.work_suspension_reason ? `: ${statusData.work_suspension_reason}` : ''
+              toast.info(`Work Suspension Notice: Work is suspended today${reason}. Stay safe!`, { timeout: 10000 })
+            } else if (statusData.is_missed_log || statusData.status === 'Missed Log') {
+              toast.warning('Attendance Alert: You have an unclosed punch / missed log from your previous shift.', { timeout: 8000 })
+            } else if (statusData.is_late_for_clockin || (statusData.schedule_warning && !isClockedIn)) {
+              toast.error(statusData.schedule_warning || `Schedule Warning: You have NOT clocked in according to your schedule today! Scheduled start was ${statusData.scheduled_start_time || '08:00 AM'}.`, { timeout: 10000 })
+            } else if (statusData.schedule_warning && isClockedIn) {
+              toast.warning(statusData.schedule_warning, { timeout: 8000 })
+            } else if (isClockedIn) {
+              const timeLog = statusData.am_in || statusData.pm_in || ''
+              toast.success(`Clock-In Status: You are currently CLOCKED IN today${timeLog ? ' (Logged: ' + timeLog + ')' : ''}. Have a productive shift!`, { timeout: 7000 })
+            } else {
+              toast.info(`Attendance Reminder: You have NOT clocked in yet today (${statusData.today_date || 'Today'}). Please remember to log your attendance!`, { timeout: 8000 })
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch attendance status for reminder:', err)
+      }
+    },
+
     // ── Session Auto-Logout & Inactivity Control ─────────────────────────────
     checkIsClockedIn() {
       return (

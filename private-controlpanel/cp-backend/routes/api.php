@@ -716,6 +716,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // User List
     Route::get('/users', 'UsersController@index');
     Route::post('/users', 'UsersController@store');
+    Route::post('/users/reset-password', 'UsersController@resetPassword');
 
     // User List Access Rights
     Route::get('/access-rights/{id}', 'AccessRightsController@index');

@@ -22,6 +22,36 @@
       </div>
     </div>
 
+    <!-- Work Suspension Alert Banner -->
+    <div
+      v-if="isWorkSuspended"
+      class="mb-3 p-2.5 px-3.5 rounded-xl border bg-indigo-50 border-indigo-200 text-indigo-900 flex items-center justify-between text-xs font-semibold shadow-xs"
+    >
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0v-5a2 2 0 012-2h2a2 2 0 012 2v5m-6 0h6" />
+        </svg>
+        <div>
+          <span class="font-bold">Work Suspended Today</span>
+          <span v-if="workSuspensionReason" class="font-normal block text-[11px] text-indigo-700">{{ workSuspensionReason }}</span>
+        </div>
+      </div>
+      <span v-if="workSuspensionWithPay" class="px-2 py-0.5 text-[10px] font-extrabold bg-emerald-100 text-emerald-800 rounded-full">WITH PAY</span>
+    </div>
+
+    <!-- Schedule Warning / Late Clock-In Alert Banner -->
+    <div
+      v-if="!isWorkSuspended && (scheduleWarning || isLateForClockin)"
+      class="mb-3 p-2.5 px-3.5 rounded-xl border bg-rose-50 border-rose-200 text-rose-800 flex items-center justify-between text-xs font-semibold shadow-xs"
+    >
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-rose-600 flex-shrink-0 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span>{{ scheduleWarning || 'Schedule Warning: You have not logged in according to your schedule today!' }}</span>
+      </div>
+    </div>
+
     <!-- 4 Punch Time Cells -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-3">
       <!-- AM IN -->
@@ -73,7 +103,13 @@
     <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2.5 border-t border-slate-100">
       <div class="flex items-center gap-1.5">
         <span class="text-[11px] font-semibold text-slate-500">Flags Today:</span>
-        <span v-if="!isLate && !isUndertime && !isMissedLog" class="text-[11px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
+        <span v-if="isWorkSuspended" class="text-[11px] bg-purple-100 text-purple-900 font-extrabold px-2.5 py-0.5 rounded-full border border-purple-300 shadow-2xs inline-flex items-center gap-1">
+          <svg class="w-3 h-3 text-purple-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0v-5a2 2 0 012-2h2a2 2 0 012 2v5m-6 0h6" />
+          </svg>
+          <span>Work Suspended</span>
+        </span>
+        <span v-else-if="!isLate && !isUndertime && !isMissedLog" class="text-[11px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">
           No Exceptions
         </span>
         <span v-if="isLate" class="text-[11px] bg-amber-50 text-amber-700 font-bold px-2 py-0.5 rounded-full border border-amber-200">
@@ -112,7 +148,12 @@ export default {
     workHours: { type: [Number, String], default: 0 },
     isLate: { type: Boolean, default: false },
     isUndertime: { type: Boolean, default: false },
-    isMissedLog: { type: Boolean, default: false }
+    isMissedLog: { type: Boolean, default: false },
+    scheduleWarning: { type: String, default: null },
+    isLateForClockin: { type: Boolean, default: false },
+    isWorkSuspended: { type: Boolean, default: false },
+    workSuspensionReason: { type: String, default: null },
+    workSuspensionWithPay: { type: Boolean, default: false }
   },
   emits: ['request-correction'],
   data() {

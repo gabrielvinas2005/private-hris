@@ -224,9 +224,9 @@ class ApiService {
     //   return this.patch(`/users/${userId}/toggle-lock`)
     // }
 
-    // async resetUserPassword(userId) {
-    //   return this.post(`/users/${userId}/reset-password`)
-    // }
+    async resetUserPassword(userId, newPassword = null) {
+        return this.post('/users/reset-password', { user_id: userId, new_password: newPassword })
+    }
 
     // Employee methods
     async getAvailableEmployees() {

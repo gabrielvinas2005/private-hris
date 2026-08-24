@@ -93,7 +93,13 @@
           <!-- Right: Setup Mode Badge -->
           <div>
             <span
-              v-if="day.isRestDay"
+              v-if="day.isWorkSuspended"
+              class="text-[9px] px-1.5 py-0.5 rounded-md font-extrabold bg-purple-100 text-purple-900 border border-purple-300 shadow-xs"
+            >
+              Suspended
+            </span>
+            <span
+              v-else-if="day.isRestDay"
               class="text-[9px] px-1.5 py-0.5 rounded-md font-medium bg-slate-100 text-slate-400 border border-slate-200/80"
             >
               Rest Day
@@ -117,8 +123,8 @@
 
     <!-- Footer Summary -->
     <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-      <span class="font-medium">5 Work Days Scheduled</span>
-      <span class="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">40.0 hrs total</span>
+      <span class="font-medium">{{ scheduledSummary.summaryText }}</span>
+      <span class="font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">{{ scheduledSummary.totalHours }} hrs total</span>
     </div>
   </div>
 </template>
@@ -131,13 +137,26 @@ export default {
     scheduleWindow: { type: String, default: '08:00 AM - 05:00 PM' },
     setupType: { type: String, default: 'on_site' },
     isWfhToday: { type: Boolean, default: false },
-    weeklySchedule: { type: Array, default: () => [] }
+    weeklySchedule: { type: Array, default: () => [] },
+    workCancellations: { type: Array, default: () => [] }
   },
   data() {
     return {
       weekDays: [],
       weekRangeText: '',
       weekOffset: 0
+    }
+  },
+  computed: {
+    scheduledSummary() {
+      const activeWorkDays = this.weekDays.filter(d => !d.isRestDay && !d.isWorkSuspended).length
+      const suspendedDays = this.weekDays.filter(d => !d.isRestDay && d.isWorkSuspended).length
+      const totalHours = (activeWorkDays * 8).toFixed(1)
+      let summaryText = `${activeWorkDays} Work Days Scheduled`
+      if (suspendedDays > 0) {
+        summaryText += ` (${suspendedDays} Suspended)`
+      }
+      return { summaryText, totalHours }
     }
   },
   watch: {
@@ -148,6 +167,12 @@ export default {
       this.buildWeekDays()
     },
     weeklySchedule: {
+      deep: true,
+      handler() {
+        this.buildWeekDays()
+      }
+    },
+    workCancellations: {
       deep: true,
       handler() {
         this.buildWeekDays()
@@ -189,7 +214,12 @@ export default {
         const d = new Date(monday)
         d.setDate(monday.getDate() + i)
 
-        const dateStr = d.toISOString().split('T')[0]
+        // Format YYYY-MM-DD in local time
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const dateDay = String(d.getDate()).padStart(2, '0')
+        const dateStr = `${year}-${month}-${dateDay}`
+
         const isToday = d.toDateString() === now.toDateString()
         const dayId = i + 1 // 1 = Monday ... 7 = Sunday
 
@@ -199,7 +229,28 @@ export default {
         let isWfh = false
         let timeWindow = isRestDay ? 'Rest Day' : (this.scheduleWindow || '08:00 AM - 05:00 PM')
 
-        if (detail) {
+        // Check for active Work Suspension / Cancellation on this date
+        const currentMs = new Date(year, d.getMonth(), d.getDate()).setHours(0,0,0,0)
+
+        const wcMatch = (this.workCancellations || []).find(wc => {
+          if (!wc.date_from || !wc.date_to) return false
+          try {
+            const fromStr = String(wc.date_from).substring(0, 10)
+            const toStr = String(wc.date_to).substring(0, 10)
+            const fromMs = new Date(`${fromStr}T00:00:00`).setHours(0,0,0,0)
+            const toMs = new Date(`${toStr}T23:59:59`).setHours(23,59,59,999)
+            return currentMs >= fromMs && currentMs <= toMs
+          } catch (_) {
+            return false
+          }
+        })
+
+        const isWorkSuspended = Boolean(wcMatch)
+        const workSuspensionReason = wcMatch?.reason || 'Work Suspended'
+
+        if (isWorkSuspended) {
+          timeWindow = `Suspended (${workSuspensionReason})`
+        } else if (detail) {
           isRestDay = !!detail.is_restday
           isWfh = !!detail.is_wfh
           timeWindow = detail.time_window || (isRestDay ? 'Rest Day' : '08:00 AM - 05:00 PM')
@@ -214,6 +265,8 @@ export default {
           dayNum: d.getDate(),
           isToday,
           isRestDay,
+          isWorkSuspended,
+          workSuspensionReason,
           timeWindow,
           isWfh
         })

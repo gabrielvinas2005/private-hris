@@ -30,11 +30,18 @@ class DashboardController extends Controller
     public function index($id)
     {
         try {
-            // Get employee ID from user
+            // Get employee ID, position, and department from user
             $employee = DB::table('users as u')
                 ->join('employees as e', 'e.employee_no', '=', 'u.employee_no')
+                ->leftJoin('positions as p', 'p.id', '=', 'e.position_id')
+                ->leftJoin('departments as d', 'd.id', '=', 'e.department_id')
                 ->where('u.id', $id)
-                ->select('e.id as employee_id', 'e.employee_no')
+                ->select(
+                    'e.id as employee_id',
+                    'e.employee_no',
+                    'p.name as position',
+                    'd.name as department'
+                )
                 ->first();
 
             // Debug: Log the query result
@@ -68,13 +75,19 @@ class DashboardController extends Controller
             $announcements = $this->getRecentAnnouncements($employeeId);
 
             return $this->successResponse([
+                'employee_info' => [
+                    'employee_id' => $employee->employee_id,
+                    'employee_no' => $employee->employee_no,
+                    'position' => $employee->position ?? null,
+                    'department' => $employee->department ?? null
+                ],
                 'leave_balance' => $leaveBalance,
                 'pending_requests' => $pendingRequests,
                 'work_hours' => $workHours,
                 'overtime_hours' => $overtimeHours,
                 'payslip_summary' => $payslipSummary,
                 'announcements' => $announcements,
-                'recent_activity' => $recentActivity
+                'recent_activity' => []
             ], 'Dashboard data retrieved successfully');
         } catch (\Exception $e) {
             return $this->serverErrorResponse('Failed to load dashboard data: ' . $e->getMessage());

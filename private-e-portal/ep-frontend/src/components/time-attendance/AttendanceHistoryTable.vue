@@ -30,8 +30,24 @@
           />
         </el-select>
 
-        <!-- Action Buttons: Preview & Download DTR PDF -->
+        <!-- Action Buttons: Refresh, Preview & Download DTR PDF -->
         <div class="flex items-center gap-2">
+          <el-button
+            type="default"
+            plain
+            :loading="loading"
+            @click="fetchPeriodDTR"
+            class="!rounded-xl font-semibold shadow-sm"
+            title="Refresh Attendance History"
+          >
+            <template #icon>
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </template>
+            Refresh
+          </el-button>
+
           <el-button
             type="info"
             plain
@@ -92,7 +108,7 @@
         <el-table-column label="Day Type" width="130">
           <template #default="{ row }">
             <span :class="dayTypeBadgeClass(row)" class="px-2.5 py-1 rounded-full text-[11px] font-bold inline-block">
-              {{ row.day_type_label || (row.is_holiday ? 'Holiday' : (row.is_restday ? 'Rest Day' : (row.is_ob ? 'Official Travel' : 'Regular'))) }}
+              {{ (row.is_work_suspended || (row.remarks && (row.remarks.toLowerCase().includes('suspended') || row.remarks.toLowerCase().includes('cancellation')))) ? 'Work Suspended' : (row.day_type_label || (row.is_holiday ? 'Holiday' : (row.is_restday ? 'Rest Day' : (row.is_ob ? 'Official Travel' : 'Regular')))) }}
             </span>
           </template>
         </el-table-column>
@@ -221,7 +237,7 @@ import { useToast } from 'vue-toastification'
 export default {
   name: 'AttendanceHistoryTable',
   props: {
-    employeeId: { type: [Number, String], required: true }
+    employeeId: { type: [Number, String], default: null }
   },
   data() {
     return {
@@ -267,6 +283,26 @@ export default {
   },
   async mounted() {
     await this.loadPayrollPeriods()
+    this.boundFetchDTR = () => {
+      this.fetchPeriodDTR()
+    }
+    window.addEventListener('dtr-updated', this.boundFetchDTR)
+    window.addEventListener('focus', this.boundFetchDTR)
+    this.refreshTimer = setInterval(() => {
+      if (this.selectedPayrollPeriod) {
+        this.fetchPeriodDTR()
+      }
+    }, 25000)
+  },
+  beforeUnmount() {
+    if (this.boundFetchDTR) {
+      window.removeEventListener('dtr-updated', this.boundFetchDTR)
+      window.removeEventListener('focus', this.boundFetchDTR)
+    }
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer)
+    }
+    this.cleanupPdfPreview()
   },
   methods: {
     formatWorkHours(val) {
@@ -308,6 +344,11 @@ export default {
       return val
     },
     async loadPayrollPeriods() {
+      if (!this.employeeId) {
+        this.payrollPeriods = []
+        this.tableRows = []
+        return
+      }
       try {
         const { dtrApiService } = await import('../../services/apiService.js')
         const response = await dtrApiService.getDTRApplicationPayrollPeriods(this.employeeId)
@@ -342,6 +383,7 @@ export default {
       }
     },
     dayTypeBadgeClass(row) {
+      if (row.is_work_suspended || (row.remarks && (row.remarks.toLowerCase().includes('suspended') || row.remarks.toLowerCase().includes('cancellation')))) return 'bg-purple-100 text-purple-900 border border-purple-300 font-bold'
       if (row.is_holiday || row.holiday) return 'bg-blue-100 text-blue-800'
       if (row.is_restday || row.rest_day) return 'bg-indigo-100 text-indigo-800'
       if (row.leave || row.is_leave) return 'bg-sky-100 text-sky-800'

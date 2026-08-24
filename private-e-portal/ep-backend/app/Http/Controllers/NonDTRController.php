@@ -839,7 +839,7 @@ class NonDTRController extends Controller
             }
 
             if (!$user) {
-                return response('<html><body style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;background:#f5f5f5;"><div style="text-align:center;padding:2rem;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);"><h2 style="color:#e74c3c;margin-bottom:1rem;">⚠ Authentication Required</h2><p style="color:#666;">Please log in to view this file.</p><p style="margin-top:1rem;"><a href="/" style="color:#3498db;text-decoration:none;">Go to Login</a></p></div></body></html>', 401)
+                return response('<html><body style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;background:#f5f5f5;"><div style="text-align:center;padding:2rem;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);"><h2 style="color:#e74c3c;margin-bottom:1rem;">Authentication Required</h2><p style="color:#666;">Please log in to view this file.</p><p style="margin-top:1rem;"><a href="/" style="color:#3498db;text-decoration:none;">Go to Login</a></p></div></body></html>', 401)
                     ->header('Content-Type', 'text/html');
             }
 

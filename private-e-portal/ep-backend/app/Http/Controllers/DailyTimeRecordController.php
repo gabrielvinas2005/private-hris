@@ -270,6 +270,49 @@ class DailyTimeRecordController extends Controller
                         $q->where('payroll_period_id', 0)->orWhereNull('payroll_period_id');
                     })
                     ->update(['payroll_period_id' => $payroll_period_id]);
+
+                // Auto-sync active work cancellations into time_data records for this period
+                $periodCancellations = DB::table('work_cancellations')
+                    ->whereDate('date_from', '<=', $payroll_period->attendance_end_date)
+                    ->whereDate('date_to', '>=', $payroll_period->attendance_start_date)
+                    ->get();
+
+                foreach ($periodCancellations as $wc) {
+                    $wcStart = Carbon::parse($wc->date_from)->max(Carbon::parse($payroll_period->attendance_start_date));
+                    $wcEnd = Carbon::parse($wc->date_to)->min(Carbon::parse($payroll_period->attendance_end_date));
+                    $wcReasonStr = 'Work Suspended (' . ($wc->reason ?: 'Work Cancellation') . ')';
+
+                    $curr = $wcStart->copy();
+                    while ($curr->lte($wcEnd)) {
+                        $cDate = $curr->format('Y-m-d');
+                        $tRec = DB::table('time_data')
+                            ->where('employee_id', $id)
+                            ->whereDate('date', $cDate)
+                            ->first();
+
+                        if ($tRec) {
+                            if (empty($tRec->remarks) || (strpos($tRec->remarks, 'Work Suspended') === false && strpos($tRec->remarks, $wc->reason) === false)) {
+                                $nRem = empty($tRec->remarks) ? $wcReasonStr : ($tRec->remarks . ' & ' . $wcReasonStr);
+                                DB::table('time_data')->where('id', $tRec->id)->update([
+                                    'remarks' => $nRem,
+                                    'absent' => 0
+                                ]);
+                            }
+                        } else {
+                            DB::table('time_data')->insert([
+                                'employee_id' => $id,
+                                'date' => $cDate,
+                                'payroll_period_id' => $payroll_period_id,
+                                'work_hours' => 0,
+                                'late' => 0,
+                                'undertime' => 0,
+                                'absent' => 0,
+                                'remarks' => $wcReasonStr
+                            ]);
+                        }
+                        $curr->addDay();
+                    }
+                }
             }
 
         // get daily time records
@@ -335,9 +378,47 @@ class DailyTimeRecordController extends Controller
             $payroll_period
         );
 
+        $startDate = $displayPeriod['attendance_start_date'] ?? null;
+        $endDate = $displayPeriod['attendance_end_date'] ?? null;
+
+        $workCancellations = collect([]);
+        if ($startDate && $endDate) {
+            $workCancellations = DB::table('work_cancellations')
+                ->where('date_from', '<=', $endDate)
+                ->where('date_to', '>=', $startDate)
+                ->get();
+        }
+
         foreach ($daily_time_records as $record) {
             $record->attendance_start_date = $displayPeriod['attendance_start_date'] ?? $record->attendance_start_date;
             $record->attendance_end_date = $displayPeriod['attendance_end_date'] ?? $record->attendance_end_date;
+
+            $recordDate = $record->date ? Carbon::parse($record->date)->format('Y-m-d') : null;
+            if ($recordDate) {
+                $wcMatch = $workCancellations->first(function($wc) use ($recordDate) {
+                    return $recordDate >= $wc->date_from && $recordDate <= $wc->date_to;
+                });
+
+                if ($wcMatch) {
+                    $record->is_work_suspended = true;
+                    $record->work_suspension_reason = $wcMatch->reason;
+                    $record->work_suspension_with_pay = filter_var($wcMatch->with_pay ?? false, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) || (int)($wcMatch->with_pay ?? 0) === 1;
+
+                    $wcReasonStr = "Work Suspended (" . $wcMatch->reason . ")";
+                    if (empty($record->remarks)) {
+                        $record->remarks = $wcReasonStr;
+                    } elseif (strpos($record->remarks, $wcMatch->reason) === false && strpos($record->remarks, 'Work Suspended') === false) {
+                        $record->remarks = $record->remarks . ' & ' . $wcReasonStr;
+                    }
+
+                    // Zero out unexcused absence if employee had no punches during work suspension
+                    if (empty($record->am_in) && empty($record->pm_in)) {
+                        $record->absent = 0;
+                    }
+                } else {
+                    $record->is_work_suspended = false;
+                }
+            }
         }
 
         // get totals
@@ -969,12 +1050,9 @@ class DailyTimeRecordController extends Controller
         try {
             $request->validate([
                 'payroll_period_id' => 'required|integer|min:1',
-                'dtr_attachment' => 'required|file|max:10240',
+                'dtr_attachment'   => 'nullable|file|max:10240',
+                'attachment'       => 'nullable|file|max:10240',
             ]);
-
-            if (!$this->employeeHasDtrApprover($employeeId)) {
-                return $this->errorResponse('You cannot apply for DTR correction. No approver has been configured for DTR applications.', 400);
-            }
 
             $pending = DB::table('time_data_request')
                 ->where(['employee_id' => $employeeId, 'status' => 0])
@@ -996,15 +1074,20 @@ class DailyTimeRecordController extends Controller
                 return $this->errorResponse('Invalid payroll period selected for your employment type.', 400);
             }
 
-            $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xlsx', 'xls'];
-            $file = $request->file('dtr_attachment');
-            $extension = strtolower($file->getClientOriginalExtension());
+            $file = $request->file('dtr_attachment') ?? $request->file('attachment');
+            $fileName = null;
+            $extension = null;
 
-            if (!in_array($extension, $allowedExtensions)) {
-                return $this->errorResponse('Invalid file type. Allowed: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX.', 400);
+            if ($file) {
+                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xlsx', 'xls'];
+                $extension = strtolower($file->getClientOriginalExtension());
+
+                if (!in_array($extension, $allowedExtensions)) {
+                    return $this->errorResponse('Invalid file type. Allowed: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX.', 400);
+                }
+
+                $fileName = $file->getClientOriginalName();
             }
-
-            $fileName = $file->getClientOriginalName();
 
             $requestId = DB::table('time_data_request')->insertGetId([
                 'employee_id' => $employeeId,
@@ -1029,12 +1112,12 @@ class DailyTimeRecordController extends Controller
                 'updated_at' => now(),
             ]);
 
-            $storageName = 'DOCS_REQ' . $employeeId . $requestId . '_' . $fileName;
-            $filePath = Storage::disk('local')->getAdapter()->getPathPrefix() . 'employee_DTR_documents\\' . $storageName;
-
-            DB::table('time_data_request')->where('id', $requestId)->update(['path' => $filePath]);
-
-            $file->storeAs('employee_DTR_documents', $storageName);
+            if ($file && $fileName) {
+                $storageName = 'DOCS_REQ' . $employeeId . $requestId . '_' . $fileName;
+                $filePath = Storage::disk('local')->getAdapter()->getPathPrefix() . 'employee_DTR_documents\\' . $storageName;
+                DB::table('time_data_request')->where('id', $requestId)->update(['path' => $filePath]);
+                $file->storeAs('employee_DTR_documents', $storageName);
+            }
 
             return $this->successResponse(['id' => $requestId], 'DTR application submitted for approval.');
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -3212,6 +3295,53 @@ class DailyTimeRecordController extends Controller
             $pmIn  = $todayRecord->pm_in ?? null;
             $pmOut = $todayRecord->pm_out ?? null;
 
+            // Check for Work Suspension / Cancellation today
+            $workSuspension = DB::table('work_cancellations')
+                ->whereDate('date_from', '<=', $today)
+                ->whereDate('date_to', '>=', $today)
+                ->first();
+
+            $isWorkSuspended = false;
+            $workSuspensionReason = null;
+            $workSuspensionWithPay = false;
+
+            if ($workSuspension) {
+                $isWorkSuspended = true;
+                $workSuspensionReason = $workSuspension->reason ?? 'Work Suspended';
+                $workSuspensionWithPay = filter_var($workSuspension->with_pay ?? false, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) || (int)($workSuspension->with_pay ?? 0) === 1;
+
+                if ($employee) {
+                    $wcRemarkStr = 'Work Suspended (' . $workSuspensionReason . ')';
+                    if (!$todayRecord) {
+                        $pp = DB::table('payroll_periods')
+                            ->whereDate('attendance_start_date', '<=', $today)
+                            ->whereDate('attendance_end_date', '>=', $today)
+                            ->first();
+
+                        $newId = DB::table('time_data')->insertGetId([
+                            'employee_id' => $employee->id,
+                            'date' => $today,
+                            'payroll_period_id' => $pp ? $pp->id : 0,
+                            'work_hours' => 0,
+                            'late' => 0,
+                            'undertime' => 0,
+                            'absent' => 0,
+                            'remarks' => $wcRemarkStr
+                        ]);
+
+                        $todayRecord = DB::table('time_data')->where('id', $newId)->first();
+                    } elseif (empty($todayRecord->remarks) || (strpos($todayRecord->remarks, 'Work Suspended') === false && strpos($todayRecord->remarks, $workSuspensionReason) === false)) {
+                        $newRem = empty($todayRecord->remarks) ? $wcRemarkStr : ($todayRecord->remarks . ' & ' . $wcRemarkStr);
+                        DB::table('time_data')->where('id', $todayRecord->id)->update([
+                            'remarks' => $newRem,
+                            'absent' => 0
+                        ]);
+                        $todayRecord->remarks = $newRem;
+                        $todayRecord->absent = 0;
+                    }
+                }
+            }
+
             if ($todayRecord) {
                 $hasLeave = (float) ($todayRecord->leave ?? 0) > 0;
                 $hasOB    = (int) ($todayRecord->is_ob ?? 0) === 1;
@@ -3220,11 +3350,15 @@ class DailyTimeRecordController extends Controller
                     $status = 'On Leave';
                 } elseif ($hasOB) {
                     $status = 'On Travel';
+                } elseif ($isWorkSuspended && empty($amIn) && empty($pmIn)) {
+                    $status = 'Work Suspended';
                 } elseif (!empty($amIn) && empty($amOut)) {
                     $status = 'Clocked In';
                 } elseif (!empty($pmIn) && empty($pmOut)) {
                     $status = 'Clocked In';
                 }
+            } elseif ($isWorkSuspended) {
+                $status = 'Work Suspended';
             }
 
             // Check biometric raw log (gracefully handles missing connection or timeout)
@@ -3352,6 +3486,45 @@ class DailyTimeRecordController extends Controller
                 }
             }
 
+            // Schedule Latiness & Unlogged Shift Warning Calculation
+            $scheduledAmInStr = '08:00:00';
+            $isRestDayToday = false;
+            if ($todayScheduleDetail) {
+                $isRestDayToday = (int)($todayScheduleDetail->is_restday ?? 0) === 1;
+                if (!empty($todayScheduleDetail->am_in)) {
+                    $scheduledAmInStr = $todayScheduleDetail->am_in;
+                }
+            }
+
+            $nowCarbon = Carbon::now('Asia/Manila');
+            $scheduledCarbon = Carbon::parse("{$today} {$scheduledAmInStr}", 'Asia/Manila');
+
+            $isLateForClockin = false;
+            $clockinLatenessMinutes = 0;
+            $scheduleWarningMessage = null;
+
+            if (!$isRestDayToday && $status !== 'On Leave' && $status !== 'On Travel' && !$isWorkSuspended) {
+                $firstPunch = $amIn ?: $pmIn;
+                if (empty($firstPunch)) {
+                    if ($nowCarbon->gt($scheduledCarbon)) {
+                        $isLateForClockin = true;
+                        $clockinLatenessMinutes = (int) $scheduledCarbon->diffInMinutes($nowCarbon);
+                        $formattedStart = $scheduledCarbon->format('h:i A');
+                        $scheduleWarningMessage = "Schedule Warning: You have NOT logged in according to your schedule today! Scheduled clock-in was at {$formattedStart} ({$clockinLatenessMinutes} mins ago). Please clock in immediately.";
+                    }
+                } else {
+                    $actualInCarbon = Carbon::parse("{$today} {$firstPunch}", 'Asia/Manila');
+                    if ($actualInCarbon->gt($scheduledCarbon)) {
+                        $minsLate = (int) $scheduledCarbon->diffInMinutes($actualInCarbon);
+                        if ($minsLate > 0) {
+                            $formattedStart = $scheduledCarbon->format('h:i A');
+                            $formattedActual = $actualInCarbon->format('h:i A');
+                            $scheduleWarningMessage = "Late Clock-In Notice: You logged in at {$formattedActual} (Scheduled start: {$formattedStart} — {$minsLate} mins late).";
+                        }
+                    }
+                }
+            }
+
             return $this->successResponse([
                 'server_time'              => $serverTime,
                 'today_date'               => $today,
@@ -3360,12 +3533,20 @@ class DailyTimeRecordController extends Controller
                 'status'                   => $status,
                 'schedule_name'            => $scheduleName,
                 'schedule_window'          => $scheduleWindow,
+                'scheduled_start_time'     => $scheduledCarbon->format('h:i A'),
+                'is_restday_today'         => $isRestDayToday,
+                'is_work_suspended'        => $isWorkSuspended,
+                'work_suspension_reason'   => $workSuspensionReason,
+                'work_suspension_with_pay' => $workSuspensionWithPay,
+                'is_late_for_clockin'      => $isLateForClockin,
+                'clockin_lateness_minutes' => $clockinLatenessMinutes,
+                'schedule_warning'         => $scheduleWarningMessage,
                 'am_in'                    => $amIn ? Carbon::parse($amIn)->format('h:i A') : null,
                 'am_out'                   => $amOut ? Carbon::parse($amOut)->format('h:i A') : null,
                 'pm_in'                    => $pmIn ? Carbon::parse($pmIn)->format('h:i A') : null,
                 'pm_out'                   => $pmOut ? Carbon::parse($pmOut)->format('h:i A') : null,
                 'work_hours'               => $todayRecord->work_hours ?? 0,
-                'is_late'                  => ($todayRecord->late ?? 0) > 0,
+                'is_late'                  => ($todayRecord->late ?? 0) > 0 || $isLateForClockin,
                 'is_undertime'             => ($todayRecord->undertime ?? 0) > 0,
                 'is_missed_log'            => $isMissedLogToday,
                 'has_biometric_today'      => !empty($biometricLog),
@@ -3382,6 +3563,19 @@ class DailyTimeRecordController extends Controller
                 'enable_biometric'         => true,
                 'require_selfie'           => $requireSelfie,
                 'enforce_geofence'         => $enforceGeofence,
+                'work_cancellations'       => DB::table('work_cancellations')
+                    ->whereDate('date_from', '<=', Carbon::now('Asia/Manila')->addDays(30)->format('Y-m-d'))
+                    ->whereDate('date_to', '>=', Carbon::now('Asia/Manila')->subDays(30)->format('Y-m-d'))
+                    ->get()
+                    ->map(function($wc) {
+                        return [
+                            'id'        => $wc->id,
+                            'date_from' => Carbon::parse($wc->date_from)->format('Y-m-d'),
+                            'date_to'   => Carbon::parse($wc->date_to)->format('Y-m-d'),
+                            'reason'    => $wc->reason,
+                            'with_pay'  => filter_var($wc->with_pay ?? false, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) || (int)($wc->with_pay ?? 0) === 1
+                        ];
+                    })->values(),
                 'weekly_schedule'          => $weeklyScheduleDetails->map(function($item) {
                     $win = 'Rest Day';
                     if ((int)($item->is_restday ?? 0) === 0 && !empty($item->am_in) && !empty($item->pm_out)) {

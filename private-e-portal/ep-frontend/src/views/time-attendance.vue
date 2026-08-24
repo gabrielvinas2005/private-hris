@@ -38,6 +38,11 @@
           :is-late="todayStatus.is_late"
           :is-undertime="todayStatus.is_undertime"
           :is-missed-log="todayStatus.is_missed_log"
+          :schedule-warning="todayStatus.schedule_warning"
+          :is-late-for-clockin="todayStatus.is_late_for_clockin"
+          :is-work-suspended="todayStatus.is_work_suspended"
+          :work-suspension-reason="todayStatus.work_suspension_reason"
+          :work-suspension-with-pay="todayStatus.work_suspension_with_pay"
           @request-correction="activeTab = 'correction'"
         />
       </div>
@@ -70,7 +75,7 @@
           <div class="space-y-4">
             <!-- Tab 1: Section 2.4 - Attendance History & DTR View -->
             <div v-if="activeTab === 'dtr'">
-              <AttendanceHistoryTable :employee-id="employeeId" />
+              <AttendanceHistoryTable ref="attendanceHistoryTable" :employee-id="employeeId" />
             </div>
 
             <!-- Tab 2: Section 2.5 - Overtime Requests -->
@@ -233,6 +238,7 @@
             :setup-type="todayStatus.setup_type"
             :is-wfh-today="todayStatus.is_wfh_today"
             :weekly-schedule="todayStatus.weekly_schedule"
+            :work-cancellations="todayStatus.work_cancellations"
           />
         </div>
 
@@ -385,7 +391,12 @@ export default {
         enable_web_clock: false,
         enable_biometric: true,
         require_selfie: true,
-        enforce_geofence: true
+        enforce_geofence: true,
+        is_work_suspended: false,
+        work_suspension_reason: null,
+        work_suspension_with_pay: false,
+        work_cancellations: [],
+        weekly_schedule: []
       },
       mainTabs: [
         { id: 'dtr', name: 'Attendance History' },
@@ -470,12 +481,16 @@ export default {
       this.isLoadingStatus = true
       try {
         const userData = JSON.parse(localStorage.getItem('user_data') || '{}')
-        const userId = userData.id || userData.user_id || userData.employee_id || 1
+        const userId = userData.id || userData.user_id || userData.employee_id || null
+        if (!userId) {
+          this.isLoadingStatus = false
+          return
+        }
         const { dtrApiService } = await import('../services/apiService.js')
         const res = await dtrApiService.getTodayStatus(userId)
         const d = res?.data || res
         if (d) {
-          this.employeeId = d.employee_id || 1
+          this.employeeId = d.employee_id || null
           const isClocked = d.status === 'Clocked In'
           localStorage.setItem('is_clocked_in', isClocked ? 'true' : 'false')
           this.todayStatus = {
@@ -485,6 +500,10 @@ export default {
             status: d.status || 'Clocked Out',
             schedule_name: d.schedule_name || this.todayStatus.schedule_name,
             schedule_window: d.schedule_window || this.todayStatus.schedule_window,
+            scheduled_start_time: d.scheduled_start_time || '08:00 AM',
+            is_late_for_clockin: !!d.is_late_for_clockin,
+            clockin_lateness_minutes: d.clockin_lateness_minutes || 0,
+            schedule_warning: d.schedule_warning || null,
             am_in: d.am_in || null,
             am_out: d.am_out || null,
             pm_in: d.pm_in || null,
@@ -504,6 +523,10 @@ export default {
             logging_method: d.logging_method || 'Office Biometric Terminal',
             is_wfh_today: !!d.is_wfh_today,
             setup_message: d.setup_message || '',
+            is_work_suspended: Boolean(d.is_work_suspended || d.status === 'Work Suspended'),
+            work_suspension_reason: d.work_suspension_reason || null,
+            work_suspension_with_pay: Boolean(d.work_suspension_with_pay),
+            work_cancellations: Array.isArray(d.work_cancellations) ? d.work_cancellations : [],
             weekly_schedule: d.weekly_schedule || []
           }
         }
@@ -519,6 +542,10 @@ export default {
       }
       this.fetchTodayStatus()
       this.buildLocatorLogs()
+      window.dispatchEvent(new CustomEvent('dtr-updated'))
+      if (this.$refs.attendanceHistoryTable) {
+        this.$refs.attendanceHistoryTable.fetchPeriodDTR()
+      }
     },
     handleAlertAction(alert) {
       if (alert.action === 'correction') this.activeTab = 'correction'

@@ -140,7 +140,12 @@ export default {
       this.loading = true
       try {
         const userData = JSON.parse(localStorage.getItem('user_data') || '{}')
-        const userId = userData.id || userData.user_id || this.employeeId || 1
+        const userId = userData.id || userData.user_id || this.employeeId || null
+        if (!userId) {
+          this.applications = []
+          this.loading = false
+          return
+        }
         const { dtrApiService } = await import('../../services/apiService.js')
         const data = await dtrApiService.getDTRApplications(userId)
         const rawApps = data?.data?.applications || data?.applications || (Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []))
@@ -193,6 +198,7 @@ export default {
         formData.append('field_type', this.form.field_type)
         formData.append('claimed_time', this.form.claimed_time)
         if (this.selectedFile) {
+          formData.append('dtr_attachment', this.selectedFile)
           formData.append('attachment', this.selectedFile)
         }
 
@@ -203,7 +209,8 @@ export default {
         this.dialogVisible = false
         await this.loadApplications()
       } catch (err) {
-        this.toast.error('Failed to submit application.')
+        const errorMsg = err?.response?.data?.message || err?.data?.message || err?.message || 'Failed to submit application.'
+        this.toast.error(errorMsg)
       } finally {
         this.submitting = false
       }

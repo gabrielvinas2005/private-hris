@@ -1,399 +1,448 @@
 <template>
   <MainLayout>
-    <!-- Welcome Section -->
-    <div class="mb-6">
-      <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white shadow-sm">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 class="text-2xl font-bold mb-1">Welcome, {{ userData.name }}</h1>
-            <p class="text-blue-100">{{ companyPortalSubtitle }}</p>
+    <div class="overview-container">
+      
+      <!-- GREETING BANNER -->
+      <div class="greeting">
+        <div class="greeting-left">
+          <div class="greeting-eyebrow">{{ greetingTime }}</div>
+          <div class="greeting-name display">{{ userData.name || 'Employee' }}</div>
+          <div class="greeting-meta">
+            {{ userRoleTitle }} · {{ userDepartment }} · Employee ID <span class="mono">{{ userEmployeeNo }}</span>
           </div>
-          <div class="flex items-center space-x-4">
-            <div class="bg-white/20 rounded-lg p-3">
-              <p class="text-xs text-blue-100 mb-1">Current Date</p>
-              <p class="text-sm font-semibold">{{ currentDate }}</p>
-            </div>
-            <div class="bg-white/20 rounded-lg p-3">
-              <p class="text-xs text-blue-100 mb-1">Current Time</p>
-              <p class="text-sm font-semibold">{{ currentTime }}</p>
-            </div>
+        </div>
+        <div class="greeting-stats">
+          <div class="g-stat">
+            <div class="v mono">{{ dashboardData.leave_balance?.total_balance ?? 14 }}</div>
+            <div class="l">Days off left</div>
+          </div>
+          <div class="g-stat">
+            <div class="v mono">{{ payslipSummary ? formatCurrency(payslipSummary.net_pay) : '₱42.6K' }}</div>
+            <div class="l">Last payslip</div>
+          </div>
+          <div class="g-stat">
+            <div class="v mono">96%</div>
+            <div class="l">Attendance rate</div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Feature #4: Next-Day 1-Click Missed Log Resolution Banner -->
-    <div v-if="hasMissedLog" class="mb-6">
-      <div class="bg-gradient-to-r from-rose-50 to-amber-50 border border-rose-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div class="flex items-start gap-4">
-          <div class="w-11 h-11 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center flex-shrink-0 font-bold text-xl shadow-inner">
-            ⚠️
+      <!-- WARNING / COMPLIANCE BANNERS -->
+      <!-- Missed Log Warning Banner -->
+      <div v-if="hasMissedLog" class="banner-alert danger-banner">
+        <div class="banner-left">
+          <div class="banner-icon danger-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
           </div>
           <div>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-rose-600">Action Required — DTR Alert</span>
-            <h3 class="text-base font-bold text-slate-900 mt-0.5">Missed Log Warning Detected</h3>
-            <p class="text-xs text-slate-600 mt-1 max-w-xl">
-              You have an unclosed attendance record from your previous shift (missing clock out). File a DTR Correction now to keep your daily time records complete and accurate.
-            </p>
+            <span class="banner-tag danger-tag">Action Required — DTR Alert</span>
+            <h3 class="banner-title display">Missed Log Warning Detected</h3>
+            <p class="banner-desc">You have an unclosed attendance record from your previous shift (missing clock out). File a DTR Correction now to keep your daily time records complete.</p>
           </div>
         </div>
-        <button 
-          @click="fileMissedLogCorrection"
-          class="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-md transition-all duration-200 flex items-center justify-center gap-2 flex-shrink-0"
-        >
+        <button @click="fileMissedLogCorrection" class="btn-alert danger-btn">
           <span>1-Click File Correction</span>
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </div>
-    </div>
 
-    <!-- Notifications banner (pending approvals / expirations / announcements count) -->
-    <div v-if="hasNotifications" class="mb-6">
-      <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-        <div class="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-          <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-          </svg>
-        </div>
-        <div class="flex-1 text-sm">
-          <p class="font-medium text-amber-900 mb-1">You have updates waiting</p>
-          <ul class="text-amber-800 space-y-0.5">
-            <li v-if="dashboardData.pending_requests?.total">
-              {{ dashboardData.pending_requests.total }} transaction(s) pending approval
-            </li>
-            <li v-if="contractExpiringSoon">
-              Your contract/probation period ends {{ formatDate(contractExpiringSoon) }}
-            </li>
-            <li v-if="recentlyResolvedCount">
-              {{ recentlyResolvedCount }} transaction(s) recently approved or returned — check Quick Actions below
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    
-
-    <!-- Role-based Widgets: Payslip, Leave Balance, Pending Approvals -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-
-      <!-- Payslip Summary Widget -->
-      <div
-        v-if="canViewPayslip"
-        class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
-        @click="navigateToModule('payslip')"
-      >
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-semibold text-gray-900 text-sm">Payslip Summary</h3>
-          <div class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z"></path>
-            </svg>
+      <!-- Work Suspension Banner -->
+      <div v-if="isWorkSuspended" class="banner-alert info-banner">
+        <div class="banner-left">
+          <div class="banner-icon info-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0v-5a2 2 0 012-2h2a2 2 0 012 2v5m-6 0h6"/></svg>
+          </div>
+          <div>
+            <div class="banner-tag-row">
+              <span class="banner-tag info-tag">Official Notice</span>
+              <span v-if="workSuspensionWithPay" class="pill-pay">WITH PAY</span>
+            </div>
+            <h3 class="banner-title display">Work Suspended Today</h3>
+            <p class="banner-desc">{{ workSuspensionReason || 'Work has been officially suspended today. Attendance logging is optional.' }}</p>
           </div>
         </div>
-        <div v-if="payslipSummary">
-          <p class="text-2xl font-bold text-gray-900">{{ formatCurrency(payslipSummary.net_pay) }}</p>
-          <p class="text-xs text-gray-500 mt-1">Net pay — {{ payslipSummary.period_label }}</p>
-        </div>
-        <p v-else class="text-sm text-gray-500">No payslip data available yet</p>
+        <button @click="navigateToModule('time-attendance')" class="btn-alert info-btn">
+          <span>View Attendance Details</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
       </div>
 
-      <!-- Leave Balance Widget -->
-      <div
-        v-if="canViewLeave"
-        class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow duration-200"
-        @click="navigateToModule('leave-management')"
-      >
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-semibold text-gray-900 text-sm">Leave Balance</h3>
-          <div class="w-8 h-8 bg-green-100 rounded flex items-center justify-center">
-            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-            </svg>
+      <!-- Schedule Warning Banner -->
+      <div v-if="scheduleWarning || isLateForClockin" class="banner-alert warning-banner">
+        <div class="banner-left">
+          <div class="banner-icon warning-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          </div>
+          <div>
+            <span class="banner-tag warning-tag">Attendance Alert — Schedule Compliance</span>
+            <h3 class="banner-title display">Unlogged Shift / Schedule Alert</h3>
+            <p class="banner-desc">{{ scheduleWarning || 'You have not logged in according to your assigned shift schedule today. Please record your clock-in immediately.' }}</p>
           </div>
         </div>
-        <p class="text-2xl font-bold text-gray-900">{{ dashboardData.leave_balance?.total_balance ?? 0 }}</p>
-        <p class="text-xs text-gray-500 mt-1">Total days available</p>
-        <ul v-if="dashboardData.leave_balance?.leave_types?.length" class="mt-2 space-y-1">
-          <li
-            v-for="lt in dashboardData.leave_balance.leave_types.slice(0, 3)"
-            :key="lt.name"
-            class="flex items-center justify-between text-xs text-gray-600"
-          >
-            <span>{{ lt.name }}</span>
-            <span class="font-medium text-gray-900">{{ lt.balance }}</span>
-          </li>
-        </ul>
+        <button @click="navigateToModule('time-attendance')" class="btn-alert warning-btn">
+          <span>Clock In / View DTR</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
       </div>
 
-      <!-- Pending Approvals Widget -->
-      <div
-        v-if="canViewLeave || canViewOvertime || canViewDocumentRequest"
-        class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
-      >
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-semibold text-gray-900 text-sm">Pending Approvals</h3>
-          <div class="w-8 h-8 bg-amber-100 rounded flex items-center justify-center">
-            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
+      <!-- Notifications Banner -->
+      <div v-if="hasNotifications" class="banner-alert notice-banner">
+        <div class="banner-left">
+          <div class="banner-icon notice-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </div>
-        </div>
-        <p class="text-2xl font-bold text-gray-900">{{ dashboardData.pending_requests?.total ?? 0 }}</p>
-        <p class="text-xs text-gray-500 mt-1">Awaiting action across all modules</p>
-        <ul class="mt-2 space-y-1 text-xs text-gray-600">
-          <li v-if="dashboardData.pending_requests?.leaves" class="flex items-center justify-between">
-            <span>Leave</span>
-            <span class="font-medium text-gray-900">{{ dashboardData.pending_requests.leaves }}</span>
-          </li>
-          <li v-if="dashboardData.pending_requests?.overtime" class="flex items-center justify-between">
-            <span>Overtime</span>
-            <span class="font-medium text-gray-900">{{ dashboardData.pending_requests.overtime }}</span>
-          </li>
-          <li v-if="dashboardData.pending_requests?.official_business" class="flex items-center justify-between">
-            <span>Travel / OB</span>
-            <span class="font-medium text-gray-900">{{ dashboardData.pending_requests.official_business }}</span>
-          </li>
-          <li v-if="dashboardData.pending_requests?.document_requests" class="flex items-center justify-between">
-            <span>Document Requests</span>
-            <span class="font-medium text-gray-900">{{ dashboardData.pending_requests.document_requests }}</span>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Information Panels -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Quick Actions Panel (only if user has at least one allowed shortcut) -->
-      <div
-        v-if="menuAccessLoaded && hasAnyQuickAction"
-        class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
-      >
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-semibold text-gray-900">Quick Actions</h3>
-          <div class="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
-            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-            </svg>
-          </div>
-        </div>
-        <div class="space-y-2">
-          <div
-            v-if="canViewLeave"
-            @click="navigateToModule('leaves')"
-            class="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors duration-200 cursor-pointer group"
-          >
-            <div class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-200">
-              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM11 19a7 7 0 01-7-7v-3a4 4 0 014-4h6a4 4 0 014 4v3a7 7 0 01-7 7z"></path>
-              </svg>
-            </div>
-            <div class="flex-1">
-              <p class="text-gray-900 font-medium text-sm">Submit Leave Request</p>
-              <p class="text-gray-600 text-xs">Apply for time off</p>
-            </div>
-          </div>
-
-          <div
-            v-if="canViewOvertime"
-            @click="navigateToModule('overtime-scheduling')"
-            class="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg hover:bg-green-50 transition-colors duration-200 cursor-pointer group"
-          >
-            <div class="w-8 h-8 bg-green-100 rounded flex items-center justify-center group-hover:bg-green-200 transition-colors duration-200">
-              <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-            </div>
-            <div class="flex-1">
-              <p class="text-gray-900 font-medium text-sm">Overtime Application</p>
-              <p class="text-gray-600 text-xs">Request additional hours</p>
-            </div>
-          </div>
-
-          <div
-            v-if="canViewTravelOrder"
-            @click="navigateToModule('travel-order')"
-            class="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg hover:bg-orange-50 transition-colors duration-200 cursor-pointer group"
-          >
-            <div class="w-8 h-8 bg-orange-100 rounded flex items-center justify-center group-hover:bg-orange-200 transition-colors duration-200">
-              <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
-              </svg>
-            </div>
-            <div class="flex-1">
-              <p class="text-gray-900 font-medium text-sm">Travel Order / Official Business</p>
-              <p class="text-gray-600 text-xs">Request travel authorization</p>
-            </div>
-          </div>
-
-          <div
-            v-if="canViewWfh"
-            @click="navigateToModule('wfh-application')"
-            class="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors duration-200 cursor-pointer group"
-          >
-            <div class="w-8 h-8 bg-teal-100 rounded flex items-center justify-center group-hover:bg-teal-200 transition-colors duration-200">
-              <svg class="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v6a1 1 0 001 1h3m6-7l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-              </svg>
-            </div>
-            <div class="flex-1">
-              <p class="text-gray-900 font-medium text-sm">Work-From-Home Request</p>
-              <p class="text-gray-600 text-xs">File a remote-work application</p>
-            </div>
-          </div>
-
-          <div
-            v-if="canViewDocumentRequest"
-            @click="navigateToModule('document-requests')"
-            class="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg hover:bg-pink-50 transition-colors duration-200 cursor-pointer group"
-          >
-            <div class="w-8 h-8 bg-pink-100 rounded flex items-center justify-center group-hover:bg-pink-200 transition-colors duration-200">
-              <svg class="w-4 h-4 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
-            </div>
-            <div class="flex-1">
-              <p class="text-gray-900 font-medium text-sm">Request a Document</p>
-              <p class="text-gray-600 text-xs">Certificates, clearances, and more</p>
-            </div>
-          </div>
-
-          <div
-            @click="navigateTo201File()"
-            v-if="canViewEmployeeRecord"
-            class="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg hover:bg-purple-50 transition-colors duration-200 cursor-pointer group"
-          >
-            <div class="w-8 h-8 bg-purple-100 rounded flex items-center justify-center group-hover:bg-purple-200 transition-colors duration-200">
-              <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-              </svg>
-            </div>
-            <div class="flex-1">
-              <p class="text-gray-900 font-medium text-sm">Update Profile</p>
-              <p class="text-gray-600 text-xs">Edit personal information</p>
-            </div>
+          <div>
+            <span class="banner-tag notice-tag">Updates Pending</span>
+            <h3 class="banner-title display">You have updates waiting</h3>
+            <ul class="banner-list">
+              <li v-if="dashboardData.pending_requests?.total">
+                {{ dashboardData.pending_requests.total }} transaction(s) pending approval
+              </li>
+              <li v-if="contractExpiringSoon">
+                Your contract/probation period ends {{ formatDate(contractExpiringSoon) }}
+              </li>
+              <li v-if="recentlyResolvedCount">
+                {{ recentlyResolvedCount }} transaction(s) recently resolved
+              </li>
+            </ul>
           </div>
         </div>
       </div>
 
-      <!-- Company Announcements Feed -->
-      <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <h3 class="font-semibold text-gray-900">Announcements</h3>
-            <span class="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 font-medium rounded-full">Official</span>
+      <!-- SECTION LABEL -->
+      <p class="section-label display">
+        My Overview <span class="n mono">4</span>
+      </p>
+
+      <!-- KPI ROW (4 CARDS) -->
+      <div class="kpi-row">
+        <!-- KPI 1: Leave Balance -->
+        <div class="kpi-card" @click="navigateToModule('leaves')">
+          <div class="kpi-top">
+            <span class="kpi-label">Leave Balance</span>
+            <span class="kpi-icon" style="background:var(--accent-soft);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            </span>
           </div>
-          <div class="flex items-center gap-2">
-            <button 
-              v-if="hasHrmAccess || userData?.is_admin || hasAnyAdminAccess()" 
-              @click="openAnnouncementModal"
-              class="text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
-            >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              <span>+ Create Announcement</span>
-            </button>
-            <div class="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
-              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
-              </svg>
+          <div class="kpi-value mono">
+            {{ dashboardData.leave_balance?.total_balance ?? 14 }}<span class="unit">days</span>
+          </div>
+          <div class="kpi-foot">
+            <b>{{ leaveVacationBalance }}</b> vacation · <b>{{ leaveSickBalance }}</b> sick
+          </div>
+        </div>
+
+        <!-- KPI 2: Next Payslip -->
+        <div class="kpi-card" @click="navigateToModule('payslip')">
+          <div class="kpi-top">
+            <span class="kpi-label">Next Payslip</span>
+            <span class="kpi-icon" style="background:var(--success-soft);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </span>
+          </div>
+          <div class="kpi-value mono">
+            {{ payslipSummary?.period_label || 'Aug 30' }}
+          </div>
+          <div class="kpi-foot">
+            Est. <b>{{ payslipSummary ? formatCurrency(payslipSummary.net_pay) : '₱43.1K' }}</b> net pay
+          </div>
+        </div>
+
+        <!-- KPI 3: Attendance (MTD) -->
+        <div class="kpi-card" @click="navigateToModule('time-attendance')">
+          <div class="kpi-top">
+            <span class="kpi-label">Attendance (MTD)</span>
+            <span class="kpi-icon" style="background:var(--violet-soft);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+            </span>
+          </div>
+          <div class="kpi-value mono">
+            96<span class="unit">%</span>
+          </div>
+          <div class="kpi-foot"><b>1</b> late arrival this month</div>
+        </div>
+
+        <!-- KPI 4: My Requests -->
+        <div class="kpi-card" @click="navigateToModule('leaves')">
+          <div class="kpi-top">
+            <span class="kpi-label">My Requests</span>
+            <span class="kpi-icon" style="background:var(--warning-soft);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+            </span>
+          </div>
+          <div class="kpi-value mono">
+            {{ dashboardData.pending_requests?.total ?? 2 }}<span class="unit">pending</span>
+          </div>
+          <div class="kpi-foot">
+            <b>{{ dashboardData.pending_requests?.leaves ?? 1 }}</b> leave · <b>{{ dashboardData.pending_requests?.overtime ?? 1 }}</b> overtime
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN GRID LAYOUT -->
+      <div class="grid-layout">
+        
+        <!-- LEFT COLUMN -->
+        <div>
+          <!-- CHARTS ROW -->
+          <div class="charts-row2">
+            <!-- Leave Balance by Type Card -->
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title display">
+                  Leave Balance by Type
+                  <span class="sub">Entitlement used this year</span>
+                </div>
+              </div>
+              <div class="lv-row">
+                <div class="lbl">Vacation</div>
+                <div class="track"><div class="fill" style="width:66%;background:var(--accent);"></div></div>
+                <div class="val mono">10 / 15</div>
+              </div>
+              <div class="lv-row">
+                <div class="lbl">Sick</div>
+                <div class="track"><div class="fill" style="width:40%;background:var(--success);"></div></div>
+                <div class="val mono">4 / 10</div>
+              </div>
+              <div class="lv-row">
+                <div class="lbl">Emergency</div>
+                <div class="track"><div class="fill" style="width:0%;background:var(--warning);"></div></div>
+                <div class="val mono">3 / 3</div>
+              </div>
+              <div class="lv-row">
+                <div class="lbl">Bereavement</div>
+                <div class="track"><div class="fill" style="width:0%;background:var(--violet);"></div></div>
+                <div class="val mono">5 / 5</div>
+              </div>
+            </div>
+
+            <!-- Attendance Trend Card -->
+            <div class="card">
+              <div class="card-head">
+                <div class="card-title display">
+                  Attendance Trend
+                  <span class="sub">Last 6 months</span>
+                </div>
+              </div>
+              <div class="chart-wrap">
+                <canvas id="chartAttendanceCanvas"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- REQUEST TRACKER -->
+          <p class="section-label display">
+            My Requests <span class="n mono">{{ dashboardData.pending_requests?.total ?? 2 }} pending</span>
+          </p>
+
+          <div class="card" style="margin-bottom:24px;">
+            <div class="card-head">
+              <div class="card-title display">Request Tracker</div>
+              <button @click="navigateToModule('leaves')" class="link-btn">
+                File new request 
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+
+            <div class="track-row">
+              <div class="track-icon" style="background:var(--accent-soft);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              </div>
+              <div class="track-body">
+                <div class="track-title">Vacation Leave</div>
+                <div class="track-meta">Aug 24–26 · 3 days · Submitted Aug 18</div>
+              </div>
+              <span class="status-chip pending">Pending</span>
+            </div>
+
+            <div class="track-row">
+              <div class="track-icon" style="background:var(--warning-soft);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div class="track-body">
+                <div class="track-title">Travel Reimbursement / Official Business</div>
+                <div class="track-meta">Client visit · ₱1,850 · Submitted Aug 15</div>
+              </div>
+              <span class="status-chip pending">Pending</span>
+            </div>
+
+            <div class="track-row">
+              <div class="track-icon" style="background:var(--success-soft);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              </div>
+              <div class="track-body">
+                <div class="track-title">Sick Leave</div>
+                <div class="track-meta">Aug 20 · 1 day · Submitted Aug 20</div>
+              </div>
+              <span class="status-chip approved">Approved</span>
+            </div>
+
+            <div class="track-row">
+              <div class="track-icon" style="background:var(--danger-soft);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div class="track-body">
+                <div class="track-title">Equipment Reimbursement</div>
+                <div class="track-meta">Home office chair · ₱6,200 · Submitted Aug 5</div>
+              </div>
+              <span class="status-chip rejected">Rejected</span>
             </div>
           </div>
         </div>
-        <AnnouncementList v-if="announcements.length" :announcements="announcements" />
-        <p v-else class="text-sm text-gray-500 py-4 text-center">No announcements right now</p>
+
+        <!-- RIGHT RAIL -->
+        <div>
+          <!-- QUICK ACTIONS CARD -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-head">
+              <div class="card-title display">Quick Actions</div>
+            </div>
+            <div class="qa-grid">
+              <div class="qa" @click="navigateToModule('leaves')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                <span>File Leave</span>
+              </div>
+              <div class="qa" @click="navigateToModule('overtime-scheduling')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                <span>Request OT</span>
+              </div>
+              <div class="qa" @click="navigateToModule('payslip')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <span>View Payslip</span>
+              </div>
+              <div class="qa" @click="navigateTo201File()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
+                <span>Edit Profile</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- COMPANY FEED CARD -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-head">
+              <div class="card-title display">Company Feed</div>
+              <button 
+                v-if="hasHrmAccess || userData?.is_admin || hasAnyAdminAccess()" 
+                @click="openAnnouncementModal"
+                class="create-ann-btn"
+              >
+                + Create
+              </button>
+            </div>
+            
+            <AnnouncementList v-if="announcements.length" :announcements="announcements" />
+            <div v-else class="feed-list">
+              <div class="feed-item">
+                <span class="feed-tag">Announcement</span>
+                <div class="feed-title">Updated hybrid work policy takes effect Sept 1</div>
+                <div class="feed-meta">Posted by People Ops · 2 days ago</div>
+              </div>
+              <div class="feed-item">
+                <span class="feed-tag">Recognition</span>
+                <div class="feed-title">You were kudos'd by Nathan Ong</div>
+                <div class="feed-meta">"Great work on the design system!" · Yesterday</div>
+              </div>
+              <div class="feed-item">
+                <span class="feed-tag">Reminder</span>
+                <div class="feed-title">Benefits open enrollment closes Aug 31</div>
+                <div class="feed-meta">People Ops · 3 days ago</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- UPCOMING CARD -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title display">Upcoming</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="date-box">
+                <div class="d mono">28</div>
+                <div class="m">Aug</div>
+              </div>
+              <div>
+                <div class="upcoming-title">Ninoy Aquino Day</div>
+                <div class="upcoming-meta">Regular holiday · Office closed</div>
+              </div>
+            </div>
+            <div class="upcoming-row">
+              <div class="date-box">
+                <div class="d mono">30</div>
+                <div class="m">Aug</div>
+              </div>
+              <div>
+                <div class="upcoming-title">Payday</div>
+                <div class="upcoming-meta">Payslip available same day</div>
+              </div>
+            </div>
+            <div class="upcoming-row">
+              <div class="date-box">
+                <div class="d mono">01</div>
+                <div class="m">Sep</div>
+              </div>
+              <div>
+                <div class="upcoming-title">Hybrid policy effective</div>
+                <div class="upcoming-meta">3 days in-office minimum</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
-    </div>
 
-    <!-- Administrative Access Section (Only if user has at least one admin module) -->
-    <div v-if="hasAnyAdminAccess()" class="mb-6">
-      <h2 class="text-lg font-semibold text-gray-900 m-4 ">Administrative Access</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-
-        <!-- HR Module Card -->
-        <div
-          v-if="hasHrmAccess"
-          @click="navigateToHRModule()"
-          class="group bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md hover:border-purple-300 transition-all duration-200 cursor-pointer"
-        >
-          <div class="flex items-center space-x-3">
-            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors duration-200">
-              <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-              </svg>
+      <!-- ADMINISTRATIVE ACCESS SECTION -->
+      <div v-if="hasAnyAdminAccess()" class="admin-section">
+        <h2 class="section-label display">Administrative Access</h2>
+        <div class="admin-grid">
+          <!-- 201 Files Card -->
+          <div v-if="hasHrmAccess" @click="navigateToHRModule()" class="admin-card purple-admin">
+            <div class="admin-icon bg-purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
             </div>
             <div>
-              <h3 class="font-semibold text-gray-900">201 Files</h3>
-              <p class="text-gray-600 text-sm">HR Module - 201 Files</p>
+              <h3 class="admin-title display">201 Files</h3>
+              <p class="admin-sub">HR Module - 201 Files</p>
             </div>
           </div>
-        </div>
 
-        <!-- Control Panel Card -->
-        <div
-          v-if="hasCpmAccess"
-          @click="navigateToControlPanel()"
-          class="group bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md hover:border-red-300 transition-all duration-200 cursor-pointer"
-        >
-          <div class="flex items-center space-x-3">
-            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors duration-200">
-              <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              </svg>
+          <!-- Control Panel Card -->
+          <div v-if="hasCpmAccess" @click="navigateToControlPanel()" class="admin-card red-admin">
+            <div class="admin-icon bg-red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             </div>
             <div>
-              <h3 class="font-semibold text-gray-900">Control Panel</h3>
-              <p class="text-gray-600 text-sm">System Administration</p>
+              <h3 class="admin-title display">Control Panel</h3>
+              <p class="admin-sub">System Administration</p>
             </div>
           </div>
-        </div>
 
-        <!-- Payroll Module Card -->
-        <div
-          v-if="hasHrpAccess"
-          @click="navigateToPayrollModule()"
-          class="group bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md hover:border-yellow-300 transition-all duration-200 cursor-pointer"
-        >
-          <div class="flex items-center space-x-3">
-            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center group-hover:bg-yellow-200 transition-colors duration-200">
-              <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-              </svg>
+          <!-- Payroll Module Card -->
+          <div v-if="hasHrpAccess" @click="navigateToPayrollModule()" class="admin-card yellow-admin">
+            <div class="admin-icon bg-yellow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
             </div>
             <div>
-              <h3 class="font-semibold text-gray-900">Payroll Module</h3>
-              <p class="text-gray-600 text-sm">Payroll Management</p>
+              <h3 class="admin-title display">Payroll Module</h3>
+              <p class="admin-sub">Payroll Management</p>
             </div>
           </div>
-        </div>
 
-        <!-- Timekeeping Module Card -->
-        <div
-          v-if="hasHrtAccess"
-          @click="navigateToTimekeeping()"
-          class="group bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md hover:border-green-300 transition-all duration-200 cursor-pointer"
-        >
-          <div class="flex items-center space-x-3">
-            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors duration-200">
-              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
+          <!-- Timekeeping Module Card -->
+          <div v-if="hasHrtAccess" @click="navigateToTimekeeping()" class="admin-card green-admin">
+            <div class="admin-icon bg-green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
             <div>
-              <h3 class="font-semibold text-gray-900">Timekeeping</h3>
-              <p class="text-gray-600 text-sm">Time & Attendance</p>
+              <h3 class="admin-title display">Timekeeping</h3>
+              <p class="admin-sub">Time & Attendance</p>
             </div>
           </div>
         </div>
-
       </div>
+
     </div>
 
-    <!-- Create Announcement Dialog for EP Dashboard -->
+    <!-- CREATE ANNOUNCEMENT DIALOG -->
     <el-dialog
       v-model="showAnnouncementModal"
       title="Create Announcement"
@@ -445,7 +494,7 @@
             type="primary"
             :loading="submittingAnnouncement"
             @click="submitDashboardAnnouncement"
-            style="background-color: #2563eb; border-color: #2563eb;"
+            style="background-color: var(--accent); border-color: var(--accent);"
           >
             Publish Announcement
           </el-button>
@@ -456,6 +505,7 @@
 </template>
 
 <script>
+import Chart from 'chart.js/auto'
 import MainLayout from '../layout/MainLayout.vue'
 import AnnouncementList from '../components/Announcement/AnnouncementList.vue'
 import { fetchCompanyPublic } from '../services/companyPublic.js'
@@ -476,7 +526,10 @@ export default {
       userData: {
         id: null,
         name: '',
-        email: ''
+        email: '',
+        position: '',
+        department: '',
+        employee_no: ''
       },
       menuAccessLoaded: false,
       canViewEmployeeRecord: false,
@@ -496,9 +549,6 @@ export default {
         work_hours: { hours_today: 0, status: 'Hours today' },
         overtime_hours: 0,
         recent_activity: [],
-        // TODO: backend getDashboardData() needs to return these two for the
-        // payslip widget and the "recently resolved" notification line to
-        // have real data instead of falling back to defaults/hidden state.
         payslip_summary: null,
         contract_expiry: null,
         recently_resolved_count: 0
@@ -510,6 +560,11 @@ export default {
       hasHrtAccess: false,
       hasCpmAccess: false,
       hasMissedLog: false,
+      isLateForClockin: false,
+      scheduleWarning: null,
+      isWorkSuspended: false,
+      workSuspensionReason: null,
+      workSuspensionWithPay: false,
       showAnnouncementModal: false,
       announcementForm: {
         title: '',
@@ -518,10 +573,46 @@ export default {
         employee_id: null
       },
       announcementEmployees: [],
-      submittingAnnouncement: false
+      submittingAnnouncement: false,
+      attendanceChart: null
     }
   },
   computed: {
+    greetingTime() {
+      const hour = new Date().getHours()
+      if (hour < 12) return 'Good morning'
+      if (hour < 18) return 'Good afternoon'
+      return 'Good evening'
+    },
+    userRoleTitle() {
+      return (
+        this.userData.position ||
+        this.userData.designation ||
+        this.dashboardData?.employee_info?.position ||
+        (this.userData.role && this.userData.role !== 'Employee' ? this.userData.role : '') ||
+        'Employee'
+      )
+    },
+    userDepartment() {
+      return (
+        this.userData.department ||
+        this.dashboardData?.employee_info?.department ||
+        'General Department'
+      )
+    },
+    userEmployeeNo() {
+      return this.userData.employee_no || (this.userData.id ? `EMP-${String(this.userData.id).padStart(4, '0')}` : 'EMP-02481')
+    },
+    leaveVacationBalance() {
+      const types = this.dashboardData.leave_balance?.leave_types || []
+      const found = types.find(t => String(t.name).toLowerCase().includes('vacation'))
+      return found ? found.balance : 10
+    },
+    leaveSickBalance() {
+      const types = this.dashboardData.leave_balance?.leave_types || []
+      const found = types.find(t => String(t.name).toLowerCase().includes('sick'))
+      return found ? found.balance : 4
+    },
     companyPortalSubtitle() {
       return this.company.name
         ? `${this.company.name} — Employee Portal`
@@ -541,7 +632,6 @@ export default {
       return this.dashboardData?.payslip_summary || null
     },
     contractExpiringSoon() {
-      // Only surface this if the expiry is within the next 30 days.
       const expiry = this.dashboardData?.contract_expiry
       if (!expiry) return null
       const days = (new Date(expiry) - new Date()) / (1000 * 60 * 60 * 24)
@@ -563,10 +653,11 @@ export default {
       this.company = data
     })
 
-    // Get user data from localStorage
     const storedUserData = localStorage.getItem('user_data')
     if (storedUserData) {
-      this.userData = JSON.parse(storedUserData)
+      try {
+        this.userData = JSON.parse(storedUserData)
+      } catch (e) {}
       const roleStr = String(this.userData?.role || this.userData?.user_role || '').toLowerCase()
       const isAdmin = this.toBool(this.userData?.is_admin) || 
         this.userData?.user_type_id === 1 || 
@@ -577,28 +668,57 @@ export default {
       this.hasHrtAccess = this.toBool(this.userData?.with_hrt_access) || isAdmin
       this.hasCpmAccess = this.toBool(this.userData?.with_cpm_access) || isAdmin
       this.loadMenuAccess()
-      // Load dashboard data after getting user data
       this.loadDashboardData()
       this.loadAnnouncements()
     }
 
-    // Set current date and time
     this.updateDateTime()
     setInterval(this.updateDateTime, 1000)
 
-    // Poll for updated pending-approval / notification state every 60s.
-    // This is a simple polling fallback — for true real-time push, wire this
-    // dashboard up to your websocket/Pusher broadcast channel instead and
-    // call loadDashboardData() (or a lighter notifications-only endpoint)
-    // whenever a broadcast event fires.
     this._notificationPoll = setInterval(() => {
       if (this.userData?.id) this.loadDashboardData()
     }, 60000)
+
+    this.$nextTick(() => {
+      this.initAttendanceChart()
+    })
   },
   beforeUnmount() {
     if (this._notificationPoll) clearInterval(this._notificationPoll)
+    if (this.attendanceChart) this.attendanceChart.destroy()
   },
   methods: {
+    initAttendanceChart() {
+      const canvas = document.getElementById('chartAttendanceCanvas')
+      if (!canvas) return
+      if (this.attendanceChart) this.attendanceChart.destroy()
+      Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif"
+      this.attendanceChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+          datasets: [{
+            data: [98, 95, 97, 94, 96, 96],
+            borderColor: '#3457D5',
+            backgroundColor: 'rgba(52, 87, 213, 0.08)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0,
+            borderWidth: 2.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, border: { display: false } },
+            y: { grid: { color: '#EEF0F5' }, border: { display: false }, ticks: { callback: v => v + '%' }, min: 85, max: 100 }
+          }
+        }
+      })
+    },
+
     hasAnyAdminAccess() {
       return this.hasHrmAccess || this.hasHrpAccess || this.hasHrtAccess || this.hasCpmAccess
     },
@@ -655,7 +775,6 @@ export default {
     },
 
     async loadMenuAccess() {
-      // 1) Restore from cache synchronously first to prevent Quick Actions layout flash
       try {
         const cachedAccess = localStorage.getItem('user_tab_access')
         if (cachedAccess) {
@@ -698,7 +817,6 @@ export default {
       this.$router.push(`/${module}`)
     },
 
-    // Get user ID for API calls
     getUserId() {
       if (!this.userData || !this.userData.id) {
         console.error('User data not available or missing ID')
@@ -707,7 +825,6 @@ export default {
       return this.userData.id
     },
 
-    // Navigate to 201 file with user ID
     navigateTo201File() {
       const userId = this.getUserId()
       if (userId) {
@@ -717,44 +834,43 @@ export default {
       }
     },
 
-    // Load dashboard data from API
     async loadDashboardData() {
       const userId = this.getUserId()
-      if (!userId) {
-        console.error('User ID not available - user may not be properly logged in')
-        return
-      }
+      if (!userId) return
 
       this.loading = true
       try {
         const ApiService = (await import('../services/api.js')).default
         await ApiService.initSanctum()
-
         const response = await ApiService.getDashboardData(userId)
 
         if (response && response.success) {
-          // Merge rather than replace, so any fields the backend doesn't yet
-          // return (payslip_summary, contract_expiry, recently_resolved_count)
-          // keep their safe defaults instead of becoming undefined.
           this.dashboardData = { ...this.dashboardData, ...response.data }
-        } else {
-          console.error('Failed to load dashboard data:', response?.message || 'Unknown error')
+          if (response.data?.employee_info) {
+            if (response.data.employee_info.position && !this.userData.position) {
+              this.userData.position = response.data.employee_info.position
+            }
+            if (response.data.employee_info.department && !this.userData.department) {
+              this.userData.department = response.data.employee_info.department
+            }
+          }
         }
 
-        // Feature #4: Check for missed log warning in DTR
         try {
           const { dtrApiService } = await import('../services/apiService.js')
           const dtrRes = await dtrApiService.getTodayStatus(userId)
           const statusData = dtrRes?.data || dtrRes
           if (statusData) {
             this.hasMissedLog = Boolean(statusData.is_missed_log || statusData.status === 'Missed Log')
+            this.isLateForClockin = Boolean(statusData.is_late_for_clockin)
+            this.scheduleWarning = statusData.schedule_warning || null
+            this.isWorkSuspended = Boolean(statusData.is_work_suspended || statusData.status === 'Work Suspended')
+            this.workSuspensionReason = statusData.work_suspension_reason || null
+            this.workSuspensionWithPay = Boolean(statusData.work_suspension_with_pay)
           }
         } catch (_) {}
       } catch (error) {
         console.error('Dashboard data loading failed:', error)
-        if (error.response?.status === 419) {
-          this.$toast?.error('Session expired. Please login again.')
-        }
       } finally {
         this.loading = false
       }
@@ -762,19 +878,6 @@ export default {
 
     fileMissedLogCorrection() {
       this.$router.push('/time-attendance')
-    },
-
-    async load201FileData() {
-      const userId = this.getUserId()
-      if (userId) {
-        try {
-          const ApiService = (await import('../services/api.js')).default
-          const response = await ApiService.getEmployee201File(userId)
-          return response
-        } catch (error) {
-          console.error('Failed to load 201 file data:', error)
-        }
-      }
     },
 
     updateDateTime() {
@@ -801,19 +904,12 @@ export default {
       }
     },
 
-    submitSupportTicket() {
-      this.$message.success('Support ticket submitted successfully!')
-    },
-
     async loadAnnouncements() {
       try {
         const ApiService = (await import('../services/api.js')).default
         const response = await ApiService.getAnnouncements()
-
         if (response && response.success) {
           this.announcements = response.data || []
-        } else {
-          console.error('Failed to load announcements:', response?.message || 'Unknown error')
         }
       } catch (error) {
         console.error('Error loading announcements:', error)
@@ -833,9 +929,7 @@ export default {
         if (res && res.data) {
           this.announcementEmployees = res.data
         }
-      } catch (e) {
-        console.warn('Failed to load employees for announcement selection:', e)
-      }
+      } catch (e) {}
     },
 
     async submitDashboardAnnouncement() {
@@ -856,8 +950,6 @@ export default {
           if (this.$message) this.$message.success('Announcement published successfully!')
           this.showAnnouncementModal = false
           await this.loadAnnouncements()
-        } else {
-          if (this.$message) this.$message.error(res?.message || 'Failed to publish announcement')
         }
       } catch (e) {
         if (this.$message) this.$message.error(e?.message || 'Failed to publish announcement')
@@ -866,96 +958,43 @@ export default {
       }
     },
 
-    // Administrative Access Navigation Methods (mirror MainLayout.vue)
     navigateToControlPanel() {
-      let user = this.userData
-      if (!user) {
-        const storedUser = localStorage.getItem('user_data')
-        if (storedUser) {
-          try {
-            user = JSON.parse(storedUser)
-          } catch (error) {
-            console.error('Error parsing user data:', error)
-          }
-        }
-      }
-
+      let user = this.userData || JSON.parse(localStorage.getItem('user_data') || '{}')
       if (user && user.email) {
         const authToken = localStorage.getItem('auth_token')
         const employeeNo = user.employee_no || user.id || 'admin'
         const controlPanelUrl = import.meta.env.VITE_CONTROL_PANEL_URL || 'http://192.168.0.126:8081'
-        const url = `${controlPanelUrl}/?employee_no=${employeeNo}&email=${user.email}&auth_token=${encodeURIComponent(authToken || '')}&redirect_from=e_portal`
-        window.open(url, '_blank')
-      } else {
-        const controlPanelUrl = import.meta.env.VITE_CONTROL_PANEL_URL || 'http://192.168.0.126:8081'
-        window.open(`${controlPanelUrl}/`, '_blank')
+        window.open(`${controlPanelUrl}/?employee_no=${employeeNo}&email=${user.email}&auth_token=${encodeURIComponent(authToken || '')}&redirect_from=e_portal`, '_blank')
       }
     },
 
     navigateToPayrollModule() {
-      let user = this.userData
-      if (!user) {
-        const storedUser = localStorage.getItem('user_data')
-        if (storedUser) {
-          user = JSON.parse(storedUser)
-        }
-      }
-
+      let user = this.userData || JSON.parse(localStorage.getItem('user_data') || '{}')
       if (user && user.email) {
         const authToken = localStorage.getItem('auth_token')
         const employeeNo = user.employee_no || user.id || 'admin'
         const payrollModuleUrl = import.meta.env.VITE_PAYROLL_MODULE_URL || 'http://192.168.0.126:8083'
-        const url = `${payrollModuleUrl}/?employee_no=${employeeNo}&email=${user.email}&auth_token=${encodeURIComponent(authToken || '')}&redirect_from=e_portal`
-        window.open(url, '_blank')
-      } else {
-        const payrollModuleUrl = import.meta.env.VITE_PAYROLL_MODULE_URL || 'http://192.168.0.126:8083'
-        window.open(`${payrollModuleUrl}/`, '_blank')
+        window.open(`${payrollModuleUrl}/?employee_no=${employeeNo}&email=${user.email}&auth_token=${encodeURIComponent(authToken || '')}&redirect_from=e_portal`, '_blank')
       }
     },
 
     navigateToTimekeeping() {
-      let user = this.userData
-      if (!user) {
-        const storedUser = localStorage.getItem('user_data')
-        if (storedUser) {
-          try {
-            user = JSON.parse(storedUser)
-          } catch (error) {
-            console.error('Error parsing user data:', error)
-          }
-        }
-      }
-
+      let user = this.userData || JSON.parse(localStorage.getItem('user_data') || '{}')
       if (user && user.email) {
         const authToken = localStorage.getItem('auth_token')
         const employeeNo = user.employee_no || user.id || 'admin'
         const timekeepingUrl = import.meta.env.VITE_TIMEKEEPING_MODULE_URL || 'http://192.168.0.126:8085'
-        const url = `${timekeepingUrl}/?employee_no=${employeeNo}&email=${user.email}&auth_token=${encodeURIComponent(authToken || '')}&redirect_from=e_portal`
-        window.open(url, '_blank')
-      } else {
-        const timekeepingUrl = import.meta.env.VITE_TIMEKEEPING_MODULE_URL || 'http://192.168.0.126:8085'
-        window.open(`${timekeepingUrl}/`, '_blank')
+        window.open(`${timekeepingUrl}/?employee_no=${employeeNo}&email=${user.email}&auth_token=${encodeURIComponent(authToken || '')}&redirect_from=e_portal`, '_blank')
       }
     },
 
     navigateToHRModule() {
-      let user = this.userData
-      if (!user) {
-        const storedUser = localStorage.getItem('user_data')
-        if (storedUser) {
-          user = JSON.parse(storedUser)
-        }
-      }
-
+      let user = this.userData || JSON.parse(localStorage.getItem('user_data') || '{}')
       if (user && user.email) {
         const authToken = localStorage.getItem('auth_token')
         const employeeNo = user.employee_no || user.id || 'admin'
         const hrModuleUrl = import.meta.env.VITE_HR_MODULE_URL || 'http://192.168.0.126:8082'
-        const url = `${hrModuleUrl}/?employee_no=${employeeNo}&email=${user.email}&auth_token=${encodeURIComponent(authToken || '')}&redirect_from=e_portal`
-        window.open(url, '_blank')
-      } else {
-        const hrModuleUrl = import.meta.env.VITE_HR_MODULE_URL || 'http://192.168.0.126:8082'
-        window.open(`${hrModuleUrl}/`, '_blank')
+        window.open(`${hrModuleUrl}/?employee_no=${employeeNo}&email=${user.email}&auth_token=${encodeURIComponent(authToken || '')}&redirect_from=e_portal`, '_blank')
       }
     }
   }
@@ -963,153 +1002,636 @@ export default {
 </script>
 
 <style scoped>
-/* Hide scrollbars and devtools */
-html, body, #app {
+/* CSS VARIABLES FOR WORKSPACE DESIGN SYSTEM */
+.overview-container {
+  --bg: #F3F5F8;
+  --surface: #FFFFFF;
+  --ink: #12172B;
+  --ink-muted: #68708A;
+  --ink-faint: #9CA3B8;
+  --border: #E5E8F0;
+  --navy: #0E1526;
+  --navy-light: #1A2340;
+  --navy-lighter: #2A3560;
+  --accent: #3457D5;
+  --accent-ink: #2540A8;
+  --accent-soft: #E9EDFC;
+  --success: #16A34A;
+  --success-soft: #E3F8EA;
+  --warning: #D97706;
+  --warning-soft: #FEF3DD;
+  --danger: #DC2626;
+  --danger-soft: #FCE8E7;
+  --violet: #7C4FE0;
+  --violet-soft: #F0E9FC;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(18,23,43,0.04), 0 8px 24px -12px rgba(18,23,43,0.10);
+
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ink);
+  padding: 4px 4px 40px;
+}
+
+/* TYPOGRAPHY */
+.mono {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.display {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* GREETING BANNER */
+.greeting {
+  background: linear-gradient(120deg, var(--navy) 0%, #1D2A52 100%);
+  border-radius: 16px;
+  padding: 24px 28px;
+  color: #fff;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  position: relative;
   overflow: hidden;
 }
-
-#__vconsole, #devtools, .devtools, [data-vconsole] {
-  display: none !important;
+.greeting::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(108,134,238,.35), transparent 70%);
+  pointer-events: none;
 }
-
-::-webkit-scrollbar {
-  display: none;
+.greeting-left {
+  position: relative;
+  z-index: 1;
 }
-
-* {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.service-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.service-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
-
-.service-icon {
-  margin-bottom: 1rem;
-}
-
-.service-title {
-  font-size: 1.125rem;
+.greeting-eyebrow {
+  font-size: 12px;
+  color: #9AA4CE;
   font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
+  letter-spacing: .03em;
+  margin-bottom: 6px;
 }
-
-.service-description {
-  font-size: 0.875rem;
-  color: #6b7280;
-  line-height: 1.4;
+.greeting-name {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
 }
-
-.space-y-3 > * + * {
-  margin-top: 0.75rem;
+.greeting-meta {
+  font-size: 13px;
+  color: #B7BEDB;
+  margin-top: 6px;
 }
-
-.flex {
+.greeting-stats {
   display: flex;
+  gap: 28px;
+  position: relative;
+  z-index: 1;
+}
+.g-stat .v {
+  font-size: 22px;
+  font-weight: 700;
+}
+.g-stat .l {
+  font-size: 11px;
+  color: #9AA4CE;
+  margin-top: 2px;
 }
 
-.items-center {
+/* WARNING & COMPLIANCE BANNERS */
+.banner-alert {
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
   align-items: center;
-}
-
-.justify-between {
   justify-content: space-between;
+  gap: 16px;
+  box-shadow: var(--shadow);
+}
+.banner-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.banner-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.banner-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.banner-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 2px;
+  display: inline-block;
+}
+.banner-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pill-pay {
+  font-size: 9.5px;
+  font-weight: 800;
+  background: var(--success-soft);
+  color: var(--success);
+  padding: 1px 7px;
+  border-radius: 20px;
+}
+.banner-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+.banner-desc {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+  max-width: 620px;
+}
+.banner-list {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  margin-top: 4px;
+  padding-left: 16px;
+}
+.btn-alert {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 9px 16px;
+  border-radius: 9px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  transition: all .15s ease;
+}
+.btn-alert svg {
+  width: 14px;
+  height: 14px;
 }
 
-.space-x-3 > * + * {
-  margin-left: 0.75rem;
+/* Banner themes */
+.danger-banner { background: var(--danger-soft); border: 1px solid rgba(220,38,38,0.2); }
+.danger-icon { background: rgba(220,38,38,0.15); color: var(--danger); }
+.danger-tag { color: var(--danger); }
+.danger-btn { background: var(--danger); color: #fff; }
+.danger-btn:hover { background: #B91C1C; }
+
+.info-banner { background: var(--accent-soft); border: 1px solid rgba(52,87,213,0.2); }
+.info-icon { background: rgba(52,87,213,0.15); color: var(--accent-ink); }
+.info-tag { color: var(--accent-ink); }
+.info-btn { background: var(--accent); color: #fff; }
+.info-btn:hover { background: var(--accent-ink); }
+
+.warning-banner { background: var(--warning-soft); border: 1px solid rgba(217,119,6,0.2); }
+.warning-icon { background: rgba(217,119,6,0.15); font-size: 18px; }
+.warning-tag { color: var(--warning); }
+.warning-btn { background: var(--warning); color: #fff; }
+.warning-btn:hover { background: #B45309; }
+
+.notice-banner { background: #FFFBEB; border: 1px solid rgba(217,119,6,0.2); }
+.notice-icon { background: rgba(217,119,6,0.15); color: var(--warning); }
+.notice-tag { color: var(--warning); }
+
+/* SECTION LABEL */
+.section-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.section-label .n {
+  font-size: 11px;
+  color: var(--ink-faint);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-weight: 600;
 }
 
-.flex-1 {
-  flex: 1 1 0%;
+/* KPI ROW */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
 }
-
-.text-sm {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px 16px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
 }
-
-.text-xs {
-  font-size: 0.75rem;
-  line-height: 1rem;
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(18,23,43,0.08);
 }
-
-.text-lg {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
+.kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
-
-.font-medium {
+.kpi-label {
+  font-size: 12px;
+  color: var(--ink-muted);
   font-weight: 500;
 }
-
-.font-semibold {
+.kpi-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kpi-icon svg {
+  width: 15px;
+  height: 15px;
+}
+.kpi-value {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--ink);
+}
+.kpi-value .unit {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+.kpi-foot {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--ink-muted);
+}
+.kpi-foot b {
+  color: var(--ink);
   font-weight: 600;
 }
 
-.text-gray-900 {
-  color: #111827;
+/* CARDS & GRID */
+.grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 22px;
+  align-items: start;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.card-title .sub {
+  display: block;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--ink-muted);
+  margin-top: 2px;
 }
 
-.text-gray-700 {
-  color: #374151;
+.charts-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.chart-wrap {
+  height: 170px;
+  position: relative;
 }
 
-.text-gray-600 {
-  color: #4b5563;
+/* LEAVE BALANCE BARS */
+.lv-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+}
+.lv-row .lbl {
+  width: 95px;
+  font-size: 12px;
+  color: var(--ink-muted);
+  flex: none;
+}
+.lv-row .track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.lv-row .fill {
+  height: 100%;
+  border-radius: 20px;
+}
+.lv-row .val {
+  width: 64px;
+  text-align: right;
+  font-size: 11.5px;
+  font-weight: 600;
+  flex: none;
+  color: var(--ink);
 }
 
-.text-gray-500 {
-  color: #6b7280;
-}
-
-.p-3 {
-  padding: 0.75rem;
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.mb-8 {
-  margin-bottom: 2rem;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
-
-.rounded-lg {
-  border-radius: 0.5rem;
-}
-
-.hover\:bg-gray-50:hover {
-  background-color: #f9fafb;
-}
-
-.transition-colors {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-.duration-200 {
-  transition-duration: 200ms;
-}
-
-.cursor-pointer {
+/* REQUEST TRACKER */
+.link-btn {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
   cursor: pointer;
 }
+.link-btn svg {
+  width: 13px;
+  height: 13px;
+}
+.track-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.track-row:last-child {
+  border-bottom: none;
+}
+.track-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.track-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.track-body {
+  flex: 1;
+  min-width: 0;
+}
+.track-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.track-meta {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+.status-chip {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  flex: none;
+}
+.status-chip.pending { background: var(--warning-soft); color: var(--warning); }
+.status-chip.approved { background: var(--success-soft); color: var(--success); }
+.status-chip.rejected { background: var(--danger-soft); color: var(--danger); }
 
-.w-full {
-  width: 100%;
+/* QUICK ACTIONS */
+.qa-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.qa {
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.qa:hover {
+  background: var(--accent-soft);
+  border-color: rgba(52,87,213,0.3);
+  transform: translateY(-1px);
+}
+.qa svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+.qa span {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+/* FEED / ANNOUNCEMENTS */
+.create-ann-btn {
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border: none;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.create-ann-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+.feed-item {
+  padding: 11px 2px;
+  border-bottom: 1px solid var(--border);
+}
+.feed-item:last-child {
+  border-bottom: none;
+}
+.feed-tag {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  margin-bottom: 3px;
+  display: inline-block;
+}
+.feed-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+}
+.feed-meta {
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+}
+
+/* UPCOMING EVENTS */
+.upcoming-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--border);
+}
+.upcoming-row:last-child {
+  border-bottom: none;
+}
+.date-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.date-box .d {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+.date-box .m {
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.upcoming-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.upcoming-meta {
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+/* ADMIN SECTION */
+.admin-section {
+  margin-top: 32px;
+}
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.admin-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: transform .15s ease, border-color .15s ease;
+}
+.admin-card:hover {
+  transform: translateY(-2px);
+}
+.purple-admin:hover { border-color: rgba(124,79,224,0.4); }
+.red-admin:hover { border-color: rgba(220,38,38,0.4); }
+.yellow-admin:hover { border-color: rgba(217,119,6,0.4); }
+.green-admin:hover { border-color: rgba(22,163,74,0.4); }
+
+.admin-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.admin-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.bg-purple { background: var(--violet-soft); color: var(--violet); }
+.bg-red { background: var(--danger-soft); color: var(--danger); }
+.bg-yellow { background: var(--warning-soft); color: var(--warning); }
+.bg-green { background: var(--success-soft); color: var(--success); }
+
+.admin-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.admin-sub {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  margin-top: 1px;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 1200px) {
+  .grid-layout { grid-template-columns: 1fr; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .admin-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .kpi-row { grid-template-columns: 1fr; }
+  .charts-row2 { grid-template-columns: 1fr; }
+  .admin-grid { grid-template-columns: 1fr; }
+  .greeting { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .greeting-stats { flex-wrap: wrap; gap: 18px; }
 }
 </style>

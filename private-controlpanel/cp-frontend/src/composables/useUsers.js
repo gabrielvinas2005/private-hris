@@ -135,9 +135,22 @@ export function useUsers() {
     //   // Will be implemented when backend route is available
     // }
 
-    // async function resetUserPassword(userId) {
-    //   // Will be implemented when backend route is available
-    // }
+    async function resetUserPassword(userId, newPassword = null) {
+        try {
+            const data = await apiService.resetUserPassword(userId, newPassword)
+            if (data.success) {
+                ElMessage.success(data.message || 'Password reset successfully!')
+                return { success: true, message: data.message, newPassword: data.data?.new_password }
+            } else {
+                ElMessage.error(data.message || 'Failed to reset password')
+                return { success: false, message: data.message }
+            }
+        } catch (error) {
+            console.error('Error resetting password:', error)
+            ElMessage.error('Error resetting password')
+            return { success: false, message: error.message }
+        }
+    }
 
     // Filter and search functions
     function filterUsers(filters = {}) {
@@ -193,6 +206,7 @@ export function useUsers() {
         fetchUsers,
         fetchAvailableEmployees,
         addUsers,
+        resetUserPassword,
         filterUsers
     }
 }

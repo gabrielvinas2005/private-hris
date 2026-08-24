@@ -43,6 +43,7 @@ Route::post('/verify-otp', 'Api\AuthController@verifyOtp');
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/downloadables', [DownloadablesController::class, 'index']);
     Route::get('/downloadables/{id}/download', [DownloadablesController::class, 'download']);
+    Route::get('/downloadables/{id}/preview', [DownloadablesController::class, 'preview']);
 });
 
 //Training Records Routes

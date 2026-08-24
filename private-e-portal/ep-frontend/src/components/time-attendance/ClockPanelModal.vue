@@ -260,6 +260,8 @@ export default {
         const newClockStatus = !this.isClockedIn
         localStorage.setItem('is_clocked_in', newClockStatus ? 'true' : 'false')
 
+        window.dispatchEvent(new CustomEvent('dtr-updated'))
+
         this.toast.success(`Successfully clocked ${this.isClockedIn ? 'out' : 'in'}!`)
         this.$emit('punch-success', response.data || response)
         this.$emit('update:visible', false)

@@ -38,7 +38,9 @@
     </div>
 
     <div v-else class="empty-notifications">
-      <div class="empty-bell">🔔</div>
+      <div class="empty-bell">
+        <svg style="width:48px;height:48px;color:#9ca3af;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-5 5v-5zM11 19a7 7 0 01-7-7v-3a4 4 0 014-4h6a4 4 0 014 4v3a7 7 0 01-7 7z"/></svg>
+      </div>
       <p class="empty-text">{{ emptyText }}</p>
     </div>
   </div>
