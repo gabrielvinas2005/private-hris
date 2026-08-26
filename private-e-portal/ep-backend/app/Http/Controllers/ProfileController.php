@@ -23,7 +23,7 @@ class ProfileController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except(['uploadPhoto']);
     }
 
     /**
@@ -166,6 +166,79 @@ class ProfileController extends Controller
             return $this->successResponse(['view' => 'account.profile_change_password'], 'Profile password page loaded successfully');
         } catch (\Exception $e) {
             return $this->serverErrorResponse('Failed to load profile password page: ' . $e->getMessage());
+        }
+    }
+
+    public function uploadPhoto(Request $request)
+    {
+        try {
+            $user = Auth::user() ?? $request->user();
+            if (!$user) {
+                return $this->errorResponse('Unauthenticated', 401);
+            }
+
+            if (!$request->hasFile('photo') && !$request->filled('photo')) {
+                return $this->errorResponse('No profile picture file or data provided.', 400);
+            }
+
+            // Check if 201 schedule allows update
+            $today = now()->format('Y-m-d');
+            $schedule = DB::table('update_201_schedule')
+                ->where('date_to', '>=', $today)
+                ->where('date_from', '<=', $today)
+                ->first();
+
+            if (!$schedule && !($user->is_admin ?? false)) {
+                return $this->errorResponse('Updating 201 File photo is currently not available based on schedule.', 403);
+            }
+
+            $photo_base64 = null;
+            if ($request->hasFile('photo')) {
+                $file = $request->file('photo');
+                $photo_base64 = base64_encode(file_get_contents($file->getRealPath()));
+            } else if ($request->filled('photo')) {
+                $rawPhoto = $request->photo;
+                if (strpos($rawPhoto, 'base64,') !== false) {
+                    $photo_base64 = explode('base64,', $rawPhoto)[1];
+                } else {
+                    $photo_base64 = $rawPhoto;
+                }
+            }
+
+            if (!$photo_base64) {
+                return $this->errorResponse('Invalid photo format provided.', 400);
+            }
+
+            // Store the photo at user's photo field
+            DB::table('users')
+                ->where('id', $user->id)
+                ->update(['photo' => $photo_base64, 'updated_at' => now()]);
+
+            // Also store/sync at employee photo if employee_no exists
+            if (!empty($user->employee_no)) {
+                DB::table('employees')
+                    ->where('employee_no', $user->employee_no)
+                    ->update(['photo' => $photo_base64, 'updated_at' => now()]);
+            }
+
+            try {
+                Audit::create([
+                    'user_id' => $user->id,
+                    'module'  => 'My Profile & Records',
+                    'menu'    => '201 File',
+                    'activity' => 'Update Profile Photo',
+                    'description' => 'Updated user profile picture.',
+                ]);
+            } catch (\Exception $auditEx) {
+                // Ignore audit failure if any
+            }
+
+            return $this->successResponse([
+                'photo' => $photo_base64,
+                'user_id' => $user->id
+            ], 'Profile picture updated successfully!');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to upload profile picture: ' . $e->getMessage());
         }
     }
 }

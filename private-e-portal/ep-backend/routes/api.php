@@ -105,6 +105,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Authentication (protected routes)
     Route::post('/logout', 'Api\AuthController@logout');
     Route::get('/profile', 'Api\AuthController@profile');
+    Route::post('/profile/upload-photo', 'ProfileController@uploadPhoto');
     Route::post('/refresh', 'Api\AuthController@refresh');
 
     // Dashboard
