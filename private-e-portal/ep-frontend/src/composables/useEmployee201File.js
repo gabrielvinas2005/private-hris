@@ -70,11 +70,8 @@ export function useEmployee201File() {
         { id: 'work', name: 'Work Information' },
         { id: 'family', name: 'Family' },
         { id: 'education', name: 'Education' },
-        { id: 'service', name: 'Service Record' },
         { id: 'experience', name: 'Work Experience' },
-        { id: 'eligibility', name: 'Eligibility' },
         { id: 'training', name: 'Training' },
-        { id: 'voluntary', name: 'Voluntary Work' },
         { id: 'ipcr', name: 'IPCR Result' },
         { id: 'other', name: 'Other' }
     ])

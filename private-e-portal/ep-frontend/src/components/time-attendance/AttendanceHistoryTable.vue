@@ -129,10 +129,80 @@
       </div>
     </div>
 
+    <!-- Week Navigation Bar (Top of Table) -->
+    <div class="px-5 py-3 bg-slate-100/70 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-bold text-slate-700">View Mode:</span>
+        <div class="inline-flex p-0.5 bg-slate-200/80 rounded-xl border border-slate-300/60">
+          <button
+            @click="viewMode = 'weekly'"
+            type="button"
+            :class="[
+              viewMode === 'weekly' ? 'bg-indigo-600 text-white font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900',
+              'px-2.5 py-1 text-xs rounded-lg transition-all cursor-pointer font-semibold'
+            ]"
+          >
+            Weekly View
+          </button>
+          <button
+            @click="viewMode = 'all'"
+            type="button"
+            :class="[
+              viewMode === 'all' ? 'bg-indigo-600 text-white font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900',
+              'px-2.5 py-1 text-xs rounded-lg transition-all cursor-pointer font-semibold'
+            ]"
+          >
+            All Cutoff Records
+          </button>
+        </div>
+      </div>
+
+      <!-- Week Selector Navigation Buttons (< This Week > or < August 16-22 >) -->
+      <div v-if="viewMode === 'weekly'" class="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-300/80 shadow-xs">
+        <button
+          @click="navigateWeek(-1)"
+          type="button"
+          title="Previous Week"
+          class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-all font-bold cursor-pointer"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <button
+          @click="resetToCurrentWeek"
+          type="button"
+          :title="weekOffset !== 0 ? 'Click to reset to This Week' : 'Current Week'"
+          :class="[
+            weekOffset === 0 ? 'bg-indigo-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-800 hover:bg-indigo-50 hover:text-indigo-600 font-bold',
+            'px-3.5 py-1 rounded-lg text-xs transition-all flex items-center gap-1.5 cursor-pointer'
+          ]"
+        >
+          <span>{{ currentWeekLabel }}</span>
+        </button>
+
+        <button
+          @click="navigateWeek(1)"
+          type="button"
+          title="Next Week"
+          class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-all font-bold cursor-pointer"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="text-xs text-slate-500 font-medium">
+        Showing <span class="font-bold text-slate-800">{{ displayTableRows.length }}</span> record(s)
+      </div>
+    </div>
+
     <!-- Attendance Data Table with Side Padding -->
-    <div class="p-4 sm:p-5 bg-slate-50/40">
+    <div class="p-4 sm:p-5 bg-slate-50/40 ">
       <el-table
-        :data="paginatedTableRows"
+        :data="displayTableRows"
         v-loading="loading"
         stripe
         border
@@ -251,9 +321,16 @@
       </el-table>
     </div>
 
-    <!-- Pagination & Page Size Control Bar -->
+    <!-- Pagination & Footer Summary Control Bar -->
     <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <div class="flex items-center gap-2 text-xs text-slate-600 font-medium">
+      <div v-if="viewMode === 'weekly'" class="flex items-center gap-2 text-xs text-slate-600 font-medium">
+        <span class="p-1 bg-indigo-50 text-indigo-700 rounded-md font-bold">Weekly View</span>
+        <span class="text-slate-500">
+          Displaying week period <strong class="text-slate-800">{{ currentWeekLabel }}</strong> ({{ displayTableRows.length }} day records)
+        </span>
+      </div>
+
+      <div v-else class="flex items-center gap-2 text-xs text-slate-600 font-medium">
         <span>Rows per page:</span>
         <el-select
           v-model="pageSize"
@@ -273,7 +350,7 @@
       </div>
 
       <el-pagination
-        v-if="filteredTableRows.length > pageSize"
+        v-if="viewMode === 'all' && filteredTableRows.length > pageSize"
         v-model:current-page="currentPage"
         :page-size="pageSize"
         :total="filteredTableRows.length"
@@ -381,10 +458,28 @@ export default {
       tableRows: [],
       currentPage: 1,
       pageSize: 10,
-      pageSizeOptions: [5, 10, 20, 50]
+      pageSizeOptions: [5, 10, 20, 50],
+      weekOffset: 0,
+      viewMode: 'weekly'
     }
   },
   computed: {
+    currentWeekLabel() {
+      if (this.weekOffset === 0) {
+        return 'This Week'
+      }
+      const { monday, sunday } = this.getWeekRange(this.weekOffset)
+      const monMonth = monday.toLocaleString('en-US', { month: 'long' })
+      const sunMonth = sunday.toLocaleString('en-US', { month: 'long' })
+      const monDate = monday.getDate()
+      const sunDate = sunday.getDate()
+
+      if (monMonth === sunMonth) {
+        return `${monMonth} ${monDate}-${sunDate}`
+      } else {
+        return `${monMonth} ${monDate} - ${sunMonth} ${sunDate}`
+      }
+    },
     filteredTableRows() {
       if (!this.selectedDayType || this.selectedDayType === 'All') {
         return this.tableRows
@@ -394,14 +489,31 @@ export default {
         return label === this.selectedDayType
       })
     },
-    paginatedTableRows() {
+    displayTableRows() {
       const rows = this.filteredTableRows
-      if (!this.pageSize || this.pageSize >= rows.length) {
-        return rows
+      if (this.viewMode !== 'weekly') {
+        if (!this.pageSize || this.pageSize >= rows.length) {
+          return rows
+        }
+        const start = (this.currentPage - 1) * this.pageSize
+        const end = start + this.pageSize
+        return rows.slice(start, end)
       }
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      return rows.slice(start, end)
+
+      const { monday, sunday } = this.getWeekRange(this.weekOffset)
+      const monMs = monday.getTime()
+      const sunMs = sunday.getTime()
+
+      return rows.filter(r => {
+        if (!r.date) return false
+        const d = new Date(r.date)
+        if (isNaN(d.getTime())) return false
+        const time = d.getTime()
+        return time >= monMs && time <= sunMs
+      })
+    },
+    paginatedTableRows() {
+      return this.displayTableRows
     },
     runningTotals() {
       let daysPresent = 0
@@ -525,11 +637,59 @@ export default {
           hours_worked: r.work_hours ?? r.hours_worked ?? 0,
           day_name: r.day_name || (r.date ? new Date(r.date).toLocaleDateString('en-US', { weekday: 'short' }) : '')
         })) : []
+        this.autoAdjustWeekOffsetToPeriod()
       } catch (err) {
         console.error('Fetch DTR error:', err)
         this.toast.error('Failed to load DTR history for selected period.')
       } finally {
         this.loading = false
+      }
+    },
+    getWeekRange(offset = 0) {
+      const now = new Date()
+      const currentDay = now.getDay()
+      const distanceToMonday = (currentDay + 6) % 7
+      const monday = new Date(now)
+      monday.setDate(now.getDate() - distanceToMonday + (offset * 7))
+      monday.setHours(0, 0, 0, 0)
+
+      const sunday = new Date(monday)
+      sunday.setDate(monday.getDate() + 6)
+      sunday.setHours(23, 59, 59, 999)
+
+      return { monday, sunday }
+    },
+    navigateWeek(offset) {
+      this.weekOffset += offset
+    },
+    resetToCurrentWeek() {
+      this.weekOffset = 0
+    },
+    autoAdjustWeekOffsetToPeriod() {
+      if (!this.tableRows || this.tableRows.length === 0) return
+      const { monday, sunday } = this.getWeekRange(this.weekOffset)
+      const monMs = monday.getTime()
+      const sunMs = sunday.getTime()
+      const hasCurrentMatch = this.tableRows.some(r => {
+        if (!r.date) return false
+        const d = new Date(r.date)
+        return !isNaN(d.getTime()) && d.getTime() >= monMs && d.getTime() <= sunMs
+      })
+
+      if (!hasCurrentMatch && this.tableRows[0]?.date) {
+        const firstDate = new Date(this.tableRows[0].date)
+        if (!isNaN(firstDate.getTime())) {
+          const now = new Date()
+          const currentDay = now.getDay()
+          const distToMon = (currentDay + 6) % 7
+          const currentMon = new Date(now)
+          currentMon.setDate(now.getDate() - distToMon)
+          currentMon.setHours(0, 0, 0, 0)
+
+          const diffMs = firstDate.getTime() - currentMon.getTime()
+          const diffWeeks = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7))
+          this.weekOffset = diffWeeks
+        }
       }
     },
     isHoliday(row) {

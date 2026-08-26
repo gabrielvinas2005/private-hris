@@ -31,12 +31,13 @@
           <button
             @click="resetToCurrentWeek"
             type="button"
+            :title="weekOffset !== 0 ? 'Click to reset to current week' : 'Current Week'"
             :class="[
-              weekOffset === 0 ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 hover:bg-white',
-              'text-[10px] px-1.5 py-0.5 rounded-lg transition-all font-semibold'
+              weekOffset === 0 ? 'bg-indigo-600 text-white font-bold' : 'text-slate-600 hover:bg-white hover:text-indigo-600',
+              'text-[10px] px-2 py-0.5 rounded-lg transition-all font-semibold cursor-pointer'
             ]"
           >
-            This Week
+            {{ weekLabelText }}
           </button>
 
           <button
@@ -148,6 +149,11 @@ export default {
     }
   },
   computed: {
+    weekLabelText() {
+      if (this.weekOffset === 0) return 'This Week'
+      if (this.weekOffset < 0) return 'Previous Week'
+      return 'Next Week'
+    },
     scheduledSummary() {
       const activeWorkDays = this.weekDays.filter(d => !d.isRestDay && !d.isWorkSuspended).length
       const suspendedDays = this.weekDays.filter(d => !d.isRestDay && d.isWorkSuspended).length

@@ -191,16 +191,6 @@
                 :form-data="editFormData"
                 @update:form-data="updateFormData" />
               
-              <!-- Service Record Tab -->
-              <ServiceRecord 
-                v-if="activeTab === 'service'" 
-                :service-records="serviceRecords"
-                :is-edit-mode="isEditMode"
-                :can-update="canUpdate"
-                :form-data="editFormData"
-                :employment-type-options="employmentTypeOptions || []"
-                @update:form-data="updateFormData" />
-              
               <!-- Work Experience Tab -->
               <WorkExperience 
                 v-if="activeTab === 'experience'" 
@@ -210,28 +200,10 @@
                 :form-data="editFormData"
                 @update:form-data="updateFormData" />
               
-              <!-- Eligibility Information Tab -->
-              <EligibilityInformation 
-                v-if="activeTab === 'eligibility'" 
-                :eligibilities="eligibilities"
-                :is-edit-mode="isEditMode"
-                :can-update="canUpdate"
-                :form-data="editFormData"
-                @update:form-data="updateFormData" />
-              
               <!-- Training Information Tab -->
               <TrainingInformation 
                 v-if="activeTab === 'training'" 
                 :trainings="trainings"
-                :is-edit-mode="isEditMode"
-                :can-update="canUpdate"
-                :form-data="editFormData"
-                @update:form-data="updateFormData" />
-              
-              <!-- Voluntary Work Tab -->
-              <VoluntaryWork 
-                v-if="activeTab === 'voluntary'" 
-                :voluntary-works="voluntaryWorks"
                 :is-edit-mode="isEditMode"
                 :can-update="canUpdate"
                 :form-data="editFormData"
@@ -292,11 +264,8 @@ import PersonalInformation from '../../components/201/PersonalInformation.vue'
 import WorkInformation from '../../components/201/WorkInformation.vue'
 import FamilyInformation from '../../components/201/FamilyInformation.vue'
 import EducationInformation from '../../components/201/EducationInformation.vue'
-import ServiceRecord from '../../components/201/ServiceRecord.vue'
 import WorkExperience from '../../components/201/WorkExperience.vue'
-import EligibilityInformation from '../../components/201/EligibilityInformation.vue'
 import TrainingInformation from '../../components/201/TrainingInformation.vue'
-import VoluntaryWork from '../../components/201/VoluntaryWork.vue'
 import IPCRResults from '../../components/201/IPCRResults.vue'
 import OtherInformation from '../../components/201/OtherInformation.vue'
 import { useEmployee201File } from '../../composables/useEmployee201File.js'
@@ -313,11 +282,8 @@ export default {
     WorkInformation,
     FamilyInformation,
     EducationInformation,
-    ServiceRecord,
     WorkExperience,
-    EligibilityInformation,
     TrainingInformation,
-    VoluntaryWork,
     IPCRResults,
     OtherInformation,
     Edit,

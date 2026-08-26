@@ -1,8 +1,8 @@
 <template>
   <div class="mb-6 relative">
     <!-- Profile Photo Avatar (Outside the white frame on the left) -->
-    <div class="relative flex items-center justify-center mb-4 md:mb-0 md:absolute md:left-6 md:top-1/2 md:-translate-y-1/2 z-10 flex-shrink-0">
-      <div class="w-28 h-28 sm:w-40 sm:h-40 rounded-full border-[6px] border-[#3f3f3f] overflow-hidden bg-gray-100 flex items-center justify-center shadow-md">
+    <div class="relative flex items-center justify-center mb-4 md:mb-0 md:absolute md:left-6 md:top-1/2 md:-translate-y-1/2 z-10 flex-shrink-0 group">
+      <div class="w-28 h-28 sm:w-40 sm:h-40 rounded-full border-[6px] border-[#3f3f3f] overflow-hidden bg-gray-100 flex items-center justify-center shadow-md relative">
         <template v-if="hasPhoto">
           <img
             :src="computedImageSrc"
@@ -18,7 +18,52 @@
             <User />
           </el-icon>
         </template>
+
+        <!-- Hover Overlay for Uploading Photo (when canUpdate is true) -->
+        <div
+          v-if="canUpdate"
+          @click="triggerPhotoUpload"
+          class="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center cursor-pointer text-white p-2 text-center select-none z-10"
+          title="Click to Change/Add Profile Picture"
+        >
+          <el-icon :size="26" class="mb-1">
+            <Camera />
+          </el-icon>
+          <span class="text-xs font-semibold">
+            {{ hasPhoto ? 'Change Photo' : 'Add Photo' }}
+          </span>
+        </div>
+
+        <!-- Loading spinner overlay during upload -->
+        <div
+          v-if="isUploadingPhoto"
+          class="absolute inset-0 bg-slate-900/70 flex flex-col items-center justify-center text-white z-20"
+        >
+          <el-icon class="is-loading mb-1" :size="28"><Loading /></el-icon>
+          <span class="text-xs font-medium">Uploading...</span>
+        </div>
       </div>
+
+      <!-- Quick Action Camera Badge Button (when canUpdate is true) -->
+      <button
+        v-if="canUpdate"
+        @click="triggerPhotoUpload"
+        type="button"
+        class="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-9 h-9 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-all transform hover:scale-110 cursor-pointer z-20"
+        title="Change/Add Profile Picture"
+        :disabled="isUploadingPhoto"
+      >
+        <el-icon :size="16"><Camera /></el-icon>
+      </button>
+
+      <!-- Hidden File Input -->
+      <input
+        ref="photoInput"
+        type="file"
+        accept="image/jpeg,image/png,image/jpg,image/webp"
+        class="hidden"
+        @change="handlePhotoSelected"
+      />
     </div>
 
     <!-- Frame 98 Read-Mode Profile Header Banner -->
@@ -104,12 +149,16 @@
 </template>
 
 <script>
-import { User } from '@element-plus/icons-vue'
+import { User, Camera, Loading } from '@element-plus/icons-vue'
+import { ElMessage, ElNotification } from 'element-plus'
+import ApiService from '../../services/api.js'
 
 export default {
   name: 'EmployeeProfileCard',
   components: {
-    User
+    User,
+    Camera,
+    Loading
   },
   props: {
     employee: {
@@ -173,7 +222,8 @@ export default {
       isImageLoaded: false,
       imageFailed: false,
       lastBase64: null,
-      localFormData: {}
+      localFormData: {},
+      isUploadingPhoto: false
     }
   },
   watch: {
@@ -504,6 +554,75 @@ export default {
       }
       
       this.$emit('update:form-data', this.localFormData)
+    },
+    triggerPhotoUpload() {
+      if (!this.canUpdate) return
+      if (this.$refs.photoInput) {
+        this.$refs.photoInput.click()
+      }
+    },
+    async handlePhotoSelected(event) {
+      const file = event.target.files && event.target.files[0]
+      if (!file) return
+
+      const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp']
+      if (!validTypes.includes(file.type)) {
+        ElMessage.error('Please select a valid image file (JPEG, PNG, WEBP)')
+        event.target.value = ''
+        return
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        ElMessage.error('Profile picture file size must be less than 5MB')
+        event.target.value = ''
+        return
+      }
+
+      this.isUploadingPhoto = true
+
+      try {
+        const formData = new FormData()
+        formData.append('photo', file)
+
+        const response = await ApiService.uploadProfilePhoto(formData)
+
+        if (response && response.success) {
+          const newPhoto = response.data.photo
+          if (this.employee) {
+            this.employee.photo = newPhoto
+          }
+          this.imageFailed = false
+          this.isImageLoaded = true
+
+          try {
+            const stored = localStorage.getItem('user_data')
+            if (stored) {
+              const u = JSON.parse(stored)
+              u.photo = newPhoto
+              localStorage.setItem('user_data', JSON.stringify(u))
+            }
+          } catch (e) {
+            // ignore
+          }
+
+          ElNotification({
+            title: 'Success',
+            message: 'Profile picture updated successfully!',
+            type: 'success',
+            duration: 3000
+          })
+        } else {
+          ElMessage.error(response?.message || 'Failed to update profile picture')
+        }
+      } catch (err) {
+        console.error('Failed to upload photo:', err)
+        ElMessage.error(err.message || 'Error uploading profile picture')
+      } finally {
+        this.isUploadingPhoto = false
+        if (this.$refs.photoInput) {
+          this.$refs.photoInput.value = ''
+        }
+      }
     }
   }
 }

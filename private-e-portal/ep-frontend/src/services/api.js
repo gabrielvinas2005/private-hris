@@ -355,6 +355,19 @@ class ApiService {
         })
     }
 
+    async uploadProfilePhoto(photoData) {
+        let body
+        if (photoData instanceof FormData) {
+            body = photoData
+        } else {
+            body = JSON.stringify({ photo: photoData })
+        }
+        return this.request('/profile/upload-photo', {
+            method: 'POST',
+            body
+        })
+    }
+
     // Employee IPCR API methods
     async checkDivisionChiefAccess() {
         return this.request('/employee-ipcr/check-access')

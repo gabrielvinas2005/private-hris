@@ -60,25 +60,7 @@
           </svg>
           <span v-if="!isSidebarCollapsed">My Profile & Records</span>
         </router-link>
-        
-        <!-- Leave Management -->
-        <router-link
-          to="/leave-management"
-          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
-          :class="[
-            isSidebarCollapsed ? 'justify-center px-0' : 'px-3.5', 
-            isActive('/leave-management')
-              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25' 
-              : (isDarkMode ? 'text-slate-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100')
-          ]"
-          v-if="isMenuAccessLoaded && hasMenuAccess('Leave Management')"
-        >
-          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <span v-if="!isSidebarCollapsed">Leave Management</span>
-        </router-link>
-
+ 
         <!-- Time and Attendance -->
         <router-link
           to="/time-attendance"
@@ -97,23 +79,24 @@
           <span v-if="!isSidebarCollapsed">Time and Attendance</span>
         </router-link>
 
-        <!-- Training Records -->
+        <!-- Leave Management -->
         <router-link
-            to="/training-records"
-            class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
-            :class="[
-              isSidebarCollapsed ? 'justify-center px-0' : 'px-3.5', 
-              isActive('/training-records') 
-                ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25' 
-                : (isDarkMode ? 'text-slate-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100')
-            ]"
+          to="/leave-management"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            isSidebarCollapsed ? 'justify-center px-0' : 'px-3.5', 
+            isActive('/leave-management')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25' 
+              : (isDarkMode ? 'text-slate-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100')
+          ]"
+          v-if="isMenuAccessLoaded && hasMenuAccess('Leave Management')"
         >
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-11.247S17.5 6.253 12 6.253z"></path>
-            </svg>
-            <span v-if="!isSidebarCollapsed">Training Records</span>
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          <span v-if="!isSidebarCollapsed">Leave Management</span>
         </router-link>
-        
+       
         <!-- Overtime Management -->
         <router-link
           to="/overtime-monitoring"
@@ -131,7 +114,7 @@
           </svg>
           <span v-if="!isSidebarCollapsed">Overtime Management</span>
         </router-link>
-        
+         
         <!-- Payslip -->
         <router-link
           to="/payslip"
@@ -168,7 +151,7 @@
           <span v-if="!isSidebarCollapsed">Daily Time Record</span>
         </router-link>
         
-        <!-- WFH Application -->
+        <!-- WFH Application 
         <router-link
           to="/wfh-application"
           class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
@@ -184,7 +167,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
           </svg>
           <span v-if="!isSidebarCollapsed">WFH Application</span>
-        </router-link>
+        </router-link>-->
 
         <!-- Interview Ratings (Panels) -->
         <router-link
@@ -202,6 +185,24 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
           </svg>
           <span v-if="!isSidebarCollapsed">Interview Ratings (Panels)</span>
+        </router-link>
+        
+        <!-- Training Records -->
+        <router-link
+          to="/training-records"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            isSidebarCollapsed ? 'justify-center px-0' : 'px-3.5',
+            isActive('/training-records')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : (isDarkMode ? 'text-slate-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100')
+          ]"
+        >
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span v-if="!isSidebarCollapsed">Training Records</span>
         </router-link>
         
         <!-- Announcements -->
@@ -257,6 +258,7 @@
           <span v-if="!isSidebarCollapsed">Downloadables</span>
         </router-link>
 
+        <!-- IPCR -->
         <router-link
           v-if="isIpcrAvailable"
           to="/ipcr"
@@ -274,6 +276,7 @@
           <span v-if="!isSidebarCollapsed">IPCR</span>
         </router-link>
 
+        <!-- IPCR Agency Head Approval -->
         <router-link
           v-if="isIpcrAgencyHead"
           to="/ipcr/agency-head-approval"
@@ -294,6 +297,7 @@
           </span>
         </router-link>
 
+        <!-- IPCR HR Recalibration -->
         <router-link
           v-if="isIpcrHR"
           to="/ipcr/hr-recalibration"
@@ -314,6 +318,7 @@
           </span>
         </router-link>
 
+        <!-- OPCR -->
         <router-link
           v-if="isOpcrAvailable"
           to="/opcr"
@@ -331,6 +336,7 @@
           <span v-if="!isSidebarCollapsed">OPCR</span>
         </router-link>
 
+        <!-- DPCR -->
         <router-link
           v-if="isDpcrAvailable"
           to="/dpcr"
@@ -582,8 +588,13 @@
                   <p class="text-sm font-semibold text-slate-900">{{ userData.name }}</p>
                   <p class="text-xs text-slate-500">{{ userData.email }}</p>
                 </div>
-                <img v-if="photoReady && userAvatarPhoto && !hasAvatarError" :src="userAvatarPhoto" @error="hasAvatarError = true" alt="Profile" class="w-9 h-9 rounded-full object-cover shadow-sm border border-slate-200" />
-                <div v-else class="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-[#4A6CFB] to-[#22308F] text-white font-bold text-xs shadow-sm shadow-[#3B5EFF]/30">
+                <el-skeleton v-if="!photoReady" animated class="w-9 h-9 flex items-center justify-center flex-shrink-0">
+                  <template #template>
+                    <el-skeleton-item variant="circle" style="width: 36px; height: 36px;" />
+                  </template>
+                </el-skeleton>
+                <img v-else-if="userAvatarPhoto && !hasAvatarError" :src="userAvatarPhoto" @error="hasAvatarError = true" alt="Profile" class="w-9 h-9 rounded-full object-cover shadow-sm border border-slate-200 flex-shrink-0" />
+                <div v-else class="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-[#4A6CFB] to-[#22308F] text-white font-bold text-xs shadow-sm shadow-[#3B5EFF]/30 flex-shrink-0">
                   {{ userInitials }}
                 </div>
               </div>

@@ -41,7 +41,7 @@
 
     <!-- Schedule Warning / Late Clock-In Alert Banner -->
     <div
-      v-if="!isWorkSuspended && (scheduleWarning || isLateForClockin)"
+      v-if="!isWorkSuspended && (scheduleWarning || isLateForClockin) && !isLateNoticeDismissed"
       class="mb-3 p-2.5 px-3.5 rounded-xl border bg-rose-50 border-rose-200 text-rose-800 flex items-center justify-between text-xs font-semibold shadow-xs"
     >
       <div class="flex items-center gap-2">
@@ -50,6 +50,15 @@
         </svg>
         <span>{{ scheduleWarning || 'Schedule Warning: You have not logged in according to your schedule today!' }}</span>
       </div>
+      <button
+        @click="dismissLateNotice"
+        class="text-rose-400 hover:text-rose-700 hover:bg-rose-100 p-1 rounded-lg transition-colors ml-2 cursor-pointer flex-shrink-0"
+        title="Dismiss notice"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
 
     <!-- 4 Punch Time Cells -->
@@ -159,7 +168,14 @@ export default {
   data() {
     return {
       now: new Date(),
-      timer: null
+      timer: null,
+      isLateNoticeDismissed: sessionStorage.getItem('late_clockin_notice_dismissed') === 'true'
+    }
+  },
+  methods: {
+    dismissLateNotice() {
+      this.isLateNoticeDismissed = true
+      sessionStorage.setItem('late_clockin_notice_dismissed', 'true')
     }
   },
   mounted() {

@@ -1,445 +1,536 @@
 <template>
   <MainLayout>
     <div class="overview-container">
-      
-      <!-- GREETING BANNER -->
-      <div class="greeting">
-        <div class="greeting-left">
-          <div class="greeting-eyebrow">{{ greetingTime }}</div>
-          <div class="greeting-name display">{{ userData.name || 'Employee' }}</div>
-          <div class="greeting-meta">
-            {{ userRoleTitle }} · {{ userDepartment }} · Employee ID <span class="mono">{{ userEmployeeNo }}</span>
-          </div>
-        </div>
-        <div class="greeting-stats">
-          <div class="g-stat">
-            <div class="v mono">{{ dashboardData.leave_balance?.total_balance ?? 14 }}</div>
-            <div class="l">Days off left</div>
-          </div>
-          <div class="g-stat">
-            <div class="v mono">{{ payslipSummary ? formatCurrency(payslipSummary.net_pay) : '₱42.6K' }}</div>
-            <div class="l">Last payslip</div>
-          </div>
-          <div class="g-stat">
-            <div class="v mono">96%</div>
-            <div class="l">Attendance rate</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- WARNING / COMPLIANCE BANNERS -->
-      <!-- Missed Log Warning Banner -->
-      <div v-if="hasMissedLog" class="banner-alert danger-banner">
-        <div class="banner-left">
-          <div class="banner-icon danger-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-          </div>
-          <div>
-            <span class="banner-tag danger-tag">Action Required — DTR Alert</span>
-            <h3 class="banner-title display">Missed Log Warning Detected</h3>
-            <p class="banner-desc">You have an unclosed attendance record from your previous shift (missing clock out). File a DTR Correction now to keep your daily time records complete.</p>
-          </div>
-        </div>
-        <button @click="fileMissedLogCorrection" class="btn-alert danger-btn">
-          <span>1-Click File Correction</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
-      </div>
-
-      <!-- Work Suspension Banner -->
-      <div v-if="isWorkSuspended" class="banner-alert info-banner">
-        <div class="banner-left">
-          <div class="banner-icon info-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0v-5a2 2 0 012-2h2a2 2 0 012 2v5m-6 0h6"/></svg>
-          </div>
-          <div>
-            <div class="banner-tag-row">
-              <span class="banner-tag info-tag">Official Notice</span>
-              <span v-if="workSuspensionWithPay" class="pill-pay">WITH PAY</span>
+      <el-skeleton :loading="loading" animated>
+        <template #template>
+          <!-- GREETING BANNER SKELETON -->
+          <div class="greeting">
+            <div class="greeting-left">
+              <el-skeleton-item variant="text" style="width: 120px; height: 14px; margin-bottom: 8px; border-radius: 4px; background: rgba(255,255,255,0.2);" />
+              <el-skeleton-item variant="h1" style="width: 260px; height: 28px; margin-bottom: 8px; border-radius: 6px; background: rgba(255,255,255,0.3);" />
+              <el-skeleton-item variant="text" style="width: 340px; height: 14px; border-radius: 4px; background: rgba(255,255,255,0.2);" />
             </div>
-            <h3 class="banner-title display">Work Suspended Today</h3>
-            <p class="banner-desc">{{ workSuspensionReason || 'Work has been officially suspended today. Attendance logging is optional.' }}</p>
+            <div class="greeting-stats">
+              <div class="g-stat" v-for="i in 3" :key="i">
+                <el-skeleton-item variant="text" style="width: 50px; height: 24px; margin-bottom: 4px; border-radius: 4px; background: rgba(255,255,255,0.3);" />
+                <el-skeleton-item variant="text" style="width: 80px; height: 12px; border-radius: 4px; background: rgba(255,255,255,0.2);" />
+              </div>
+            </div>
           </div>
-        </div>
-        <button @click="navigateToModule('time-attendance')" class="btn-alert info-btn">
-          <span>View Attendance Details</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
-      </div>
 
-      <!-- Schedule Warning Banner -->
-      <div v-if="scheduleWarning || isLateForClockin" class="banner-alert warning-banner">
-        <div class="banner-left">
-          <div class="banner-icon warning-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          <!-- SECTION LABEL: MY OVERVIEW SKELETON -->
+          <div class="section-label display">
+            <el-skeleton-item variant="text" style="width: 110px; height: 18px; border-radius: 4px;" />
+            <el-skeleton-item variant="rect" style="width: 24px; height: 18px; border-radius: 20px;" />
           </div>
-          <div>
-            <span class="banner-tag warning-tag">Attendance Alert — Schedule Compliance</span>
-            <h3 class="banner-title display">Unlogged Shift / Schedule Alert</h3>
-            <p class="banner-desc">{{ scheduleWarning || 'You have not logged in according to your assigned shift schedule today. Please record your clock-in immediately.' }}</p>
-          </div>
-        </div>
-        <button @click="navigateToModule('time-attendance')" class="btn-alert warning-btn">
-          <span>Clock In / View DTR</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
-      </div>
 
-      <!-- Notifications Banner -->
-      <div v-if="hasNotifications" class="banner-alert notice-banner">
-        <div class="banner-left">
-          <div class="banner-icon notice-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <!-- KPI ROW SKELETON (4 CARDS) -->
+          <div class="kpi-row">
+            <div v-for="i in 4" :key="i" class="kpi-card">
+              <div class="kpi-top">
+                <el-skeleton-item variant="text" style="width: 90px; height: 14px; border-radius: 4px;" />
+                <el-skeleton-item variant="rect" style="width: 28px; height: 28px; border-radius: 8px;" />
+              </div>
+              <el-skeleton-item variant="h3" style="width: 80px; height: 28px; margin: 8px 0; border-radius: 6px;" />
+              <el-skeleton-item variant="text" style="width: 140px; height: 12px; border-radius: 4px;" />
+            </div>
           </div>
-          <div>
-            <span class="banner-tag notice-tag">Updates Pending</span>
-            <h3 class="banner-title display">You have updates waiting</h3>
-            <ul class="banner-list">
-              <li v-if="dashboardData.pending_requests?.total">
-                {{ dashboardData.pending_requests.total }} transaction(s) pending approval
-              </li>
-              <li v-if="contractExpiringSoon">
-                Your contract/probation period ends {{ formatDate(contractExpiringSoon) }}
-              </li>
-              <li v-if="recentlyResolvedCount">
-                {{ recentlyResolvedCount }} transaction(s) recently resolved
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
-      <!-- SECTION LABEL -->
-      <p class="section-label display">
-        My Overview <span class="n mono">4</span>
-      </p>
+          <!-- MAIN GRID LAYOUT SKELETON -->
+          <div class="grid-layout">
+            <!-- LEFT COLUMN SKELETON -->
+            <div>
+              <!-- CHARTS ROW SKELETON -->
+              <div class="charts-row2">
+                <div class="card">
+                  <div class="card-head">
+                    <div style="width: 100%;">
+                      <el-skeleton-item variant="text" style="width: 150px; height: 16px; margin-bottom: 6px; border-radius: 4px;" />
+                      <el-skeleton-item variant="text" style="width: 130px; height: 12px; border-radius: 4px;" />
+                    </div>
+                  </div>
+                  <div v-for="j in 4" :key="j" class="lv-row">
+                    <el-skeleton-item variant="text" style="width: 80px; height: 12px; border-radius: 4px;" />
+                    <el-skeleton-item variant="rect" style="flex: 1; height: 8px; border-radius: 20px;" />
+                    <el-skeleton-item variant="text" style="width: 45px; height: 12px; border-radius: 4px;" />
+                  </div>
+                </div>
 
-      <!-- KPI ROW (4 CARDS) -->
-      <div class="kpi-row">
-        <!-- KPI 1: Leave Balance -->
-        <div class="kpi-card" @click="navigateToModule('leaves')">
-          <div class="kpi-top">
-            <span class="kpi-label">Leave Balance</span>
-            <span class="kpi-icon" style="background:var(--accent-soft);">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            </span>
-          </div>
-          <div class="kpi-value mono">
-            {{ dashboardData.leave_balance?.total_balance ?? 14 }}<span class="unit">days</span>
-          </div>
-          <div class="kpi-foot">
-            <b>{{ leaveVacationBalance }}</b> vacation · <b>{{ leaveSickBalance }}</b> sick
-          </div>
-        </div>
-
-        <!-- KPI 2: Next Payslip -->
-        <div class="kpi-card" @click="navigateToModule('payslip')">
-          <div class="kpi-top">
-            <span class="kpi-label">Next Payslip</span>
-            <span class="kpi-icon" style="background:var(--success-soft);">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </span>
-          </div>
-          <div class="kpi-value mono">
-            {{ payslipSummary?.period_label || 'Aug 30' }}
-          </div>
-          <div class="kpi-foot">
-            Est. <b>{{ payslipSummary ? formatCurrency(payslipSummary.net_pay) : '₱43.1K' }}</b> net pay
-          </div>
-        </div>
-
-        <!-- KPI 3: Attendance (MTD) -->
-        <div class="kpi-card" @click="navigateToModule('time-attendance')">
-          <div class="kpi-top">
-            <span class="kpi-label">Attendance (MTD)</span>
-            <span class="kpi-icon" style="background:var(--violet-soft);">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
-            </span>
-          </div>
-          <div class="kpi-value mono">
-            96<span class="unit">%</span>
-          </div>
-          <div class="kpi-foot"><b>1</b> late arrival this month</div>
-        </div>
-
-        <!-- KPI 4: My Requests -->
-        <div class="kpi-card" @click="navigateToModule('leaves')">
-          <div class="kpi-top">
-            <span class="kpi-label">My Requests</span>
-            <span class="kpi-icon" style="background:var(--warning-soft);">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-            </span>
-          </div>
-          <div class="kpi-value mono">
-            {{ dashboardData.pending_requests?.total ?? 2 }}<span class="unit">pending</span>
-          </div>
-          <div class="kpi-foot">
-            <b>{{ dashboardData.pending_requests?.leaves ?? 1 }}</b> leave · <b>{{ dashboardData.pending_requests?.overtime ?? 1 }}</b> overtime
-          </div>
-        </div>
-      </div>
-
-      <!-- MAIN GRID LAYOUT -->
-      <div class="grid-layout">
-        
-        <!-- LEFT COLUMN -->
-        <div>
-          <!-- CHARTS ROW -->
-          <div class="charts-row2">
-            <!-- Leave Balance by Type Card -->
-            <div class="card">
-              <div class="card-head">
-                <div class="card-title display">
-                  Leave Balance by Type
-                  <span class="sub">Entitlement used this year</span>
+                <div class="card">
+                  <div class="card-head">
+                    <div style="width: 100%;">
+                      <el-skeleton-item variant="text" style="width: 130px; height: 16px; margin-bottom: 6px; border-radius: 4px;" />
+                      <el-skeleton-item variant="text" style="width: 90px; height: 12px; border-radius: 4px;" />
+                    </div>
+                  </div>
+                  <el-skeleton-item variant="rect" style="width: 100%; height: 170px; border-radius: 10px;" />
                 </div>
               </div>
-              <div class="lv-row">
-                <div class="lbl">Vacation</div>
-                <div class="track"><div class="fill" style="width:66%;background:var(--accent);"></div></div>
-                <div class="val mono">10 / 15</div>
+
+              <!-- SECTION LABEL: MY REQUESTS SKELETON -->
+              <div class="section-label display" style="margin-top: 10px;">
+                <el-skeleton-item variant="text" style="width: 100px; height: 18px; border-radius: 4px;" />
+                <el-skeleton-item variant="rect" style="width: 70px; height: 18px; border-radius: 20px;" />
               </div>
-              <div class="lv-row">
-                <div class="lbl">Sick</div>
-                <div class="track"><div class="fill" style="width:40%;background:var(--success);"></div></div>
-                <div class="val mono">4 / 10</div>
-              </div>
-              <div class="lv-row">
-                <div class="lbl">Emergency</div>
-                <div class="track"><div class="fill" style="width:0%;background:var(--warning);"></div></div>
-                <div class="val mono">3 / 3</div>
-              </div>
-              <div class="lv-row">
-                <div class="lbl">Bereavement</div>
-                <div class="track"><div class="fill" style="width:0%;background:var(--violet);"></div></div>
-                <div class="val mono">5 / 5</div>
+
+              <!-- REQUEST TRACKER SKELETON -->
+              <div class="card" style="margin-bottom:24px;">
+                <div class="card-head">
+                  <el-skeleton-item variant="text" style="width: 120px; height: 16px; border-radius: 4px;" />
+                  <el-skeleton-item variant="text" style="width: 100px; height: 14px; border-radius: 4px;" />
+                </div>
+                <div v-for="k in 4" :key="k" class="track-row">
+                  <el-skeleton-item variant="rect" style="width: 34px; height: 34px; border-radius: 10px;" />
+                  <div style="flex: 1; margin: 0 12px;">
+                    <el-skeleton-item variant="text" style="width: 55%; height: 14px; margin-bottom: 4px; border-radius: 4px;" />
+                    <el-skeleton-item variant="text" style="width: 75%; height: 12px; border-radius: 4px;" />
+                  </div>
+                  <el-skeleton-item variant="rect" style="width: 60px; height: 20px; border-radius: 20px;" />
+                </div>
               </div>
             </div>
 
-            <!-- Attendance Trend Card -->
-            <div class="card">
-              <div class="card-head">
-                <div class="card-title display">
-                  Attendance Trend
-                  <span class="sub">Last 6 months</span>
+            <!-- RIGHT RAIL SKELETON -->
+            <div>
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-head">
+                  <el-skeleton-item variant="text" style="width: 100px; height: 16px; border-radius: 4px;" />
+                </div>
+                <div class="qa-grid">
+                  <div v-for="q in 4" :key="q" class="qa">
+                    <el-skeleton-item variant="rect" style="width: 18px; height: 18px; border-radius: 4px;" />
+                    <el-skeleton-item variant="text" style="width: 70px; height: 12px; border-radius: 4px;" />
+                  </div>
                 </div>
               </div>
-              <div class="chart-wrap">
-                <canvas id="chartAttendanceCanvas"></canvas>
+
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-head">
+                  <el-skeleton-item variant="text" style="width: 110px; height: 16px; border-radius: 4px;" />
+                </div>
+                <div v-for="f in 3" :key="f" class="feed-item">
+                  <el-skeleton-item variant="text" style="width: 80px; height: 10px; margin-bottom: 4px; border-radius: 4px;" />
+                  <el-skeleton-item variant="text" style="width: 90%; height: 14px; margin-bottom: 4px; border-radius: 4px;" />
+                  <el-skeleton-item variant="text" style="width: 60%; height: 11px; border-radius: 4px;" />
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <el-skeleton-item variant="text" style="width: 80px; height: 16px; border-radius: 4px;" />
+                </div>
+                <div v-for="u in 3" :key="u" class="upcoming-row">
+                  <el-skeleton-item variant="rect" style="width: 40px; height: 40px; border-radius: 10px;" />
+                  <div style="flex: 1;">
+                    <el-skeleton-item variant="text" style="width: 70%; height: 14px; margin-bottom: 4px; border-radius: 4px;" />
+                    <el-skeleton-item variant="text" style="width: 50%; height: 11px; border-radius: 4px;" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- REQUEST TRACKER -->
-          <p class="section-label display">
-            My Requests <span class="n mono">{{ dashboardData.pending_requests?.total ?? 2 }} pending</span>
-          </p>
+          <!-- ADMINISTRATIVE ACCESS SKELETON -->
+          <div class="admin-section">
+            <div class="section-label display">
+              <el-skeleton-item variant="text" style="width: 160px; height: 18px; border-radius: 4px;" />
+            </div>
+            <div class="admin-grid">
+              <div v-for="a in 4" :key="a" class="admin-card">
+                <el-skeleton-item variant="rect" style="width: 42px; height: 42px; border-radius: 11px;" />
+                <div style="flex: 1;">
+                  <el-skeleton-item variant="text" style="width: 90px; height: 14px; margin-bottom: 4px; border-radius: 4px;" />
+                  <el-skeleton-item variant="text" style="width: 110px; height: 12px; border-radius: 4px;" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
 
-          <div class="card" style="margin-bottom:24px;">
-            <div class="card-head">
-              <div class="card-title display">Request Tracker</div>
-              <button @click="navigateToModule('leaves')" class="link-btn">
-                File new request 
+        <template #default>
+          <!-- GREETING BANNER -->
+          <div class="greeting">
+            <div class="greeting-left">
+              <div class="greeting-eyebrow">{{ greetingTime }}</div>
+              <div class="greeting-name display">{{ userData.name || 'Employee' }}</div>
+              <div class="greeting-meta">
+                {{ userRoleTitle }} · {{ userDepartment }} · Employee ID <span class="mono">{{ userEmployeeNo }}</span>
+              </div>
+            </div>
+            <div class="greeting-stats">
+              <div class="g-stat">
+                <div class="v mono">{{ dashboardData.leave_balance?.total_balance ?? 0 }}</div>
+                <div class="l">Days off left</div>
+              </div>
+              <div class="g-stat">
+                <div class="v mono">{{ payslipSummary ? formatCurrency(payslipSummary.net_pay) : '—' }}</div>
+                <div class="l">Last payslip</div>
+              </div>
+              <div class="g-stat">
+                <div class="v mono">{{ attendanceMtdRate != null ? attendanceMtdRate + '%' : '—' }}</div>
+                <div class="l">Attendance rate</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- WARNING / COMPLIANCE BANNERS -->
+          <!-- Missed Log Warning Banner -->
+          <div v-if="hasMissedLog" class="banner-alert danger-banner">
+            <div class="banner-left">
+              <div class="banner-icon danger-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              </div>
+              <div>
+                <span class="banner-tag danger-tag">Action Required — DTR Alert</span>
+                <h3 class="banner-title display">Missed Log Warning Detected</h3>
+                <p class="banner-desc">You have an unclosed attendance record from your previous shift (missing clock out). File a DTR Correction now to keep your daily time records complete.</p>
+              </div>
+            </div>
+            <button @click="fileMissedLogCorrection" class="btn-alert danger-btn">
+              <span>1-Click File Correction</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+
+          <!-- Work Suspension Banner -->
+          <div v-if="isWorkSuspended" class="banner-alert info-banner">
+            <div class="banner-left">
+              <div class="banner-icon info-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0v-5a2 2 0 012-2h2a2 2 0 012 2v5m-6 0h6"/></svg>
+              </div>
+              <div>
+                <div class="banner-tag-row">
+                  <span class="banner-tag info-tag">Official Notice</span>
+                  <span v-if="workSuspensionWithPay" class="pill-pay">WITH PAY</span>
+                </div>
+                <h3 class="banner-title display">Work Suspended Today</h3>
+                <p class="banner-desc">{{ workSuspensionReason || 'Work has been officially suspended today. Attendance logging is optional.' }}</p>
+              </div>
+            </div>
+            <button @click="navigateToModule('time-attendance')" class="btn-alert info-btn">
+              <span>View Attendance Details</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+
+          <!-- Schedule Warning Banner -->
+          <div v-if="(scheduleWarning || isLateForClockin) && !isScheduleNoticeDismissed" class="banner-alert warning-banner flex items-center justify-between">
+            <div class="banner-left">
+              <div class="banner-icon warning-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              </div>
+              <div>
+                <span class="banner-tag warning-tag">Attendance Alert — Schedule Compliance</span>
+                <h3 class="banner-title display">Unlogged Shift / Schedule Alert</h3>
+                <p class="banner-desc">{{ scheduleWarning || 'You have not logged in according to your assigned shift schedule today. Please record your clock-in immediately.' }}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button @click="navigateToModule('time-attendance')" class="btn-alert warning-btn">
+                <span>Clock In / View DTR</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </button>
-            </div>
-
-            <div class="track-row">
-              <div class="track-icon" style="background:var(--accent-soft);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-              </div>
-              <div class="track-body">
-                <div class="track-title">Vacation Leave</div>
-                <div class="track-meta">Aug 24–26 · 3 days · Submitted Aug 18</div>
-              </div>
-              <span class="status-chip pending">Pending</span>
-            </div>
-
-            <div class="track-row">
-              <div class="track-icon" style="background:var(--warning-soft);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              </div>
-              <div class="track-body">
-                <div class="track-title">Travel Reimbursement / Official Business</div>
-                <div class="track-meta">Client visit · ₱1,850 · Submitted Aug 15</div>
-              </div>
-              <span class="status-chip pending">Pending</span>
-            </div>
-
-            <div class="track-row">
-              <div class="track-icon" style="background:var(--success-soft);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-              </div>
-              <div class="track-body">
-                <div class="track-title">Sick Leave</div>
-                <div class="track-meta">Aug 20 · 1 day · Submitted Aug 20</div>
-              </div>
-              <span class="status-chip approved">Approved</span>
-            </div>
-
-            <div class="track-row">
-              <div class="track-icon" style="background:var(--danger-soft);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              </div>
-              <div class="track-body">
-                <div class="track-title">Equipment Reimbursement</div>
-                <div class="track-meta">Home office chair · ₱6,200 · Submitted Aug 5</div>
-              </div>
-              <span class="status-chip rejected">Rejected</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- RIGHT RAIL -->
-        <div>
-          <!-- QUICK ACTIONS CARD -->
-          <div class="card" style="margin-bottom:16px;">
-            <div class="card-head">
-              <div class="card-title display">Quick Actions</div>
-            </div>
-            <div class="qa-grid">
-              <div class="qa" @click="navigateToModule('leaves')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                <span>File Leave</span>
-              </div>
-              <div class="qa" @click="navigateToModule('overtime-scheduling')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-                <span>Request OT</span>
-              </div>
-              <div class="qa" @click="navigateToModule('payslip')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                <span>View Payslip</span>
-              </div>
-              <div class="qa" @click="navigateTo201File()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
-                <span>Edit Profile</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- COMPANY FEED CARD -->
-          <div class="card" style="margin-bottom:16px;">
-            <div class="card-head">
-              <div class="card-title display">Company Feed</div>
-              <button 
-                v-if="hasHrmAccess || userData?.is_admin || hasAnyAdminAccess()" 
-                @click="openAnnouncementModal"
-                class="create-ann-btn"
+              <button
+                @click="dismissScheduleNotice"
+                class="p-2 text-amber-700 hover:text-amber-950 hover:bg-amber-100/60 rounded-xl transition-colors cursor-pointer"
+                title="Dismiss notice"
               >
-                + Create
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
+          </div>
+
+          <!-- Notifications Banner -->
+          <div v-if="hasNotifications" class="banner-alert notice-banner">
+            <div class="banner-left">
+              <div class="banner-icon notice-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </div>
+              <div>
+                <span class="banner-tag notice-tag">Updates Pending</span>
+                <h3 class="banner-title display">You have updates waiting</h3>
+                <ul class="banner-list">
+                  <li v-if="dashboardData.pending_requests?.total">
+                    {{ dashboardData.pending_requests.total }} transaction(s) pending approval
+                  </li>
+                  <li v-if="contractExpiringSoon">
+                    Your contract/probation period ends {{ formatDate(contractExpiringSoon) }}
+                  </li>
+                  <li v-if="recentlyResolvedCount">
+                    {{ recentlyResolvedCount }} transaction(s) recently resolved
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION LABEL -->
+          <p class="section-label display">
+            My Overview <span class="n mono">4</span>
+          </p>
+
+          <!-- KPI ROW (4 CARDS) -->
+          <div class="kpi-row">
+            <!-- KPI 1: Leave Balance -->
+            <div class="kpi-card" @click="navigateToModule('leaves')">
+              <div class="kpi-top">
+                <span class="kpi-label">Leave Balance</span>
+                <span class="kpi-icon" style="background:var(--accent-soft);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                </span>
+              </div>
+              <div class="kpi-value mono">
+                {{ dashboardData.leave_balance?.total_balance ?? 0 }}<span class="unit">days</span>
+              </div>
+              <div class="kpi-foot">
+                <b>{{ leaveVacationBalance }}</b> vacation · <b>{{ leaveSickBalance }}</b> sick
+              </div>
+            </div>
+
+            <!-- KPI 2: Next Payslip -->
+            <div class="kpi-card" @click="navigateToModule('payslip')">
+              <div class="kpi-top">
+                <span class="kpi-label">Next Payslip</span>
+                <span class="kpi-icon" style="background:var(--success-soft);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </span>
+              </div>
+              <div class="kpi-value mono">
+                {{ payslipSummary?.period_label || '—' }}
+              </div>
+              <div class="kpi-foot">
+                Est. <b>{{ payslipSummary ? formatCurrency(payslipSummary.net_pay) : '—' }}</b> net pay
+              </div>
+            </div>
+
+            <!-- KPI 3: Attendance (MTD) -->
+            <div class="kpi-card" @click="navigateToModule('time-attendance')">
+              <div class="kpi-top">
+                <span class="kpi-label">Attendance (MTD)</span>
+                <span class="kpi-icon" style="background:var(--violet-soft);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+                </span>
+              </div>
+              <div class="kpi-value mono">
+                {{ attendanceMtdRate != null ? attendanceMtdRate : '—' }}<span v-if="attendanceMtdRate != null" class="unit">%</span>
+              </div>
+              <div class="kpi-foot"><b>{{ dashboardData.late_count ?? 0 }}</b> late arrival(s) this month</div>
+            </div>
+
+            <!-- KPI 4: My Requests -->
+            <div class="kpi-card" @click="navigateToModule('leaves')">
+              <div class="kpi-top">
+                <span class="kpi-label">My Requests</span>
+                <span class="kpi-icon" style="background:var(--warning-soft);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                </span>
+              </div>
+              <div class="kpi-value mono">
+                {{ dashboardData.pending_requests?.total ?? 0 }}<span class="unit">pending</span>
+              </div>
+              <div class="kpi-foot">
+                <b>{{ dashboardData.pending_requests?.leaves ?? 0 }}</b> leave · <b>{{ dashboardData.pending_requests?.overtime ?? 0 }}</b> overtime
+              </div>
+            </div>
+          </div>
+
+          <!-- MAIN GRID LAYOUT -->
+          <div class="grid-layout">
             
-            <AnnouncementList v-if="announcements.length" :announcements="announcements" />
-            <div v-else class="feed-list">
-              <div class="feed-item">
-                <span class="feed-tag">Announcement</span>
-                <div class="feed-title">Updated hybrid work policy takes effect Sept 1</div>
-                <div class="feed-meta">Posted by People Ops · 2 days ago</div>
-              </div>
-              <div class="feed-item">
-                <span class="feed-tag">Recognition</span>
-                <div class="feed-title">You were kudos'd by Nathan Ong</div>
-                <div class="feed-meta">"Great work on the design system!" · Yesterday</div>
-              </div>
-              <div class="feed-item">
-                <span class="feed-tag">Reminder</span>
-                <div class="feed-title">Benefits open enrollment closes Aug 31</div>
-                <div class="feed-meta">People Ops · 3 days ago</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- UPCOMING CARD -->
-          <div class="card">
-            <div class="card-head">
-              <div class="card-title display">Upcoming</div>
-            </div>
-            <div class="upcoming-row">
-              <div class="date-box">
-                <div class="d mono">28</div>
-                <div class="m">Aug</div>
-              </div>
-              <div>
-                <div class="upcoming-title">Ninoy Aquino Day</div>
-                <div class="upcoming-meta">Regular holiday · Office closed</div>
-              </div>
-            </div>
-            <div class="upcoming-row">
-              <div class="date-box">
-                <div class="d mono">30</div>
-                <div class="m">Aug</div>
-              </div>
-              <div>
-                <div class="upcoming-title">Payday</div>
-                <div class="upcoming-meta">Payslip available same day</div>
-              </div>
-            </div>
-            <div class="upcoming-row">
-              <div class="date-box">
-                <div class="d mono">01</div>
-                <div class="m">Sep</div>
-              </div>
-              <div>
-                <div class="upcoming-title">Hybrid policy effective</div>
-                <div class="upcoming-meta">3 days in-office minimum</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- ADMINISTRATIVE ACCESS SECTION -->
-      <div v-if="hasAnyAdminAccess()" class="admin-section">
-        <h2 class="section-label display">Administrative Access</h2>
-        <div class="admin-grid">
-          <!-- 201 Files Card -->
-          <div v-if="hasHrmAccess" @click="navigateToHRModule()" class="admin-card purple-admin">
-            <div class="admin-icon bg-purple">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-            </div>
+            <!-- LEFT COLUMN -->
             <div>
-              <h3 class="admin-title display">201 Files</h3>
-              <p class="admin-sub">HR Module - 201 Files</p>
-            </div>
-          </div>
+              <!-- CHARTS ROW -->
+              <div class="charts-row2">
+                <!-- Leave Balance by Type Card -->
+                <div class="card">
+                  <div class="card-head">
+                    <div class="card-title display">
+                      Leave Balance by Type
+                      <span class="sub">Entitlement used this year</span>
+                    </div>
+                  </div>
+                  <div v-if="leaveBreakdownList.length">
+                    <div v-for="(lv, idx) in leaveBreakdownList" :key="idx" class="lv-row">
+                      <div class="lbl">{{ lv.name }}</div>
+                      <div class="track"><div class="fill" :style="{ width: lv.percent + '%', background: lv.color }"></div></div>
+                      <div class="val mono">{{ lv.balance }} / {{ lv.entitlement }}</div>
+                    </div>
+                  </div>
+                  <div v-else class="py-6 text-center text-slate-400 text-xs">
+                    No leave balances recorded
+                  </div>
+                </div>
 
-          <!-- Control Panel Card -->
-          <div v-if="hasCpmAccess" @click="navigateToControlPanel()" class="admin-card red-admin">
-            <div class="admin-icon bg-red">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <!-- Attendance Trend Card -->
+                <div class="card">
+                  <div class="card-head">
+                    <div class="card-title display">
+                      Attendance Trend
+                      <span class="sub">Last 6 months</span>
+                    </div>
+                  </div>
+                  <div class="chart-wrap">
+                    <canvas id="chartAttendanceCanvas"></canvas>
+                  </div>
+                </div>
+              </div>
+
+              <!-- REQUEST TRACKER -->
+              <p class="section-label display">
+                My Requests <span class="n mono">{{ dashboardData.pending_requests?.total ?? 0 }} pending</span>
+              </p>
+
+              <div class="card" style="margin-bottom:24px;">
+                <div class="card-head">
+                  <div class="card-title display">Request Tracker</div>
+                  <button @click="navigateToModule('leaves')" class="link-btn">
+                    File new request 
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </button>
+                </div>
+
+                <div v-if="recentRequestsList.length">
+                  <div v-for="req in recentRequestsList" :key="req.id" class="track-row">
+                    <div class="track-icon" :style="{ background: getRequestColorSoft(req.type) }">
+                      <svg viewBox="0 0 24 24" fill="none" :stroke="getRequestColor(req.type)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    </div>
+                    <div class="track-body">
+                      <div class="track-title">{{ req.title }}</div>
+                      <div class="track-meta">{{ req.meta }}</div>
+                    </div>
+                    <span :class="['status-chip', req.status]">{{ req.status }}</span>
+                  </div>
+                </div>
+                <div v-else class="py-6 text-center text-slate-400 text-xs">
+                  No recent requests found
+                </div>
+              </div>
             </div>
+
+            <!-- RIGHT RAIL -->
             <div>
-              <h3 class="admin-title display">Control Panel</h3>
-              <p class="admin-sub">System Administration</p>
+              <!-- QUICK ACTIONS CARD -->
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-head">
+                  <div class="card-title display">Quick Actions</div>
+                </div>
+                <div class="qa-grid">
+                  <div class="qa" @click="navigateToModule('leaves')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    <span>File Leave</span>
+                  </div>
+                  <div class="qa" @click="navigateToModule('overtime-scheduling')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                    <span>Request OT</span>
+                  </div>
+                  <div class="qa" @click="navigateToModule('payslip')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <span>View Payslip</span>
+                  </div>
+                  <div class="qa" @click="navigateTo201File()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
+                    <span>Edit Profile</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- COMPANY FEED CARD -->
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-head">
+                  <div class="card-title display">Company Feed</div>
+                  <button 
+                    v-if="hasHrmAccess || userData?.is_admin || hasAnyAdminAccess()" 
+                    @click="openAnnouncementModal"
+                    class="create-ann-btn"
+                  >
+                    + Create
+                  </button>
+                </div>
+                
+                <AnnouncementList v-if="announcements.length" :announcements="announcements" />
+                <div v-else class="py-6 text-center text-slate-400 text-xs">
+                  No announcements posted
+                </div>
+              </div>
+
+              <!-- UPCOMING CARD -->
+              <div class="card">
+                <div class="card-head">
+                  <div class="card-title display">Upcoming</div>
+                </div>
+                <div v-if="upcomingEventsList.length">
+                  <div v-for="(ev, idx) in upcomingEventsList" :key="idx" class="upcoming-row">
+                    <div class="date-box">
+                      <div class="d mono">{{ ev.day }}</div>
+                      <div class="m">{{ ev.month }}</div>
+                    </div>
+                    <div>
+                      <div class="upcoming-title">{{ ev.title }}</div>
+                      <div class="upcoming-meta">{{ ev.meta }}</div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="py-6 text-center text-slate-400 text-xs">
+                  No upcoming events scheduled
+                </div>
+              </div>
             </div>
+
           </div>
 
-          <!-- Payroll Module Card -->
-          <div v-if="hasHrpAccess" @click="navigateToPayrollModule()" class="admin-card yellow-admin">
-            <div class="admin-icon bg-yellow">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
-            </div>
-            <div>
-              <h3 class="admin-title display">Payroll Module</h3>
-              <p class="admin-sub">Payroll Management</p>
+          <!-- ADMINISTRATIVE ACCESS SECTION -->
+          <div v-if="hasAnyAdminAccess()" class="admin-section">
+            <h2 class="section-label display">Administrative Access</h2>
+            <div class="admin-grid">
+              <!-- 201 Files Card -->
+              <div v-if="hasHrmAccess" @click="navigateToHRModule()" class="admin-card purple-admin">
+                <div class="admin-icon bg-purple">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                </div>
+                <div>
+                  <h3 class="admin-title display">201 Files</h3>
+                  <p class="admin-sub">HR Module - 201 Files</p>
+                </div>
+              </div>
+
+              <!-- Control Panel Card -->
+              <div v-if="hasCpmAccess" @click="navigateToControlPanel()" class="admin-card red-admin">
+                <div class="admin-icon bg-red">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <div>
+                  <h3 class="admin-title display">Control Panel</h3>
+                  <p class="admin-sub">System Administration</p>
+                </div>
+              </div>
+
+              <!-- Payroll Module Card -->
+              <div v-if="hasHrpAccess" @click="navigateToPayrollModule()" class="admin-card yellow-admin">
+                <div class="admin-icon bg-yellow">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
+                </div>
+                <div>
+                  <h3 class="admin-title display">Payroll Module</h3>
+                  <p class="admin-sub">Payroll Management</p>
+                </div>
+              </div>
+
+              <!-- Timekeeping Module Card -->
+              <div v-if="hasHrtAccess" @click="navigateToTimekeeping()" class="admin-card green-admin">
+                <div class="admin-icon bg-green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div>
+                  <h3 class="admin-title display">Timekeeping</h3>
+                  <p class="admin-sub">Time & Attendance</p>
+                </div>
+              </div>
             </div>
           </div>
-
-          <!-- Timekeeping Module Card -->
-          <div v-if="hasHrtAccess" @click="navigateToTimekeeping()" class="admin-card green-admin">
-            <div class="admin-icon bg-green">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            </div>
-            <div>
-              <h3 class="admin-title display">Timekeeping</h3>
-              <p class="admin-sub">Time & Attendance</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
+        </template>
+      </el-skeleton>
     </div>
 
     <!-- CREATE ANNOUNCEMENT DIALOG -->
@@ -553,7 +644,7 @@ export default {
         recently_resolved_count: 0
       },
       announcements: [],
-      loading: false,
+      loading: true,
       hasHrmAccess: false,
       hasHrpAccess: false,
       hasHrtAccess: false,
@@ -561,6 +652,7 @@ export default {
       hasMissedLog: false,
       isLateForClockin: false,
       scheduleWarning: null,
+      isScheduleNoticeDismissed: sessionStorage.getItem('late_clockin_notice_dismissed') === 'true',
       isWorkSuspended: false,
       workSuspensionReason: null,
       workSuspensionWithPay: false,
@@ -600,17 +692,62 @@ export default {
       )
     },
     userEmployeeNo() {
-      return this.userData.employee_no || (this.userData.id ? `EMP-${String(this.userData.id).padStart(4, '0')}` : 'EMP-02481')
+      return this.userData.employee_no || (this.userData.id ? `EMP-${String(this.userData.id).padStart(4, '0')}` : '')
     },
     leaveVacationBalance() {
       const types = this.dashboardData.leave_balance?.leave_types || []
       const found = types.find(t => String(t.name).toLowerCase().includes('vacation'))
-      return found ? found.balance : 10
+      return found ? (found.balance ?? found.remaining ?? 0) : 0
     },
     leaveSickBalance() {
       const types = this.dashboardData.leave_balance?.leave_types || []
       const found = types.find(t => String(t.name).toLowerCase().includes('sick'))
-      return found ? found.balance : 4
+      return found ? (found.balance ?? found.remaining ?? 0) : 0
+    },
+    leaveBreakdownList() {
+      const types = this.dashboardData.leave_balance?.leave_types || []
+      const colors = ['var(--accent)', 'var(--success)', 'var(--warning)', 'var(--violet)', '#0EA5E9', '#F59E0B']
+      return types.map((t, index) => {
+        const entitlement = Number(t.entitlement || t.total || t.allocated || 15)
+        const balance = Number(t.balance ?? t.remaining ?? 0)
+        const used = Math.max(0, entitlement - balance)
+        const percent = entitlement > 0 ? Math.min(100, Math.round((used / entitlement) * 100)) : 0
+        return {
+          name: t.name || t.leave_type_name || 'Leave',
+          balance: balance,
+          entitlement: entitlement,
+          percent: percent,
+          color: colors[index % colors.length]
+        }
+      })
+    },
+    attendanceMtdRate() {
+      if (this.dashboardData?.attendance_rate !== undefined && this.dashboardData?.attendance_rate !== null) {
+        return this.dashboardData.attendance_rate
+      }
+      return this.dashboardData?.work_hours?.attendance_rate ?? null
+    },
+    recentRequestsList() {
+      const list = this.dashboardData?.recent_activity || this.dashboardData?.recent_requests || []
+      return list.map(item => ({
+        id: item.id || Math.random(),
+        type: item.type || item.request_type || 'leave',
+        title: item.title || item.name || item.request_type || 'Request',
+        meta: item.details || item.description || (item.created_at ? `Submitted ${this.formatDate(item.created_at)}` : ''),
+        status: (item.status || 'pending').toLowerCase()
+      }))
+    },
+    upcomingEventsList() {
+      const events = this.dashboardData?.upcoming_events || this.dashboardData?.holidays || []
+      return events.map(e => {
+        const dateObj = e.date ? new Date(e.date) : new Date()
+        return {
+          day: String(dateObj.getDate()).padStart(2, '0'),
+          month: dateObj.toLocaleString('en-US', { month: 'short' }),
+          title: e.title || e.name || 'Event',
+          meta: e.description || e.type || ''
+        }
+      })
     },
     companyPortalSubtitle() {
       return this.company.name
@@ -687,17 +824,39 @@ export default {
     if (this.attendanceChart) this.attendanceChart.destroy()
   },
   methods: {
+    dismissScheduleNotice() {
+      this.isScheduleNoticeDismissed = true
+      sessionStorage.setItem('late_clockin_notice_dismissed', 'true')
+    },
     initAttendanceChart() {
       const canvas = document.getElementById('chartAttendanceCanvas')
       if (!canvas) return
       if (this.attendanceChart) this.attendanceChart.destroy()
+
+      const trendData = this.dashboardData?.attendance_trend || []
+      let labels = []
+      let data = []
+
+      if (Array.isArray(trendData) && trendData.length > 0) {
+        labels = trendData.map(t => t.month || t.label || '')
+        data = trendData.map(t => Number(t.rate ?? t.value ?? 100))
+      } else {
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        const currentMonthIndex = new Date().getMonth()
+        for (let i = 5; i >= 0; i--) {
+          const idx = (currentMonthIndex - i + 12) % 12
+          labels.push(monthNames[idx])
+          data.push(100)
+        }
+      }
+
       Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif"
       this.attendanceChart = new Chart(canvas, {
         type: 'line',
         data: {
-          labels: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+          labels: labels,
           datasets: [{
-            data: [98, 95, 97, 94, 96, 96],
+            data: data,
             borderColor: '#3457D5',
             backgroundColor: 'rgba(52, 87, 213, 0.08)',
             fill: true,
@@ -712,10 +871,26 @@ export default {
           plugins: { legend: { display: false } },
           scales: {
             x: { grid: { display: false }, border: { display: false } },
-            y: { grid: { color: '#EEF0F5' }, border: { display: false }, ticks: { callback: v => v + '%' }, min: 85, max: 100 }
+            y: { grid: { color: '#EEF0F5' }, border: { display: false }, ticks: { callback: v => v + '%' }, min: 50, max: 100 }
           }
         }
       })
+    },
+
+    getRequestColor(type) {
+      const t = String(type || '').toLowerCase()
+      if (t.includes('sick') || t.includes('leave')) return 'var(--accent-ink)'
+      if (t.includes('travel') || t.includes('ob') || t.includes('reimburse')) return 'var(--warning)'
+      if (t.includes('overtime') || t.includes('ot')) return 'var(--violet)'
+      return 'var(--accent-ink)'
+    },
+
+    getRequestColorSoft(type) {
+      const t = String(type || '').toLowerCase()
+      if (t.includes('sick') || t.includes('leave')) return 'var(--accent-soft)'
+      if (t.includes('travel') || t.includes('ob') || t.includes('reimburse')) return 'var(--warning-soft)'
+      if (t.includes('overtime') || t.includes('ot')) return 'var(--violet-soft)'
+      return 'var(--accent-soft)'
     },
 
     hasAnyAdminAccess() {
@@ -870,6 +1045,9 @@ export default {
         console.error('Dashboard data loading failed:', error)
       } finally {
         this.loading = false
+        this.$nextTick(() => {
+          this.initAttendanceChart()
+        })
       }
     },
 
