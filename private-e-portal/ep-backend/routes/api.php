@@ -23,6 +23,7 @@ Route::get('/sanctum/csrf-cookie', 'Laravel\Sanctum\Http\Controllers\CsrfCookieC
 
 // Public routes (no authentication required)
 Route::get('/company-public', 'CompanyController@publicInfo');
+Route::get('/dtr-debug/{id}', 'DailyTimeRecordController@debugDtrApprover');
 Route::get('/vacancies', 'VacanciesController@index');
 Route::get('/position-info/{id}/{type_id}', 'VacanciesController@positions');
 Route::get('/applicant-add/{id}/{plantilla_id}', 'ApplicantsController@add');
@@ -151,20 +152,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/201-file-autosave/{employee_id}', 'EmployeeRequestController@autosave');
     Route::get('/201-file-add/{id}', 'EmployeeFileController@update');
 
-    // SALN Routes
-    Route::get('/saln/{id}', 'SALNController@index');
-    Route::post('/real-properties', 'SALNController@store');
-    Route::post('/personal-properties', 'SALNController@storepersonal');
-    Route::post('/liabilities', 'SALNController@storeliabilities');
-    Route::post('/business-interests', 'SALNController@storebusiness');
-    Route::post('/relatives', 'SALNController@storerelatives');
-    Route::get('/saln-download/{id}', 'SALNController@download');
-    Route::delete('/real-properties/{id}', 'SALNController@destroy');
-    Route::delete('/personal-properties/{id}', 'SALNController@destroypersonal');
-    Route::delete('/liabilities/{id}', 'SALNController@destroyliabilities');
-    Route::delete('/business-interests/{id}', 'SALNController@destroybusiness');
-    Route::delete('/relatives/{id}', 'SALNController@destroyrelatives');
-
     // Overtime Application Routes
     Route::get('/overtime-applications/{id}', 'OvertimeApplicationController@index');
     Route::post('/overtime-applications/store', 'OvertimeApplicationController@store');
@@ -271,6 +258,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/review-daily-time-records/{id}/approve/{type_id}', 'DailyTimeRecordController@approve');
     Route::post('/review-daily-time-records/{id}/approve/{type_id}', 'DailyTimeRecordController@approve');
     Route::get('/review-daily-time-records/{id}/download', 'DailyTimeRecordController@download');
+    Route::get('/dtr-debug/{id}', 'DailyTimeRecordController@debugDtrApprover');
 
     // WFH Attendance Routes
     Route::get('/wfh-attendance/{id}/employee-info', 'WFHAttendanceController@getEmployeeInfo');

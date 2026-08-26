@@ -1222,7 +1222,6 @@ export default {
         '/overtime-monitoring': 'Manage your overtime applications',
         '/payslip': 'View and download your payslips',
         '/dtr': 'Track your daily time records',
-        '/saln': 'Submit your Statement of Assets, Liabilities and Net Worth',
         '/announcements': 'View important announcements and updates',
         '/ipcr': 'Individual Performance Commitment and Review',
         '/ipcr/agency-head-approval': 'Approve IPCR records after supervisor calibration',

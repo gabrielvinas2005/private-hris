@@ -566,9 +566,34 @@ export default {
         const { useOvertime } = await import('../composables/useOvertime.js')
         const { state, loadOvertimeData } = useOvertime()
         await loadOvertimeData()
-        this.overtimeList = [...(state.pendingOvertime || []), ...(state.approvedOvertime || [])]
+
+        const formatTime = (val) => {
+          if (!val) return ''
+          if (val.includes('T')) return val.split('T')[1].slice(0, 5)
+          if (val.includes(' ')) return val.split(' ')[1].slice(0, 5)
+          return val.slice(0, 5)
+        }
+
+        const formatStatus = (row) => {
+          if (row.approved || row.approved_1 || row.approved_2 || row.approved_3) return 'Approved'
+          if (row.disapproved || row.disapproved_1 || row.disapproved_2 || row.disapproved_3) return 'Disapproved'
+          if (row.is_cancel) return 'Cancelled'
+          return 'Pending'
+        }
+
+        const rawList = [...(state.pendingOvertime || []), ...(state.approvedOvertime || []), ...(state.disapprovedOvertime || [])]
+        this.overtimeList = rawList.map(item => ({
+          ...item,
+          date: item.date ? item.date.split('T')[0].split(' ')[0] : '',
+          time_from: formatTime(item.date_time_from) || item.time_from || '',
+          time_to: formatTime(item.date_time_to) || item.time_to || '',
+          reason: item.remarks || item.reason || '',
+          type_name: item.overtime_type_name || item.type_name || 'Regular OT',
+          status: item.status || formatStatus(item),
+          approver_name: item.approver_1 || item.approver_name || 'Supervisor / HR Review'
+        }))
       } catch (e) {
-        // handled
+        console.error('Failed to load overtime list:', e)
       } finally {
         this.otLoading = false
       }
@@ -580,11 +605,54 @@ export default {
       }
       this.otSubmitting = true
       try {
-        this.toast.success('Overtime request filed successfully!')
-        this.showOtModal = false
-        await this.loadOvertime()
+        const raw = localStorage.getItem('user_data')
+        const userData = raw ? JSON.parse(raw) : null
+        const userId = userData ? userData.id : null
+
+        const { default: ApiService } = await import('../services/api.js')
+        const otDataRes = await ApiService.getOvertimeData(userId)
+        const empId = otDataRes?.data?.emp_id || (otDataRes?.data?.info?.[0]?.id) || userId
+        const defaultOtTypeId = otDataRes?.data?.LeaveType?.[0]?.id || 1
+
+        const formData = new FormData()
+        formData.append('overtime_id', '0')
+        formData.append('employee_id', empId)
+        formData.append('overtime_type_id', this.otForm.type || defaultOtTypeId)
+        formData.append('date', this.otForm.date)
+        formData.append('date_time_from', this.otForm.time_from || '17:00')
+        formData.append('date_time_to', this.otForm.time_to || '19:00')
+
+        let totalHours = 2
+        if (this.otForm.time_from && this.otForm.time_to) {
+          const f = new Date(`2000-01-01T${this.otForm.time_from}`)
+          const t = new Date(`2000-01-01T${this.otForm.time_to}`)
+          if (t > f) {
+            totalHours = Math.round(((t - f) / (1000 * 60 * 60)) * 4) / 4
+          }
+        }
+        formData.append('total_hours', totalHours)
+        formData.append('selectRadio', '1')
+        formData.append('remarks', this.otForm.reason)
+
+        const res = await ApiService.addOvertimeApplication(formData)
+        if (res && (res.success || res.data || !res.error)) {
+          this.toast.success('Overtime request filed successfully!')
+          this.showOtModal = false
+          this.otForm = {
+            date: new Date().toISOString().slice(0, 10),
+            time_from: '17:00',
+            time_to: '19:00',
+            type: '1',
+            reason: ''
+          }
+          await this.loadOvertime()
+        } else {
+          this.toast.error(res?.error || res?.message || 'Failed to file Overtime request.')
+        }
       } catch (e) {
-        this.toast.error('Failed to file Overtime request.')
+        console.error('Error submitting overtime:', e)
+        const msg = e?.message ? e.message.split(' - ').pop() : 'Failed to file Overtime request.'
+        this.toast.error(msg)
       } finally {
         this.otSubmitting = false
       }
@@ -595,9 +663,31 @@ export default {
         const { useOfficialBusiness } = await import('../composables/useOfficialBusiness.js')
         const { state, loadOBData } = useOfficialBusiness()
         await loadOBData()
-        this.travelList = [...(state.pendingOB || []), ...(state.approvedOB || [])]
+
+        const formatDate = (val) => {
+          if (!val) return ''
+          return val.split('T')[0].split(' ')[0]
+        }
+
+        const formatStatus = (row) => {
+          if (row.approved || row.approved_1 || row.approved_2 || row.approved_3) return 'Approved'
+          if (row.disapproved || row.disapproved_1 || row.disapproved_2 || row.disapproved_3) return 'Disapproved'
+          if (row.is_cancel) return 'Cancelled'
+          return 'Pending'
+        }
+
+        const rawList = [...(state.pendingOB || []), ...(state.approvedOB || []), ...(state.disapprovedOB || [])]
+        this.travelList = rawList.map(item => ({
+          ...item,
+          date_from: formatDate(item.date_time_from) || formatDate(item.date) || item.date_from || '',
+          date_to: formatDate(item.date_time_to) || formatDate(item.date) || item.date_to || '',
+          destination: item.client || item.destination || 'N/A',
+          purpose: item.purpose || '',
+          travel_type: item.to_type_name || item.ta_type_name || (item.ob_type === 3 ? 'Travel Order' : (item.ob_type === 2 ? 'Travel Auth' : 'Pass Slip')),
+          status: item.status || formatStatus(item)
+        }))
       } catch (e) {
-        // handled
+        console.error('Failed to load travel list:', e)
       } finally {
         this.travelLoading = false
       }
@@ -609,11 +699,48 @@ export default {
       }
       this.travelSubmitting = true
       try {
-        this.toast.success('Travel Order submitted successfully!')
-        this.showTravelModal = false
-        await this.loadTravel()
+        const raw = localStorage.getItem('user_data')
+        const userData = raw ? JSON.parse(raw) : null
+        const userId = userData ? userData.id : null
+
+        const startDate = this.travelForm.date_from || new Date().toISOString().slice(0, 10)
+        const endDate = this.travelForm.date_to || startDate
+
+        const { default: ApiService } = await import('../services/api.js')
+        const obDataRes = await ApiService.getOfficialBusiness(userId)
+        const empId = obDataRes?.data?.emp_id || (obDataRes?.data?.info?.[0]?.id) || userId
+
+        const formData = new FormData()
+        formData.append('official_business_id', '0')
+        formData.append('employee_id', empId)
+        formData.append('ob_type', '3') // Travel Order
+        formData.append('date', startDate)
+        formData.append('date_time_from', `${startDate}T08:00`)
+        formData.append('date_time_to', `${endDate}T17:00`)
+        formData.append('client', this.travelForm.destination)
+        formData.append('purpose', this.travelForm.purpose)
+        formData.append('recommending_position', '')
+        formData.append('approver', '')
+
+        const res = await ApiService.storeOfficialBusiness(formData)
+        if (res && res.success !== false) {
+          this.toast.success('Travel Order submitted successfully!')
+          this.showTravelModal = false
+          this.travelForm = {
+            date_from: new Date().toISOString().slice(0, 10),
+            date_to: new Date().toISOString().slice(0, 10),
+            destination: '',
+            purpose: '',
+            transport: 'Official Vehicle'
+          }
+          await this.loadTravel()
+        } else {
+          this.toast.error(res?.error || res?.message || 'Failed to submit Travel Order.')
+        }
       } catch (e) {
-        this.toast.error('Failed to submit Travel Order.')
+        console.error('Error submitting travel order:', e)
+        const msg = e?.message ? e.message.split(' - ').pop() : 'Failed to submit Travel Order.'
+        this.toast.error(msg)
       } finally {
         this.travelSubmitting = false
       }

@@ -130,110 +130,6 @@ export const mockEmployeeData = {
     last_update_date: 'December 15, 2023'
 }
 
-// Mock SALN data
-export const mockSALNData = {
-    employee: {
-        id: 1,
-        name: 'John Doe',
-        position: 'HR Officer',
-        department: 'Human Resources',
-        spouse_name: 'Jane Doe',
-        spouse_occupation: 'Teacher',
-        spouse_employer: 'Public School',
-        spouse_business_address: 'School District, Manila',
-        pa_house_no: '456',
-        pa_village: 'Village B',
-        pa_street: 'Secondary Street'
-    },
-    address: {
-        pa_brgy: 'Barangay 2',
-        pa_city: 'Quezon City',
-        pa_province: 'Metro Manila',
-        pa_region: 'NCR'
-    },
-    children: [
-        { id: 1, child_name: 'John Jr.', child_middlename: 'Smith', child_lastname: 'Doe', child_birthdate: '2010-05-20' },
-        { id: 2, child_name: 'Jane', child_middlename: 'Marie', child_lastname: 'Doe', child_birthdate: '2012-08-15' }
-    ],
-    realProperties: [
-        {
-            id: 1,
-            description: 'Residential House',
-            kind: 'House and Lot',
-            exact_location: 'Quezon City, Metro Manila',
-            assessed_value: 2500000.00,
-            current_fair_market_value: 3500000.00,
-            acquisition_year: 2015,
-            acquisition_mode: 'Purchase',
-            acquisition_cost: 2500000.00
-        },
-        {
-            id: 2,
-            description: 'Commercial Lot',
-            kind: 'Lot',
-            exact_location: 'Makati City, Metro Manila',
-            assessed_value: 5000000.00,
-            current_fair_market_value: 8000000.00,
-            acquisition_year: 2018,
-            acquisition_mode: 'Inheritance',
-            acquisition_cost: 0.00
-        }
-    ],
-    personalProperties: [
-        {
-            id: 1,
-            description: 'Toyota Innova',
-            year_acquired: 2020,
-            acquisition_cost: 1200000.00
-        },
-        {
-            id: 2,
-            description: 'Samsung TV 55"',
-            year_acquired: 2021,
-            acquisition_cost: 45000.00
-        }
-    ],
-    liabilities: [
-        {
-            id: 1,
-            nature: 'Housing Loan',
-            creditor_name: 'Bank of the Philippine Islands',
-            outstanding_balance: 1500000.00
-        },
-        {
-            id: 2,
-            nature: 'Car Loan',
-            creditor_name: 'Toyota Financial Services',
-            outstanding_balance: 800000.00
-        }
-    ],
-    businessInterests: [
-        {
-            id: 1,
-            entity_name: 'Doe Family Restaurant',
-            business_address: 'Manila, Philippines',
-            nature_of_business: 'Food and Beverage',
-            date_acquired: '2020-01-15'
-        }
-    ],
-    relatives: [
-        {
-            id: 1,
-            relatives_name: 'Maria Santos',
-            relationship: 'Sister',
-            position: 'Administrative Officer',
-            office_address: 'Department of Education, Manila'
-        },
-        {
-            id: 2,
-            relatives_name: 'Pedro Santos',
-            relationship: 'Brother-in-law',
-            position: 'Police Officer',
-            office_address: 'Philippine National Police, Quezon City'
-        }
-    ]
-}
-
 // Mock Competencies data
 export const mockCompetenciesData = {
     competencies: [
@@ -344,18 +240,6 @@ export const mockApiService = {
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 500))
         return { data: { message: 'Update request created successfully' } }
-    },
-
-    async getSALNData() {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        return { data: mockSALNData }
-    },
-
-    async updateSALNData(type, data) {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500))
-        return { data: { message: 'SALN data updated successfully' } }
     },
 
     // Competencies API methods

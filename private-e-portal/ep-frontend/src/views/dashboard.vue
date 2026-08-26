@@ -537,7 +537,6 @@ export default {
       canViewOvertime: false,
       canViewPayslip: false,
       canViewDtr: false,
-      canViewSaln: false,
       canViewTravelOrder: false,
       canViewWfh: false,
       canViewDocumentRequest: false,
@@ -765,7 +764,6 @@ export default {
       this.canViewPayslip = has('Payslip') || has('payslip')
       this.canViewDtr =
         has('Daily Time Record') || has('dtr') || has('daily time record')
-      this.canViewSaln = has('SALN') || has('saln')
       this.canViewTravelOrder =
         has('Travel Order') || has('travel_order') || has('official business') || has('ob')
       this.canViewWfh =
@@ -803,7 +801,6 @@ export default {
           this.canViewOvertime = false
           this.canViewPayslip = false
           this.canViewDtr = false
-          this.canViewSaln = false
           this.canViewTravelOrder = false
           this.canViewWfh = false
           this.canViewDocumentRequest = false

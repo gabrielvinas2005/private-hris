@@ -81,7 +81,7 @@ usort($controllers, function($a, $b) {
     $priority2 = ['AccessRightsController', 'InterviewController', 'OvertimeApplicationController',
                   'PlantillaReportController', 'PlantillasController', 'ProcessAttendanceController',
                   'RatingController', 'ReimbursementCommunicationExpensesController', 'SalaryAdjustmentController',
-                  'SALNController', 'UsersController', 'VacantPositionController', 'YearEndBonusController',
+                  'UsersController', 'VacantPositionController', 'YearEndBonusController',
                   'UniformClothingController', 'TrainingRequisitionersController', 'TrainingRequisitionController',
                   'TradionessReportController', 'RATAController', 'PositionsController'];
     

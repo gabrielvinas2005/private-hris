@@ -8,7 +8,7 @@
 <script>
 import MainLayout from '../layout/MainLayout.vue'
 import IconGrid from '../components/IconGrid.vue'
-import { FileIcon, SalnIcon, CompetencyIcon } from '../assets/icons/index.js'
+import { FileIcon, CompetencyIcon } from '../assets/icons/index.js'
 
 export default {
   name: 'ProfileRecords',
@@ -28,15 +28,6 @@ export default {
           hoverBgClass: 'group-hover:bg-blue-100',
           iconColor: 'text-blue-600',
           onClick: () => this.$router.push('/201-file')
-        },
-        {
-          icon: SalnIcon,
-          label: 'Update My SALN',
-          description: 'Submit or update your SALN',
-          bgClass: 'bg-purple-50',
-          hoverBgClass: 'group-hover:bg-purple-100',
-          iconColor: 'text-purple-600',
-          onClick: () => this.$router.push('/saln')
         },
         {
           icon: CompetencyIcon,

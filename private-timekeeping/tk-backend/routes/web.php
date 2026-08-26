@@ -55,21 +55,6 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
     Route::post('/201_file_updates_add/{id}/{request_id}', 'EmployeeRequestController@store')->name('201_file_updates_add');
     Route::get('/201_file_add/{id}', 'EmployeeFileController@update')->name('201_file_add');
 
-    // SALN
-    Route::get('/SALN/{id}', 'SALNController@index')->name('SALN');
-    Route::post('/real-properties/store', 'SALNController@store')->name('real-properties.store');
-    Route::post('/personal-properties/store', 'SALNController@storepersonal')->name('personal-properties.store');
-    Route::post('/liabilities/store', 'SALNController@storeliabilities')->name('liabilities.store');
-    Route::post('/business-interests/store', 'SALNController@storebusiness')->name('business-interests.store');
-    Route::post('/relatives/store', 'SALNController@storerelatives')->name('relatives.store');
-    Route::get('/saln_download/{id}', 'SALNController@download')->name('saln_download');
-    Route::delete('/real-properties/{id}', 'SALNController@destroy')->name('real-properties.destroy');
-    Route::delete('/personal-properties/{id}', 'SALNController@destroypersonal')->name('personal-properties.destroy');
-    Route::delete('/liabilities/{id}', 'SALNController@destroyliabilities')->name('liabilities.destroy');
-    Route::delete('/business-interests/{id}', 'SALNController@destroybusiness')->name('business-interests.destroy');
-    Route::delete('/relatives/{id}', 'SALNController@destroyrelatives')->name('relatives.destroy');
-
-
     // Overtime Application
     Route::get('/overtime_application/{id}', 'OvertimeApplicationController@index')->name('overtime_applications');
     Route::post('/overtime_application_add', 'OvertimeApplicationController@store')->name('overtime_application_store');

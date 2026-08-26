@@ -1547,27 +1547,21 @@ class OfficialBusinessApplicationController extends Controller
             ->where('a.disapproved', false)
             ->where('a.disapproved_2', false)
             ->where('a.disapproved_3', false)
-            ->where(function ($query) use ($requires_second_level, $requires_third_level) {
+            ->where(function ($query) {
                 $query->where(function ($basePending) {
                     $basePending->where('a.approved', false);
+                })
+                ->orWhere(function ($secondLevelPending) {
+                    $secondLevelPending->where('a.approved', true)
+                        ->where('a.approved_2', false)
+                        ->where('a.disapproved_2', false);
+                })
+                ->orWhere(function ($thirdLevelPending) {
+                    $thirdLevelPending->where('a.approved', true)
+                        ->where('a.approved_2', true)
+                        ->where('a.approved_3', false)
+                        ->where('a.disapproved_3', false);
                 });
-
-                if ($requires_second_level) {
-                    $query->orWhere(function ($secondLevelPending) {
-                        $secondLevelPending->where('a.approved', true)
-                            ->where('a.approved_2', false)
-                            ->where('a.disapproved_2', false);
-                    });
-                }
-
-                if ($requires_third_level) {
-                    $query->orWhere(function ($thirdLevelPending) {
-                        $thirdLevelPending->where('a.approved', true)
-                            ->where('a.approved_2', true)
-                            ->where('a.approved_3', false)
-                            ->where('a.disapproved_3', false);
-                    });
-                }
             })
             ->orderby('a.date', 'desc');
 
@@ -1870,6 +1864,10 @@ class OfficialBusinessApplicationController extends Controller
                 return response()->json(['error' => 'Employee not found. Please ensure your account is linked to an employee record.'], 400);
             }
 
+            // Sync resolved employee_id back into data array
+            $data['employee_id'] = $employee_id;
+            $request->merge(['employee_id' => $employee_id]);
+
             // Check if employee has approver configured.
             // OB Slip/Pass Slip approver setup uses type_id = 5
             // Travel Authority/Travel Order uses type_id = 2
@@ -1882,7 +1880,7 @@ class OfficialBusinessApplicationController extends Controller
                 ->exists();
 
             if (!$has_approver) {
-                return response()->json(['error' => 'You cannot apply for official business. No approver has been configured for official business applications.'], 400);
+                \Log::info('No explicit approver detail for OB/Travel type_id=' . $approver_type_id . ', allowing filing with default approver workflow.');
             }
 
             // Limit Official Business applications to 3 per month per employee

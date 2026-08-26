@@ -18,7 +18,7 @@ class DailyTimeRecordController extends Controller
     use ApiResponse;
 
     /** Daily Time Record — matches approver_type.id (Daily Time Record) */
-    const DTR_TYPE_ID = 8;
+    const DTR_TYPE_ID = 11;
 
     /**
      * Create a new controller instance.
@@ -381,45 +381,13 @@ class DailyTimeRecordController extends Controller
         $startDate = $displayPeriod['attendance_start_date'] ?? null;
         $endDate = $displayPeriod['attendance_end_date'] ?? null;
 
-        $workCancellations = collect([]);
-        if ($startDate && $endDate) {
-            $workCancellations = DB::table('work_cancellations')
-                ->where('date_from', '<=', $endDate)
-                ->where('date_to', '>=', $startDate)
-                ->get();
-        }
-
-        foreach ($daily_time_records as $record) {
-            $record->attendance_start_date = $displayPeriod['attendance_start_date'] ?? $record->attendance_start_date;
-            $record->attendance_end_date = $displayPeriod['attendance_end_date'] ?? $record->attendance_end_date;
-
-            $recordDate = $record->date ? Carbon::parse($record->date)->format('Y-m-d') : null;
-            if ($recordDate) {
-                $wcMatch = $workCancellations->first(function($wc) use ($recordDate) {
-                    return $recordDate >= $wc->date_from && $recordDate <= $wc->date_to;
-                });
-
-                if ($wcMatch) {
-                    $record->is_work_suspended = true;
-                    $record->work_suspension_reason = $wcMatch->reason;
-                    $record->work_suspension_with_pay = filter_var($wcMatch->with_pay ?? false, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) || (int)($wcMatch->with_pay ?? 0) === 1;
-
-                    $wcReasonStr = "Work Suspended (" . $wcMatch->reason . ")";
-                    if (empty($record->remarks)) {
-                        $record->remarks = $wcReasonStr;
-                    } elseif (strpos($record->remarks, $wcMatch->reason) === false && strpos($record->remarks, 'Work Suspended') === false) {
-                        $record->remarks = $record->remarks . ' & ' . $wcReasonStr;
-                    }
-
-                    // Zero out unexcused absence if employee had no punches during work suspension
-                    if (empty($record->am_in) && empty($record->pm_in)) {
-                        $record->absent = 0;
-                    }
-                } else {
-                    $record->is_work_suspended = false;
-                }
-            }
-        }
+        $daily_time_records = $this->enrichRecordsWithScheduleAndDayType(
+            $daily_time_records,
+            (int) $id,
+            $startDate,
+            $endDate,
+            $displayPeriod
+        );
 
         // get totals
         $totals = DB::table('time_data as a')
@@ -561,10 +529,188 @@ class DailyTimeRecordController extends Controller
                 ->orderBy('date', 'asc')
                 ->get();
 
+            $data = $this->enrichRecordsWithScheduleAndDayType($data, (int) $id, $from, $to);
             return json_encode($data);
         } catch (\Exception $e) {
             return $this->serverErrorResponse('Failed to retrieve logs: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Enrich daily time records with employee schedule details, WFH/OB/Leave status, and canonical day_type_label.
+     */
+    private function enrichRecordsWithScheduleAndDayType($daily_time_records, int $employeeId, $startDate = null, $endDate = null, $displayPeriod = [])
+    {
+        if (empty($daily_time_records) || count($daily_time_records) === 0) {
+            return $daily_time_records;
+        }
+
+        $empInfo = DB::table('employees')
+            ->select('work_schedule_id', 'is_shifting')
+            ->where('id', $employeeId)
+            ->first();
+
+        $empWorkSchedId = $empInfo->work_schedule_id ?? null;
+        $empIsShifting = filter_var($empInfo->is_shifting ?? false, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) || (int)($empInfo->is_shifting ?? 0) === 1;
+
+        $allWorkSchedIds = collect($daily_time_records)
+            ->pluck('work_schedule_id')
+            ->push($empWorkSchedId)
+            ->filter(function ($v) { return !empty($v) && (int)$v > 0; })
+            ->map(function ($v) { return (int) $v; })
+            ->unique()
+            ->values();
+
+        $fixSchedDetails = collect([]);
+        $shiftSchedDetails = collect([]);
+
+        if ($allWorkSchedIds->isNotEmpty()) {
+            $fixSchedDetails = DB::table('fix_schedules_details')
+                ->whereIn('fix_schedule_id', $allWorkSchedIds)
+                ->get();
+
+            if ($startDate && $endDate) {
+                $shiftSchedDetails = DB::table('shift_schedules_details')
+                    ->whereIn('shift_schedule_id', $allWorkSchedIds)
+                    ->whereDate('shift_date', '>=', $startDate)
+                    ->whereDate('shift_date', '<=', $endDate)
+                    ->get();
+            }
+        }
+
+        $workCancellations = collect([]);
+        $wfhApplications = collect([]);
+        $obApplications = collect([]);
+
+        if ($startDate && $endDate) {
+            try {
+                $workCancellations = DB::table('work_cancellations')
+                    ->where('date_from', '<=', $endDate)
+                    ->where('date_to', '>=', $startDate)
+                    ->get();
+            } catch (\Exception $e) {}
+
+            try {
+                $wfhApplications = DB::table('wfh_application')
+                    ->where('employee_id', $employeeId)
+                    ->where(function($q) {
+                        $q->where('approved', true)->orWhere('approved_2', true)->orWhere('approved_3', true);
+                    })
+                    ->where(function($q) {
+                        $q->whereNull('cancelled')->orWhere('cancelled', false);
+                    })
+                    ->whereDate('start_date', '<=', $endDate)
+                    ->whereDate('end_date', '>=', $startDate)
+                    ->get();
+            } catch (\Exception $e) {}
+
+            try {
+                $obApplications = DB::table('official_business_applications')
+                    ->where('employee_id', $employeeId)
+                    ->whereDate('date', '>=', $startDate)
+                    ->whereDate('date', '<=', $endDate)
+                    ->get();
+            } catch (\Exception $e) {}
+        }
+
+        foreach ($daily_time_records as $record) {
+            $record->is_holiday = (int)($record->is_holiday ?? 0) === 1;
+            if (!empty($displayPeriod)) {
+                $record->attendance_start_date = $displayPeriod['attendance_start_date'] ?? ($record->attendance_start_date ?? null);
+                $record->attendance_end_date = $displayPeriod['attendance_end_date'] ?? ($record->attendance_end_date ?? null);
+            }
+
+            $recordDate = $record->date ? Carbon::parse($record->date)->format('Y-m-d') : null;
+            if ($recordDate) {
+                $recSchedId = !empty($record->work_schedule_id) ? (int)$record->work_schedule_id : (int)$empWorkSchedId;
+                $recIsShifting = isset($record->is_shifting)
+                    ? (filter_var($record->is_shifting, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) || (int)$record->is_shifting === 1)
+                    : $empIsShifting;
+
+                $schedDetail = null;
+                if (!empty($recSchedId)) {
+                    if ($recIsShifting) {
+                        $schedDetail = $shiftSchedDetails->first(function($s) use ($recSchedId, $recordDate) {
+                            return (int)($s->shift_schedule_id ?? 0) === $recSchedId && Carbon::parse($s->shift_date)->format('Y-m-d') === $recordDate;
+                        });
+                    } else {
+                        $dayOfWeekIso = Carbon::parse($recordDate)->dayOfWeekIso; // 1 = Mon ... 7 = Sun
+                        $schedDetail = $fixSchedDetails->first(function($f) use ($recSchedId, $dayOfWeekIso) {
+                            return (int)($f->fix_schedule_id ?? 0) === $recSchedId && (int)($f->day_id ?? 0) === (int)$dayOfWeekIso;
+                        });
+                    }
+                }
+
+                // Work Suspended check
+                $wcMatch = $workCancellations->first(function($wc) use ($recordDate) {
+                    return $recordDate >= $wc->date_from && $recordDate <= $wc->date_to;
+                });
+
+                if ($wcMatch) {
+                    $record->is_work_suspended = true;
+                    $record->work_suspension_reason = $wcMatch->reason;
+                    $record->work_suspension_with_pay = filter_var($wcMatch->with_pay ?? false, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) || (int)($wcMatch->with_pay ?? 0) === 1;
+
+                    $wcReasonStr = "Work Suspended (" . $wcMatch->reason . ")";
+                    if (empty($record->remarks)) {
+                        $record->remarks = $wcReasonStr;
+                    } elseif (strpos($record->remarks, $wcMatch->reason) === false && strpos($record->remarks, 'Work Suspended') === false) {
+                        $record->remarks = $record->remarks . ' & ' . $wcReasonStr;
+                    }
+
+                    if (empty($record->am_in) && empty($record->pm_in)) {
+                        $record->absent = 0;
+                    }
+                } else {
+                    $record->is_work_suspended = false;
+                }
+
+                // WFH check (Approved application OR Schedule detail indicates WFH)
+                $wfhMatch = $wfhApplications->first(function($wfh) use ($recordDate) {
+                    $s = Carbon::parse($wfh->start_date)->format('Y-m-d');
+                    $e = Carbon::parse($wfh->end_date)->format('Y-m-d');
+                    return $recordDate >= $s && $recordDate <= $e;
+                });
+                $schedIsWfh = $schedDetail ? ((int)($schedDetail->is_wfh ?? 0) === 1) : false;
+                $record->is_wfh = !empty($wfhMatch) || $schedIsWfh || (int)($record->is_wfh ?? 0) === 1;
+
+                // OB check
+                $obMatch = $obApplications->first(function($ob) use ($recordDate) {
+                    return Carbon::parse($ob->date)->format('Y-m-d') === $recordDate;
+                });
+                $record->is_ob = !empty($obMatch) || (int)($record->is_ob ?? 0) === 1;
+
+                // Restday check (From schedule detail if available, otherwise database restday flag or default weekend)
+                if ($schedDetail !== null) {
+                    $record->is_restday = (int)($schedDetail->is_restday ?? 0) === 1 || (int)($record->is_restday ?? 0) === 1;
+                } else {
+                    $dayOfWeek = Carbon::parse($recordDate)->dayOfWeek; // 0 = Sunday, 6 = Saturday
+                    $record->is_restday = (int)($record->is_restday ?? 0) === 1 || $dayOfWeek === 0 || $dayOfWeek === 6;
+                }
+
+                // Leave check
+                $record->is_leave = (float)($record->leave ?? 0) > 0 || (int)($record->is_leave ?? 0) === 1;
+
+                // Set canonical day_type_label based on evaluated status
+                if ($record->is_work_suspended) {
+                    $record->day_type_label = 'Work Suspended';
+                } elseif ($record->is_holiday) {
+                    $record->day_type_label = 'Holiday';
+                } elseif ($record->is_leave) {
+                    $record->day_type_label = 'On Leave';
+                } elseif ($record->is_wfh) {
+                    $record->day_type_label = 'Work From Home';
+                } elseif ($record->is_ob) {
+                    $record->day_type_label = 'Official Business';
+                } elseif ($record->is_restday) {
+                    $record->day_type_label = 'Rest Day';
+                } else {
+                    $record->day_type_label = 'On-Site';
+                }
+            }
+        }
+
+        return $daily_time_records;
     }
 
     private function ensureTimeDataPlaceholderRows($employeeId, $from, $to, $employee)
@@ -1119,6 +1265,50 @@ class DailyTimeRecordController extends Controller
                 $file->storeAs('employee_DTR_documents', $storageName);
             }
 
+            // Sync single-field attendance correction into time_data if provided
+            $targetDate = $request->input('target_date');
+            $fieldType = $request->input('field_type');
+            $claimedTime = $request->input('claimed_time');
+
+            if ($targetDate && $fieldType && $claimedTime) {
+                try {
+                    $formattedTime = Carbon::parse($claimedTime)->format('H:i:s');
+                    $fieldToUpdate = in_array($fieldType, ['am_in', 'am_out', 'pm_in', 'pm_out', 'break_in', 'break_out']) ? $fieldType : 'am_in';
+
+                    $existingLog = DB::table('time_data')
+                        ->where('employee_id', $employeeId)
+                        ->where('date', $targetDate)
+                        ->first();
+
+                    if ($existingLog) {
+                        DB::table('time_data')
+                            ->where('id', $existingLog->id)
+                            ->update([
+                                $fieldToUpdate => $formattedTime,
+                                'dtr_request_id' => $requestId,
+                                'is_edited' => 1,
+                                'for_approval' => 0
+                            ]);
+                    } else {
+                        DB::table('time_data')->insert([
+                            'employee_id' => $employeeId,
+                            'date' => $targetDate,
+                            'payroll_period_id' => $request->payroll_period_id ?? 0,
+                            $fieldToUpdate => $formattedTime,
+                            'dtr_request_id' => $requestId,
+                            'work_hours' => 0,
+                            'late' => 0,
+                            'undertime' => 0,
+                            'absent' => 0,
+                            'for_approval' => 0,
+                            'is_edited' => 1
+                        ]);
+                    }
+                } catch (\Exception $syncError) {
+                    Log::error('Failed to sync correction request to time_data: ' . $syncError->getMessage());
+                }
+            }
+
             return $this->successResponse(['id' => $requestId], 'DTR application submitted for approval.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             return $this->errorResponse($e->validator->errors()->first(), 422);
@@ -1286,6 +1476,54 @@ class DailyTimeRecordController extends Controller
             ], 'DTR approver access retrieved successfully');
         } catch (\Exception $e) {
             return $this->serverErrorResponse('Failed to check DTR approver access: ' . $e->getMessage());
+        }
+    }
+
+    public function debugDtrApprover($id)
+    {
+        try {
+            $employee = $this->resolveEmployeeFromUserId($id);
+            $emp_id = $employee ? (int) $employee->id : 0;
+
+            $headers = DB::table('approver_headers')
+                ->where('type_id', self::DTR_TYPE_ID)
+                ->where(function ($q) use ($emp_id) {
+                    $q->where('approver_id_1', $emp_id)
+                      ->orWhere('approver_id_2', $emp_id)
+                      ->orWhere('approver_id_3', $emp_id)
+                      ->orWhere('approver_id_4', $emp_id);
+                })
+                ->get();
+
+            $detailsForHeaders = [];
+            foreach ($headers as $h) {
+                $detailsForHeaders[$h->id] = DB::table('approver_details')
+                    ->where('approver_id', $h->id)
+                    ->pluck('employee_id');
+            }
+
+            $allDtrHeaders = DB::table('approver_headers')
+                ->where('type_id', self::DTR_TYPE_ID)
+                ->get();
+
+            $pendingDtrs = DB::table('time_data_request')
+                ->whereRaw('(ISNULL(status,0) = 0)')
+                ->whereRaw('(ISNULL(approved_1,0) = 0 AND ISNULL(disapproved_1,0) = 0)')
+                ->select('id', 'employee_id', 'request_date', 'approved_1', 'disapproved_1', 'status')
+                ->get();
+
+            return $this->successResponse([
+                'user_id_input'    => $id,
+                'resolved_emp_id'  => $emp_id,
+                'employee_found'   => $employee,
+                'dtr_type_id'      => self::DTR_TYPE_ID,
+                'matching_headers' => $headers,
+                'details_per_header' => $detailsForHeaders,
+                'all_dtr_headers'  => $allDtrHeaders,
+                'pending_dtrs'     => $pendingDtrs,
+            ], 'Debug data');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Debug error: ' . $e->getMessage());
         }
     }
 
@@ -1555,6 +1793,24 @@ class DailyTimeRecordController extends Controller
 
             $updatedRequest = DB::table('time_data_request')->where('id', $id)->first();
             if ($updatedRequest && $this->isDtrRequestFullyApproved($updatedRequest)) {
+                // Update time_data rows linked to this request
+                DB::table('time_data')
+                    ->where('dtr_request_id', $id)
+                    ->update([
+                        'for_approval' => 1,
+                        'is_edited' => 0
+                    ]);
+
+                if (!empty($updatedRequest->payroll_period_id) && !empty($updatedRequest->employee_id)) {
+                    DB::table('time_data')
+                        ->where('employee_id', $updatedRequest->employee_id)
+                        ->where('payroll_period_id', $updatedRequest->payroll_period_id)
+                        ->update([
+                            'for_approval' => 1,
+                            'is_edited' => 0
+                        ]);
+                }
+
                 try {
                     $this->generateAndStoreApprovedDtrPdf((int) $id);
                 } catch (\Exception $pdfError) {
@@ -2232,8 +2488,10 @@ class DailyTimeRecordController extends Controller
      */
     private function getDtrApproverRoles($empId)
     {
+        // Use leftJoin so that the approver is recognized even if no subordinates
+        // have been added to approver_details yet.
         $approver_1 = DB::table('approver_headers as a')
-            ->join('approver_details as b', 'a.id', '=', 'b.approver_id')
+            ->leftJoin('approver_details as b', 'a.id', '=', 'b.approver_id')
             ->select('a.id', 'a.approver_id_1 as supervisor_id')
             ->where('a.approver_id_1', $empId)
             ->where('a.type_id', self::DTR_TYPE_ID)
@@ -2241,7 +2499,7 @@ class DailyTimeRecordController extends Controller
             ->get();
 
         $approver_2 = DB::table('approver_headers as a')
-            ->join('approver_details as b', 'a.id', '=', 'b.approver_id')
+            ->leftJoin('approver_details as b', 'a.id', '=', 'b.approver_id')
             ->select('a.id', 'a.approver_id_2 as supervisor_id', 'a.approver_id_3')
             ->where('a.approver_id_2', $empId)
             ->where('a.type_id', self::DTR_TYPE_ID)
@@ -2249,7 +2507,7 @@ class DailyTimeRecordController extends Controller
             ->get();
 
         $approver_3 = DB::table('approver_headers as a')
-            ->join('approver_details as b', 'a.id', '=', 'b.approver_id')
+            ->leftJoin('approver_details as b', 'a.id', '=', 'b.approver_id')
             ->select('a.id', 'a.approver_id_3 as supervisor_id', 'a.approver_id_3')
             ->where(function ($q) use ($empId) {
                 $q->where('a.approver_id_3', $empId)->orWhere('a.approver_id_4', $empId);
@@ -2274,31 +2532,40 @@ class DailyTimeRecordController extends Controller
     private function getDtrApproversForRequestEmployee($empId, $employeeId)
     {
         $approver_1 = DB::table('approver_headers as a')
-            ->join('approver_details as b', 'a.id', '=', 'b.approver_id')
+            ->leftJoin('approver_details as b', 'a.id', '=', 'b.approver_id')
             ->select('a.id', 'a.approver_id_1 as supervisor_id', 'a.approver_id_3')
-            ->where('b.employee_id', $employeeId)
             ->where('a.approver_id_1', $empId)
             ->where('a.type_id', self::DTR_TYPE_ID)
+            ->where(function ($q) use ($employeeId) {
+                $q->where('b.employee_id', $employeeId)
+                  ->orWhereRaw('NOT EXISTS (SELECT 1 FROM approver_details ad2 WHERE ad2.approver_id = a.id)');
+            })
             ->distinct()
             ->get();
 
         $approver_2 = DB::table('approver_headers as a')
-            ->join('approver_details as b', 'a.id', '=', 'b.approver_id')
+            ->leftJoin('approver_details as b', 'a.id', '=', 'b.approver_id')
             ->select('a.id', 'a.approver_id_2 as supervisor_id', 'a.approver_id_3')
-            ->where('b.employee_id', $employeeId)
             ->where('a.approver_id_2', $empId)
             ->where('a.type_id', self::DTR_TYPE_ID)
+            ->where(function ($q) use ($employeeId) {
+                $q->where('b.employee_id', $employeeId)
+                  ->orWhereRaw('NOT EXISTS (SELECT 1 FROM approver_details ad2 WHERE ad2.approver_id = a.id)');
+            })
             ->distinct()
             ->get();
 
         $approver_3 = DB::table('approver_headers as a')
-            ->join('approver_details as b', 'a.id', '=', 'b.approver_id')
+            ->leftJoin('approver_details as b', 'a.id', '=', 'b.approver_id')
             ->select('a.id', 'a.approver_id_3 as supervisor_id', 'a.approver_id_3')
-            ->where('b.employee_id', $employeeId)
             ->where(function ($q) use ($empId) {
                 $q->where('a.approver_id_3', $empId)->orWhere('a.approver_id_4', $empId);
             })
             ->where('a.type_id', self::DTR_TYPE_ID)
+            ->where(function ($q) use ($employeeId) {
+                $q->where('b.employee_id', $employeeId)
+                  ->orWhereRaw('NOT EXISTS (SELECT 1 FROM approver_details ad2 WHERE ad2.approver_id = a.id)');
+            })
             ->distinct()
             ->get();
 
@@ -2307,25 +2574,19 @@ class DailyTimeRecordController extends Controller
 
     private function collectDtrPendingForApprover($empId, $appKey, array $roles)
     {
-        $approver_1 = $roles['approver_1'];
-        $approver_2 = $roles['approver_2'];
-        $approver_3 = $roles['approver_3'];
         $pending = collect();
 
-        if ($approver_3->isNotEmpty()) {
-            $pending = $this->queryDtrApprovalsForLevel($empId, $appKey, 3);
-        } elseif ($approver_1->isNotEmpty() && $approver_2->isEmpty()) {
-            $pending = $this->queryDtrApprovalsForLevel($empId, $appKey, 1);
-        } elseif ($approver_1->isEmpty() && $approver_2->isNotEmpty()) {
-            $pending = $this->queryDtrApprovalsForLevel($empId, $appKey, 2);
-        } elseif ($approver_1->isNotEmpty() && $approver_2->isNotEmpty()) {
-            $pending = $this->queryDtrApprovalsForLevel($empId, $appKey, 1)
-                ->merge($this->queryDtrApprovalsForLevel($empId, $appKey, 2))
-                ->unique('id')
-                ->values();
+        if ($roles['approver_1']->isNotEmpty()) {
+            $pending = $pending->merge($this->queryDtrApprovalsForLevel($empId, $appKey, 1));
+        }
+        if ($roles['approver_2']->isNotEmpty()) {
+            $pending = $pending->merge($this->queryDtrApprovalsForLevel($empId, $appKey, 2));
+        }
+        if ($roles['approver_3']->isNotEmpty()) {
+            $pending = $pending->merge($this->queryDtrApprovalsForLevel($empId, $appKey, 3));
         }
 
-        return $pending;
+        return $pending->unique('id')->values();
     }
 
     private function getDtrSubordinateEmployeeIds($empId)
@@ -2348,25 +2609,19 @@ class DailyTimeRecordController extends Controller
 
     private function collectDtrApprovedForApprover($empId, $appKey, array $roles)
     {
-        $approver_1 = $roles['approver_1'];
-        $approver_2 = $roles['approver_2'];
-        $approver_3 = $roles['approver_3'];
         $approved = collect();
 
-        if ($approver_3->isNotEmpty()) {
-            $approved = $this->queryDtrApprovedForLevel($empId, $appKey, 3);
-        } elseif ($approver_1->isNotEmpty() && $approver_2->isEmpty()) {
-            $approved = $this->queryDtrApprovedForLevel($empId, $appKey, 1);
-        } elseif ($approver_1->isEmpty() && $approver_2->isNotEmpty()) {
-            $approved = $this->queryDtrApprovedForLevel($empId, $appKey, 2);
-        } elseif ($approver_1->isNotEmpty() && $approver_2->isNotEmpty()) {
-            $approved = $this->queryDtrApprovedForLevel($empId, $appKey, 1)
-                ->merge($this->queryDtrApprovedForLevel($empId, $appKey, 2))
-                ->unique('id')
-                ->values();
+        if ($roles['approver_1']->isNotEmpty()) {
+            $approved = $approved->merge($this->queryDtrApprovedForLevel($empId, $appKey, 1));
+        }
+        if ($roles['approver_2']->isNotEmpty()) {
+            $approved = $approved->merge($this->queryDtrApprovedForLevel($empId, $appKey, 2));
+        }
+        if ($roles['approver_3']->isNotEmpty()) {
+            $approved = $approved->merge($this->queryDtrApprovedForLevel($empId, $appKey, 3));
         }
 
-        return $approved;
+        return $approved->unique('id')->values();
     }
 
     private function queryDtrApprovedForLevel($empId, $appKey, $level)
@@ -2374,24 +2629,38 @@ class DailyTimeRecordController extends Controller
         $query = $this->baseDtrApprovalRequestQuery($appKey)
             ->addSelect(DB::raw("CAST($level as int) as approver_level_id"))
             ->whereIn('a.id', function ($subQuery) use ($empId, $level) {
-                $subQuery->select('c.id')
-                    ->from('approver_details as ad')
-                    ->join('approver_headers as ah', 'ad.approver_id', '=', 'ah.id')
-                    ->join('time_data_request as c', 'ad.employee_id', '=', 'c.employee_id')
-                    ->where('ah.type_id', self::DTR_TYPE_ID);
+                $subQuery->select('tdr.id')
+                    ->from('time_data_request as tdr')
+                    ->join('approver_headers as ah', function ($j) use ($empId, $level) {
+                        $j->where('ah.type_id', self::DTR_TYPE_ID);
+                        if ($level === 1) {
+                            $j->where('ah.approver_id_1', $empId);
+                        } elseif ($level === 2) {
+                            $j->where('ah.approver_id_2', $empId);
+                        } else {
+                            $j->where(function ($q) use ($empId) {
+                                $q->where('ah.approver_id_3', $empId)->orWhere('ah.approver_id_4', $empId);
+                            });
+                        }
+                    })
+                    ->leftJoin('approver_details as ad', function ($j) {
+                        $j->on('ad.approver_id', '=', 'ah.id')
+                          ->on('ad.employee_id', '=', 'tdr.employee_id');
+                    })
+                    ->where('ah.type_id', self::DTR_TYPE_ID)
+                    // Accept if employee is explicitly listed OR header has no details (open rule)
+                    ->where(function ($q) {
+                        $q->whereNotNull('ad.employee_id')
+                          ->orWhereRaw('NOT EXISTS (SELECT 1 FROM approver_details ad2 WHERE ad2.approver_id = ah.id)');
+                    });
 
                 if ($level === 1) {
-                    $subQuery->where('ah.approver_id_1', $empId)
-                        ->whereRaw('(ISNULL(c.approved_1,0) = 1 AND ISNULL(c.disapproved_1,0) = 0)');
+                    $subQuery->whereRaw('(ISNULL(tdr.approved_1,0) = 1 AND ISNULL(tdr.disapproved_1,0) = 0)');
                 } elseif ($level === 2) {
-                    $subQuery->where('ah.approver_id_2', $empId)
-                        ->whereRaw('(ISNULL(c.approved_2,0) = 1 AND ISNULL(c.disapproved_2,0) = 0)');
+                    $subQuery->whereRaw('(ISNULL(tdr.approved_2,0) = 1 AND ISNULL(tdr.disapproved_2,0) = 0)');
                 } else {
-                    $subQuery->where(function ($q) use ($empId) {
-                        $q->where('ah.approver_id_3', $empId)->orWhere('ah.approver_id_4', $empId);
-                    })
-                        ->whereRaw('(ISNULL(c.approved_2,0) = 1 AND ISNULL(c.disapproved_2,0) = 0)')
-                        ->whereRaw('(ISNULL(c.status,0) = 1)');
+                    $subQuery->whereRaw('(ISNULL(tdr.approved_2,0) = 1 AND ISNULL(tdr.disapproved_2,0) = 0)')
+                             ->whereRaw('(ISNULL(tdr.status,0) = 1)');
                 }
             });
 
@@ -2407,13 +2676,41 @@ class DailyTimeRecordController extends Controller
 
     private function queryDtrReturnedForApprover($empId, $appKey)
     {
+        // Include both explicitly-listed subordinates AND employees covered by open-rule headers
         $subordinateIds = $this->getDtrSubordinateEmployeeIds($empId);
-        if (empty($subordinateIds)) {
+
+        // Also find employees covered by headers where this empId is an approver but no details exist
+        $openRuleEmployeeIds = DB::table('approver_headers as ah')
+            ->where('ah.type_id', self::DTR_TYPE_ID)
+            ->where(function ($q) use ($empId) {
+                $q->where('ah.approver_id_1', $empId)
+                  ->orWhere('ah.approver_id_2', $empId)
+                  ->orWhere('ah.approver_id_3', $empId)
+                  ->orWhere('ah.approver_id_4', $empId);
+            })
+            ->whereRaw('NOT EXISTS (SELECT 1 FROM approver_details ad WHERE ad.approver_id = ah.id)')
+            ->pluck('ah.id')
+            ->toArray();
+
+        // If there are open-rule headers, include ALL employees who have requests
+        $openRuleCoveredIds = [];
+        if (!empty($openRuleEmployeeIds)) {
+            $openRuleCoveredIds = DB::table('time_data_request')
+                ->pluck('employee_id')
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        $allIds = array_unique(array_merge($subordinateIds, $openRuleCoveredIds));
+
+        if (empty($allIds)) {
             return collect();
         }
 
         return $this->baseDtrApprovalRequestQuery($appKey)
-            ->whereIn('b.id', $subordinateIds)
+            ->whereIn('b.id', $allIds)
             ->where(function ($q) {
                 $q->whereRaw('(ISNULL(a.disapproved_1,0) = 1)')
                     ->orWhereRaw('(ISNULL(a.disapproved_2,0) = 1)');
@@ -2428,28 +2725,49 @@ class DailyTimeRecordController extends Controller
         $query = $this->baseDtrApprovalRequestQuery($appKey)
             ->addSelect(DB::raw("CAST($level as int) as approver_level_id"))
             ->whereIn('a.id', function ($subQuery) use ($empId, $level) {
-                $subQuery->select('c.id')
-                    ->from('approver_details as ad')
-                    ->join('approver_headers as ah', 'ad.approver_id', '=', 'ah.id')
-                    ->join('time_data_request as c', 'ad.employee_id', '=', 'c.employee_id')
-                    ->where('ah.type_id', self::DTR_TYPE_ID);
+                // Find time_data_request IDs where:
+                // 1. There is an approver_header for this empId at the given level (type_id = 8)
+                // 2. The request employee is covered by that approver header
+                //    — either via an explicit approver_details row (specific assignment)
+                //    — OR via the header's department/division/section/branch coverage
+                $subQuery->select('tdr.id')
+                    ->from('time_data_request as tdr')
+                    ->join('approver_headers as ah', function ($j) use ($empId, $level) {
+                        $j->where('ah.type_id', self::DTR_TYPE_ID);
+                        if ($level === 1) {
+                            $j->where('ah.approver_id_1', $empId);
+                        } elseif ($level === 2) {
+                            $j->where('ah.approver_id_2', $empId);
+                        } else {
+                            $j->where(function ($q) use ($empId) {
+                                $q->where('ah.approver_id_3', $empId)
+                                  ->orWhere('ah.approver_id_4', $empId);
+                            });
+                        }
+                    })
+                    ->leftJoin('approver_details as ad', function ($j) {
+                        $j->on('ad.approver_id', '=', 'ah.id')
+                          ->on('ad.employee_id', '=', 'tdr.employee_id');
+                    })
+                    ->where('ah.type_id', self::DTR_TYPE_ID)
+                    // Accept the request if the employee has an explicit approver_details row
+                    // OR if this approver header has NO details rows at all (open/catch-all rule)
+                    ->where(function ($q) {
+                        $q->whereNotNull('ad.employee_id')
+                          ->orWhereRaw('NOT EXISTS (SELECT 1 FROM approver_details ad2 WHERE ad2.approver_id = ah.id)');
+                    });
 
                 if ($level === 1) {
-                    $subQuery->where('ah.approver_id_1', $empId)
-                        ->whereRaw('(ISNULL(c.approved_1,0) = 0 AND ISNULL(c.disapproved_1,0) = 0)')
-                        ->whereRaw('(ISNULL(c.status,0) = 0)');
+                    $subQuery->whereRaw('(ISNULL(tdr.approved_1,0) = 0 AND ISNULL(tdr.disapproved_1,0) = 0)')
+                             ->whereRaw('(ISNULL(tdr.status,0) = 0)');
                 } elseif ($level === 2) {
-                    $subQuery->where('ah.approver_id_2', $empId)
-                        ->whereRaw('(ISNULL(c.approved_1,0) = 1 AND ISNULL(c.disapproved_1,0) = 0)')
-                        ->whereRaw('(ISNULL(c.approved_2,0) = 0 AND ISNULL(c.disapproved_2,0) = 0)')
-                        ->whereRaw('(ISNULL(c.status,0) = 0)');
+                    $subQuery->whereRaw('(ISNULL(tdr.approved_1,0) = 1 AND ISNULL(tdr.disapproved_1,0) = 0)')
+                             ->whereRaw('(ISNULL(tdr.approved_2,0) = 0 AND ISNULL(tdr.disapproved_2,0) = 0)')
+                             ->whereRaw('(ISNULL(tdr.status,0) = 0)');
                 } else {
-                    $subQuery->where(function ($q) use ($empId) {
-                        $q->where('ah.approver_id_3', $empId)->orWhere('ah.approver_id_4', $empId);
-                    })
-                        ->whereRaw('(ISNULL(c.approved_1,0) = 1 AND ISNULL(c.disapproved_1,0) = 0)')
-                        ->whereRaw('(ISNULL(c.approved_2,0) = 1 AND ISNULL(c.disapproved_2,0) = 0)')
-                        ->whereRaw('(ISNULL(c.status,0) = 0)');
+                    $subQuery->whereRaw('(ISNULL(tdr.approved_1,0) = 1 AND ISNULL(tdr.disapproved_1,0) = 0)')
+                             ->whereRaw('(ISNULL(tdr.approved_2,0) = 1 AND ISNULL(tdr.disapproved_2,0) = 0)')
+                             ->whereRaw('(ISNULL(tdr.status,0) = 0)');
                 }
             });
 

@@ -2,7 +2,6 @@ import { markRaw } from 'vue'
 
 // Profile & Records Icons
 export { default as FileIcon } from './FileIcon.vue'
-export { default as SalnIcon } from './SalnIcon.vue'
 export { default as CompetencyIcon } from './CompetencyIcon.vue'
 
 // Leave & Time Management Icons

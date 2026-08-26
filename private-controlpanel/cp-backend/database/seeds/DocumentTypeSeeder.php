@@ -42,10 +42,6 @@ class DocumentTypeSeeder extends Seeder
                 "active" => true,
             ],
             [
-                "name" => "SALN (Sworn Statement of Assets, Liabilities, and Networth)",
-                "active" => true,
-            ],
-            [
                 "name" =>
                 "Birth Certificate/Change of Name/Change of Birthdate & Birthplace",
                 "active" => true,

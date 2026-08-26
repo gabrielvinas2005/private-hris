@@ -26,22 +26,6 @@ const API_ROUTES = {
         export: '/employee-file/export'
     },
 
-    // SALN routes
-    saln: {
-        get: (userId) => `/saln/${userId}`,
-        realProperties: '/real-properties',
-        personalProperties: '/personal-properties',
-        liabilities: '/liabilities',
-        businessInterests: '/business-interests',
-        relatives: '/relatives',
-        download: (userId) => `/saln-download/${userId}`,
-        deleteRealProperty: (id) => `/real-properties/${id}`,
-        deletePersonalProperty: (id) => `/personal-properties/${id}`,
-        deleteLiability: (id) => `/liabilities/${id}`,
-        deleteBusinessInterest: (id) => `/business-interests/${id}`,
-        deleteRelative: (id) => `/relatives/${id}`
-    },
-
     // Dashboard routes
     dashboard: {
         get: (userId) => `/dashboard/${userId}`,
@@ -740,86 +724,6 @@ class ApiService {
         return this.request('/employee-file/export')
     }
 
-    // SALN: load data for user id
-    async getSALN(userId) {
-        return this.request(`/saln/${userId}`)
-    }
-
-    // SALN: save real properties (array of objects)
-    async saveSALNRealProperties(properties) {
-        return this.request('/real-properties', {
-            method: 'POST',
-            body: JSON.stringify({ properties })
-        })
-    }
-
-    // SALN: save personal properties
-    async saveSALNPersonalProperties(personal_properties) {
-        return this.request('/personal-properties', {
-            method: 'POST',
-            body: JSON.stringify({ personal_properties })
-        })
-    }
-
-    // SALN: save liabilities
-    async saveSALNLiabilities(liabilities) {
-        return this.request('/liabilities', {
-            method: 'POST',
-            body: JSON.stringify({ liabilities })
-        })
-    }
-
-    // SALN: save business interests
-    async saveSALNBusinessInterests(business) {
-        return this.request('/business-interests', {
-            method: 'POST',
-            body: JSON.stringify({ business })
-        })
-    }
-
-    // SALN: save relatives in government
-    async saveSALNRelatives(relatives) {
-        return this.request('/relatives', {
-            method: 'POST',
-            body: JSON.stringify({ relatives })
-        })
-    }
-
-    // SALN: delete real property
-    async deleteSALNRealProperty(id) {
-        return this.request(`/real-properties/${id}`, {
-            method: 'DELETE'
-        })
-    }
-
-    // SALN: delete personal property
-    async deleteSALNPersonalProperty(id) {
-        return this.request(`/personal-properties/${id}`, {
-            method: 'DELETE'
-        })
-    }
-
-    // SALN: delete liability
-    async deleteSALNLiability(id) {
-        return this.request(`/liabilities/${id}`, {
-            method: 'DELETE'
-        })
-    }
-
-    // SALN: delete business interest
-    async deleteSALNBusinessInterest(id) {
-        return this.request(`/business-interests/${id}`, {
-            method: 'DELETE'
-        })
-    }
-
-    // SALN: delete relative
-    async deleteSALNRelative(id) {
-        return this.request(`/relatives/${id}`, {
-            method: 'DELETE'
-        })
-    }
-
     // Dashboard: get dashboard data
     async getDashboardData(userId) {
         return this.request(`/dashboard/${userId}`)
@@ -839,50 +743,6 @@ class ApiService {
 
     async getAnnouncementEmployees() {
         return this.request('/announcements/employees')
-    }
-
-    // SALN: download PDF
-    async downloadSALN(userId, params = {}) {
-        await this.initSanctum()
-        let url = `${this.baseURL}/saln-download/${userId}`
-
-        // Add query parameters if provided
-        const queryParams = new URLSearchParams()
-        if (params.complianceType) {
-            queryParams.append('complianceType', params.complianceType)
-        }
-        if (params.complianceDate) {
-            queryParams.append('complianceDate', params.complianceDate)
-        }
-        if (params.filing) {
-            queryParams.append('filing', params.filing)
-        }
-
-        if (queryParams.toString()) {
-            url += '?' + queryParams.toString()
-        }
-
-        const token = localStorage.getItem('auth_token')
-        const res = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/pdf',
-                'X-Requested-With': 'XMLHttpRequest',
-                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-            },
-            credentials: 'include'
-        })
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
-        const blob = await res.blob()
-        const link = document.createElement('a')
-        const objectUrl = URL.createObjectURL(blob)
-        link.href = objectUrl
-        link.download = `saln_${userId}.pdf`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(objectUrl)
-        return true
     }
 
     // Leave: load dashboard for a user

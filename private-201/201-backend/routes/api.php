@@ -95,20 +95,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/201-file-updates-add/{id}/{request_id}', 'EmployeeRequestController@store');
     Route::get('/201-file-add/{id}', 'EmployeeFileController@update');
 
-    // SALN Routes
-    Route::get('/saln/{id}', 'SALNController@index');
-    Route::post('/real-properties', 'SALNController@store');
-    Route::post('/personal-properties', 'SALNController@storepersonal');
-    Route::post('/liabilities', 'SALNController@storeliabilities');
-    Route::post('/business-interests', 'SALNController@storebusiness');
-    Route::post('/relatives', 'SALNController@storerelatives');
-    Route::get('/saln-download/{id}', 'SALNController@download');
-    Route::delete('/real-properties/{id}', 'SALNController@destroy');
-    Route::delete('/personal-properties/{id}', 'SALNController@destroypersonal');
-    Route::delete('/liabilities/{id}', 'SALNController@destroyliabilities');
-    Route::delete('/business-interests/{id}', 'SALNController@destroybusiness');
-    Route::delete('/relatives/{id}', 'SALNController@destroyrelatives');
-
     // Overtime Application Routes
     Route::get('/overtime-applications/{id}', 'OvertimeApplicationController@index');
     Route::post('/overtime-applications/store', 'OvertimeApplicationController@store');

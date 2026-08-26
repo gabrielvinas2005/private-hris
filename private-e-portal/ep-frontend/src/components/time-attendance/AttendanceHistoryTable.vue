@@ -19,7 +19,7 @@
         <el-select
           v-model="selectedPayrollPeriod"
           placeholder="Select Payroll Period"
-          style="width: 260px"
+          style="width: 240px"
           @change="fetchPeriodDTR"
         >
           <el-option
@@ -29,6 +29,52 @@
             :value="period.id"
           />
         </el-select>
+
+        <!-- Column Visibility Toggle -->
+        <el-popover placement="bottom-end" width="220" trigger="click">
+          <template #reference>
+            <el-button type="default" plain class="!rounded-xl font-semibold shadow-sm">
+              <template #icon>
+                <svg class="w-4 h-4 mr-1 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </template>
+              Columns
+            </el-button>
+          </template>
+          <div class="space-y-2 p-1">
+            <div class="font-bold text-xs text-slate-700 border-b border-slate-100 pb-1.5 mb-2">Column Visibility</div>
+            <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded">
+              <input type="checkbox" v-model="visibleColumns.date" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              <span>Date</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded">
+              <input type="checkbox" v-model="visibleColumns.dayType" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              <span>Day Type</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded">
+              <input type="checkbox" v-model="visibleColumns.punches" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              <span>Punches (AM/PM)</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded">
+              <input type="checkbox" v-model="visibleColumns.workedHours" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              <span>Worked Hours</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded">
+              <input type="checkbox" v-model="visibleColumns.late" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              <span>Late</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded">
+              <input type="checkbox" v-model="visibleColumns.undertime" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              <span>Undertime</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded">
+              <input type="checkbox" v-model="visibleColumns.remarks" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              <span>Remarks</span>
+            </label>
+          </div>
+        </el-popover>
 
         <!-- Action Buttons: Refresh, Preview & Download DTR PDF -->
         <div class="flex items-center gap-2">
@@ -83,38 +129,75 @@
       </div>
     </div>
 
-    <!-- Attendance Data Table -->
-    <div class="overflow-x-auto">
+    <!-- Attendance Data Table with Side Padding -->
+    <div class="p-4 sm:p-5 bg-slate-50/40">
       <el-table
-        :data="tableRows"
+        :data="paginatedTableRows"
         v-loading="loading"
         stripe
-        row-class-name="dtr-row-custom"
+        border
+        fit
+        style="width: 100%"
+        :row-class-name="getRowClassName"
+        :span-method="arraySpanMethod"
         empty-text="No attendance records found for this period"
       >
         <!-- Date -->
-        <el-table-column prop="date" label="Date" width="130">
+        <el-table-column v-if="visibleColumns.date" prop="date" label="Date" min-width="125" resizable>
           <template #default="{ row }">
-            <div class="font-semibold text-slate-900 text-xs">
-              {{ row.date }}
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="font-semibold text-slate-900 text-xs">{{ row.date }}</span>
+              <span v-if="isTodayRow(row)" class="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-500 text-white uppercase tracking-wider shadow-sm">
+                Today
+              </span>
             </div>
-            <div class="text-[10px] text-slate-400 font-sans uppercase">
+            <div class="text-[10px] text-slate-400 font-sans uppercase font-medium">
               {{ row.day_name }}
             </div>
           </template>
         </el-table-column>
 
         <!-- Day Type -->
-        <el-table-column label="Day Type" width="130">
+        <el-table-column v-if="visibleColumns.dayType" min-width="180" resizable>
+          <template #header>
+            <div class="flex items-center justify-between gap-1.5 w-full">
+              <span>Day Type</span>
+              <el-select
+                v-model="selectedDayType"
+                placeholder="All"
+                size="small"
+                style="width: 110px"
+                clearable
+                @change="currentPage = 1"
+                @click.stop
+              >
+                <el-option value="All" label="All" />
+                <el-option value="On-Site" label="On-Site" />
+                <el-option value="Work From Home" label="WFH" />
+                <el-option value="On Leave" label="On Leave" />
+                <el-option value="Official Business" label="OB" />
+                <el-option value="Rest Day" label="Rest Day" />
+                <el-option value="Holiday" label="Holiday" />
+                <el-option value="Work Suspended" label="Suspended" />
+              </el-select>
+            </div>
+          </template>
           <template #default="{ row }">
-            <span :class="dayTypeBadgeClass(row)" class="px-2.5 py-1 rounded-full text-[11px] font-bold inline-block">
-              {{ (row.is_work_suspended || (row.remarks && (row.remarks.toLowerCase().includes('suspended') || row.remarks.toLowerCase().includes('cancellation')))) ? 'Work Suspended' : (row.day_type_label || (row.is_holiday ? 'Holiday' : (row.is_restday ? 'Rest Day' : (row.is_ob ? 'Official Travel' : 'Regular')))) }}
+            <div v-if="isRestday(row) && !hasWorkPunches(row)" class="py-1 px-3 bg-slate-100/90 text-slate-600 rounded-lg border border-slate-200/80 text-xs font-bold flex items-center justify-center gap-2 tracking-wide">
+              <span :class="dayTypeBadgeClass(row)" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold inline-block">
+                {{ getDayTypeLabel(row) }}
+              </span>
+              <span class="text-slate-400 font-normal">•</span>
+              <span class="text-slate-500 uppercase text-[11px] font-semibold">No Scheduled Shift</span>
+            </div>
+            <span v-else :class="dayTypeBadgeClass(row)" class="px-2.5 py-1 rounded-full text-[11px] font-bold inline-block">
+              {{ getDayTypeLabel(row) }}
             </span>
           </template>
         </el-table-column>
 
         <!-- Punches (AM / PM) -->
-        <el-table-column label="Punches (AM / PM)" min-width="220">
+        <el-table-column v-if="visibleColumns.punches" label="Punches (AM / PM)" min-width="210" resizable>
           <template #default="{ row }">
             <div class="text-xs space-y-0.5">
               <span class="text-slate-700 font-medium block">
@@ -126,7 +209,9 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="Worked Hours" min-width="130">
+
+        <!-- Worked Hours -->
+        <el-table-column v-if="visibleColumns.workedHours" label="Worked Hours" min-width="130" resizable>
           <template #default="{ row }">
             <span class="text-xs font-bold text-slate-900">
               {{ formatWorkHours(row.hours_worked || row.work_hours) }}
@@ -135,7 +220,7 @@
         </el-table-column>
 
         <!-- Late (mins) -->
-        <el-table-column label="Late" width="95">
+        <el-table-column v-if="visibleColumns.late" label="Late" min-width="90" resizable>
           <template #default="{ row }">
             <span v-if="row.late > 0" class="text-amber-700 font-bold text-xs bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
               {{ row.late }}m
@@ -143,7 +228,9 @@
             <span v-else class="text-slate-300 text-xs">—</span>
           </template>
         </el-table-column>
-        <el-table-column label="Undertime" width="105">
+
+        <!-- Undertime -->
+        <el-table-column v-if="visibleColumns.undertime" label="Undertime" min-width="100" resizable>
           <template #default="{ row }">
             <span v-if="row.undertime > 0" class="text-orange-700 font-bold text-xs bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
               {{ row.undertime }}m
@@ -153,7 +240,7 @@
         </el-table-column>
 
         <!-- Remarks -->
-        <el-table-column label="Remarks" min-width="150">
+        <el-table-column v-if="visibleColumns.remarks" label="Remarks" min-width="160" resizable>
           <template #default="{ row }">
             <span v-if="row.remarks" class="text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded">
               {{ row.remarks }}
@@ -162,6 +249,38 @@
           </template>
         </el-table-column>
       </el-table>
+    </div>
+
+    <!-- Pagination & Page Size Control Bar -->
+    <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2 text-xs text-slate-600 font-medium">
+        <span>Rows per page:</span>
+        <el-select
+          v-model="pageSize"
+          size="small"
+          style="width: 85px"
+          @change="currentPage = 1"
+        >
+          <el-option :value="5" label="5" />
+          <el-option :value="10" label="10" />
+          <el-option :value="20" label="20" />
+          <el-option :value="50" label="50" />
+          <el-option :value="filteredTableRows.length || 999" label="All" />
+        </el-select>
+        <span class="text-slate-400 font-normal ml-1">
+          Showing {{ filteredTableRows.length > 0 ? (currentPage - 1) * pageSize + 1 : 0 }}–{{ Math.min(currentPage * pageSize, filteredTableRows.length) }} of {{ filteredTableRows.length }} records
+        </span>
+      </div>
+
+      <el-pagination
+        v-if="filteredTableRows.length > pageSize"
+        v-model:current-page="currentPage"
+        :page-size="pageSize"
+        :total="filteredTableRows.length"
+        layout="prev, pager, next"
+        background
+        size="small"
+      />
     </div>
 
     <!-- Running Totals Summary Footer Card -->
@@ -248,11 +367,42 @@ export default {
       pdfPreviewVisible: false,
       pdfPreviewUrl: '',
       selectedPayrollPeriod: null,
+      selectedDayType: 'All',
+      visibleColumns: {
+        date: true,
+        dayType: true,
+        punches: true,
+        workedHours: true,
+        late: true,
+        undertime: true,
+        remarks: true
+      },
       payrollPeriods: [],
-      tableRows: []
+      tableRows: [],
+      currentPage: 1,
+      pageSize: 10,
+      pageSizeOptions: [5, 10, 20, 50]
     }
   },
   computed: {
+    filteredTableRows() {
+      if (!this.selectedDayType || this.selectedDayType === 'All') {
+        return this.tableRows
+      }
+      return this.tableRows.filter(row => {
+        const label = this.getDayTypeLabel(row)
+        return label === this.selectedDayType
+      })
+    },
+    paginatedTableRows() {
+      const rows = this.filteredTableRows
+      if (!this.pageSize || this.pageSize >= rows.length) {
+        return rows
+      }
+      const start = (this.currentPage - 1) * this.pageSize
+      const end = start + this.pageSize
+      return rows.slice(start, end)
+    },
     runningTotals() {
       let daysPresent = 0
       let totalLate = 0
@@ -260,7 +410,7 @@ export default {
       let totalAbsences = 0
       let totalOT = 0
 
-      this.tableRows.forEach(row => {
+      this.filteredTableRows.forEach(row => {
         if ((row.hours_worked || row.work_hours || 0) > 0 || row.am_in || row.pm_in) daysPresent++
         totalLate += Number(row.late || 0)
         totalUndertime += Number(row.undertime || 0)
@@ -382,14 +532,48 @@ export default {
         this.loading = false
       }
     },
+    isHoliday(row) {
+      if (!row) return false
+      if (row.day_type_label) return row.day_type_label === 'Holiday'
+      return Number(row.is_holiday) === 1 || row.is_holiday === true
+    },
+    isRestday(row) {
+      if (!row) return false
+      if (row.day_type_label) return row.day_type_label === 'Rest Day'
+      return Number(row.is_restday) === 1 || row.is_restday === true || row.rest_day === true
+    },
+    isOb(row) {
+      if (!row) return false
+      if (row.day_type_label) return row.day_type_label === 'Official Business' || row.day_type_label === 'OB'
+      return Number(row.is_ob) === 1 || row.is_ob === true
+    },
+    isWfh(row) {
+      if (!row) return false
+      if (row.day_type_label) return row.day_type_label === 'Work From Home' || row.day_type_label === 'WFH'
+      return Number(row.is_wfh) === 1 || row.is_wfh === true || (row.remarks && row.remarks.toLowerCase().includes('wfh'))
+    },
+    getDayTypeLabel(row) {
+      if (!row) return 'On-Site'
+      if (row.day_type_label) return row.day_type_label
+      if (row.is_work_suspended || (row.remarks && (row.remarks.toLowerCase().includes('suspended') || row.remarks.toLowerCase().includes('cancellation')))) {
+        return 'Work Suspended'
+      }
+      if (this.isHoliday(row)) return 'Holiday'
+      if (row.leave || row.is_leave) return 'On Leave'
+      if (this.isWfh(row)) return 'Work From Home'
+      if (this.isOb(row)) return 'Official Business'
+      if (this.isRestday(row)) return 'Rest Day'
+      return 'On-Site'
+    },
     dayTypeBadgeClass(row) {
-      if (row.is_work_suspended || (row.remarks && (row.remarks.toLowerCase().includes('suspended') || row.remarks.toLowerCase().includes('cancellation')))) return 'bg-purple-100 text-purple-900 border border-purple-300 font-bold'
-      if (row.is_holiday || row.holiday) return 'bg-blue-100 text-blue-800'
-      if (row.is_restday || row.rest_day) return 'bg-indigo-100 text-indigo-800'
-      if (row.leave || row.is_leave) return 'bg-sky-100 text-sky-800'
-      if (row.is_ob) return 'bg-purple-100 text-purple-800'
-      if (row.absent) return 'bg-rose-100 text-rose-800'
-      return 'bg-emerald-100 text-emerald-800'
+      const label = this.getDayTypeLabel(row)
+      if (label === 'Work Suspended' || label === 'Suspended') return 'bg-purple-100 text-purple-900 border border-purple-300 font-bold'
+      if (label === 'Holiday') return 'bg-blue-100 text-blue-800 border border-blue-200 font-bold'
+      if (label === 'On Leave') return 'bg-sky-100 text-sky-800 border border-sky-200 font-bold'
+      if (label === 'Work From Home' || label === 'WFH') return 'bg-indigo-100 text-indigo-800 border border-indigo-200 font-bold'
+      if (label === 'Official Business' || label === 'OB') return 'bg-teal-100 text-teal-800 border border-teal-200 font-bold'
+      if (label === 'Rest Day') return 'bg-slate-200 text-slate-700 border border-slate-300 font-medium'
+      return 'bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold'
     },
     async downloadDTR() {
       if (!this.selectedPayrollPeriod) return
@@ -434,7 +618,66 @@ export default {
         window.URL.revokeObjectURL(this.pdfPreviewUrl)
         this.pdfPreviewUrl = ''
       }
+    },
+    hasWorkPunches(row) {
+      if (!row) return false
+      return !!(row.am_in || row.pm_in || (row.hours_worked || row.work_hours || 0) > 0)
+    },
+    arraySpanMethod({ row, columnIndex }) {
+      if (this.isRestday(row) && !this.hasWorkPunches(row)) {
+        const activeColsCount = Object.values(this.visibleColumns).filter(Boolean).length
+        const dayTypeIdx = this.visibleColumns.date ? 1 : 0
+        if (this.visibleColumns.dayType && columnIndex === dayTypeIdx) {
+          return [1, Math.max(1, activeColsCount - dayTypeIdx)]
+        } else if (columnIndex > dayTypeIdx) {
+          return [0, 0]
+        }
+      }
+      return [1, 1]
+    },
+    isTodayRow(row) {
+      if (!row || !row.date) return false
+      const todayStr = new Date().toISOString().slice(0, 10)
+      return row.date === todayStr
+    },
+    getRowClassName({ row }) {
+      if (!row || !row.date) return 'dtr-row-custom'
+      
+      const todayStr = new Date().toISOString().slice(0, 10)
+      const isToday = row.date === todayStr
+      
+      const dName = (row.day_name || '').toUpperCase()
+      const dayOfWeek = new Date(row.date).getDay()
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6 || dName.includes('SAT') || dName.includes('SUN') || this.isRestday(row)
+
+      if (isToday) {
+        return 'dtr-row-custom dtr-row-today'
+      }
+      if (isWeekend) {
+        return 'dtr-row-custom dtr-row-weekend'
+      }
+      return 'dtr-row-custom'
     }
   }
 }
 </script>
+
+<style scoped>
+:deep(.el-table .dtr-row-today) {
+  background-color: #fefce8 !important;
+}
+:deep(.el-table .dtr-row-today td.el-table__cell) {
+  background-color: #fefce8 !important;
+}
+:deep(.el-table .dtr-row-today .el-table__cell:first-child) {
+  border-left: 4px solid #f59e0b !important;
+}
+
+:deep(.el-table .dtr-row-weekend) {
+  background-color: #f8fafc !important;
+}
+:deep(.el-table .dtr-row-weekend td.el-table__cell) {
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+}
+</style>

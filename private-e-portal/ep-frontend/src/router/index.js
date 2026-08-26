@@ -9,7 +9,6 @@ import TimeAttendanceHub from '../views/time-attendance.vue';
 import OvertimeScheduling from '../views/overtime-scheduling.vue';
 import PayrollCompensation from '../views/payroll-compensation.vue';
 import Employee201File from '../views/201-file/index.vue';
-import SALNView from '../views/SALN/index.vue';
 import CompetenciesView from '../views/Competencies/index.vue';
 import AddCompetencyView from '../views/Competencies/add.vue';
 import EditCompetencyView from '../views/Competencies/edit.vue';
@@ -121,11 +120,6 @@ const routes = [
     {
         path: '/201-file/:id',
         component: Employee201File,
-        meta: { requiresAuth: true }
-    },
-    {
-        path: '/saln',
-        component: SALNView,
         meta: { requiresAuth: true }
     },
     {
