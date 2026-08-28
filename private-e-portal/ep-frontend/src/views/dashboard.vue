@@ -175,7 +175,7 @@
 
           <!-- WARNING / COMPLIANCE BANNERS -->
           <!-- Missed Log Warning Banner -->
-          <div v-if="hasMissedLog" class="banner-alert danger-banner">
+          <div v-if="hasMissedLog && !isMissedLogNoticeDismissed" class="banner-alert danger-banner flex items-center justify-between">
             <div class="banner-left">
               <div class="banner-icon danger-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
@@ -186,14 +186,26 @@
                 <p class="banner-desc">You have an unclosed attendance record from your previous shift (missing clock out). File a DTR Correction now to keep your daily time records complete.</p>
               </div>
             </div>
-            <button @click="fileMissedLogCorrection" class="btn-alert danger-btn">
-              <span>1-Click File Correction</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </button>
+            <div class="flex items-center gap-2">
+              <button @click="fileMissedLogCorrection" class="btn-alert danger-btn">
+                <span>1-Click File Correction</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+              <button
+                @click="dismissMissedLogNotice"
+                class="p-2 text-rose-700 hover:text-rose-950 hover:bg-rose-100/60 rounded-xl transition-colors cursor-pointer"
+                title="Dismiss notice"
+                aria-label="Dismiss notice"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <!-- Work Suspension Banner -->
-          <div v-if="isWorkSuspended" class="banner-alert info-banner">
+          <div v-if="isWorkSuspended && !isWorkSuspensionNoticeDismissed" class="banner-alert info-banner flex items-center justify-between">
             <div class="banner-left">
               <div class="banner-icon info-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0v-5a2 2 0 012-2h2a2 2 0 012 2v5m-6 0h6"/></svg>
@@ -207,10 +219,22 @@
                 <p class="banner-desc">{{ workSuspensionReason || 'Work has been officially suspended today. Attendance logging is optional.' }}</p>
               </div>
             </div>
-            <button @click="navigateToModule('time-attendance')" class="btn-alert info-btn">
-              <span>View Attendance Details</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </button>
+            <div class="flex items-center gap-2">
+              <button @click="navigateToModule('time-attendance')" class="btn-alert info-btn">
+                <span>View Attendance Details</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+              <button
+                @click="dismissWorkSuspensionNotice"
+                class="p-2 text-indigo-700 hover:text-indigo-950 hover:bg-indigo-100/60 rounded-xl transition-colors cursor-pointer"
+                title="Dismiss notice"
+                aria-label="Dismiss notice"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <!-- Schedule Warning Banner -->
@@ -234,6 +258,7 @@
                 @click="dismissScheduleNotice"
                 class="p-2 text-amber-700 hover:text-amber-950 hover:bg-amber-100/60 rounded-xl transition-colors cursor-pointer"
                 title="Dismiss notice"
+                aria-label="Dismiss notice"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -243,7 +268,7 @@
           </div>
 
           <!-- Notifications Banner -->
-          <div v-if="hasNotifications" class="banner-alert notice-banner">
+          <div v-if="hasNotifications && !isNotificationsNoticeDismissed" class="banner-alert notice-banner flex items-center justify-between">
             <div class="banner-left">
               <div class="banner-icon notice-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -264,6 +289,16 @@
                 </ul>
               </div>
             </div>
+            <button
+              @click="dismissNotificationsNotice"
+              class="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+              title="Dismiss notice"
+              aria-label="Dismiss notice"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
           <!-- SECTION LABEL -->
@@ -650,12 +685,15 @@ export default {
       hasHrtAccess: false,
       hasCpmAccess: false,
       hasMissedLog: false,
+      isMissedLogNoticeDismissed: sessionStorage.getItem('missed_log_notice_dismissed') === 'true',
       isLateForClockin: false,
       scheduleWarning: null,
       isScheduleNoticeDismissed: sessionStorage.getItem('late_clockin_notice_dismissed') === 'true',
       isWorkSuspended: false,
+      isWorkSuspensionNoticeDismissed: sessionStorage.getItem('work_suspension_notice_dismissed') === 'true',
       workSuspensionReason: null,
       workSuspensionWithPay: false,
+      isNotificationsNoticeDismissed: sessionStorage.getItem('notifications_notice_dismissed') === 'true',
       showAnnouncementModal: false,
       announcementForm: {
         title: '',
@@ -824,9 +862,21 @@ export default {
     if (this.attendanceChart) this.attendanceChart.destroy()
   },
   methods: {
+    dismissMissedLogNotice() {
+      this.isMissedLogNoticeDismissed = true
+      sessionStorage.setItem('missed_log_notice_dismissed', 'true')
+    },
+    dismissWorkSuspensionNotice() {
+      this.isWorkSuspensionNoticeDismissed = true
+      sessionStorage.setItem('work_suspension_notice_dismissed', 'true')
+    },
     dismissScheduleNotice() {
       this.isScheduleNoticeDismissed = true
       sessionStorage.setItem('late_clockin_notice_dismissed', 'true')
+    },
+    dismissNotificationsNotice() {
+      this.isNotificationsNoticeDismissed = true
+      sessionStorage.setItem('notifications_notice_dismissed', 'true')
     },
     initAttendanceChart() {
       const canvas = document.getElementById('chartAttendanceCanvas')

@@ -86,8 +86,8 @@
     @foreach ($leave as $dtl)
         <div class="main">
 
-            <p class="cs"><strong>Civil Service Form No. 6</strong><br>Revised 2020</p>
-            <p class="Annex"><strong>Annex A</strong><br>
+            <p class="cs"><strong>Company Form HR-LV-01</strong><br>Standard Corporate Form</p>
+            <p class="Annex"><strong>Corporate HRIS</strong><br>
             <div class="header">
                 </p><br><br><br><br>
                 @if ($companyLogo)
@@ -157,10 +157,10 @@
                         </p>
                     </td>
                     <td style="padding-bottom: 10px;">
-                        <p style="font-size: 10px;display: inline-block;">5. SALARY GRADE</p>
+                        <p style="font-size: 10px;display: inline-block;">5. EMPLOYEE ID</p>
                         <p
                             style="font-size: 10px;border-bottom: solid 1px black;text-align: center;display: inline-block;width: 100px;">
-                            {{ $dtl->salary_grade_id ?? '' }}
+                            {{ $dtl->employee_no ?? $dtl->employee_id ?? '' }}
                         </p>
                     </td>
                 </tr>
@@ -190,9 +190,7 @@
                                     {{ stripos($leaveTypeName, 'vacation') !== false ? 'X' : '' }}
                                 </p>
                             </div>
-                            <p style="font-size: 6;display: inline-block;"><b>Vacation Leave</b> (Sec. 51, Rule XVI,
-                                Omnibus
-                                Rules Implementing E.O. No. 292)</p>
+                            <p style="font-size: 6;display: inline-block;"><b>Vacation Leave (VL) / Paid Time Off (PTO)</b></p>
                         </div>
                         <div style="vertical-align: middle;">
                             <div
@@ -201,9 +199,7 @@
                                     {{ stripos($leaveTypeName, 'forced') !== false || stripos($leaveTypeName, 'mandatory') !== false ? 'X' : '' }}
                                 </p>
                             </div>
-                            <p style="font-size: 6;display: inline-block;"><b>Mandatory/Forced Leave</b>(Sec. 25, Rule
-                                XVI,
-                                Omnibus Rules Implementing E.O. No. 292)</p>
+                            <p style="font-size: 6;display: inline-block;"><b>Mandatory / Forced Leave</b></p>
                         </div>
                         <div style="vertical-align: middle;">
                             <div
@@ -212,9 +208,7 @@
                                     {{ stripos($leaveTypeName, 'sick') !== false ? 'X' : '' }}
                                 </p>
                             </div>
-                            <p style="font-size: 6;display: inline-block;"><b>Sick Leave</b> (Sec. 43, Rule XVI, Omnibus
-                                Rules
-                                Implementing E.O. No. 292)</p>
+                            <p style="font-size: 6;display: inline-block;"><b>Sick Leave (SL)</b></p>
                         </div>
                         <div style="vertical-align: middle;">
                             <div
@@ -223,9 +217,7 @@
                                     {{ stripos($leaveTypeName, 'maternity') !== false ? 'X' : '' }}
                                 </p>
                             </div>
-                            <p style="font-size: 6;display: inline-block;"><b>Maternity Leave</b> (R.A. No. 11210 / IRR
-                                issued
-                                by CSC, DOLE and SSS)</p>
+                            <p style="font-size: 6;display: inline-block;"><b>Maternity Leave</b> (R.A. No. 11210 / SSS)</p>
                         </div>
                         <div style="vertical-align: middle;">
                             <div
@@ -234,21 +226,16 @@
                                     {{ stripos($leaveTypeName, 'paternity') !== false ? 'X' : '' }}
                                 </p>
                             </div>
-                            <p style="font-size: 6;display: inline-block;"><b>Paternity Leave</b> (R.A. No. 8187 / CSC
-                                MC
-                                No.
-                                71, s. 1998, as amended)</p>
+                            <p style="font-size: 6;display: inline-block;"><b>Paternity Leave</b> (R.A. No. 8187)</p>
                         </div>
                         <div style="vertical-align: middle;">
                             <div
                                 style="margin: 2px;border: solid 1px black;width: 10px;height: 10px;display: inline-block;text-align: center;">
                             <p style="font-size: 5;margin: 0px;">
-                                    {{ stripos($leaveTypeName, 'special privilege') !== false ? 'X' : '' }}
+                                    {{ stripos($leaveTypeName, 'special privilege') !== false || stripos($leaveTypeName, 'bereavement') !== false ? 'X' : '' }}
                                 </p>
                             </div>
-                            <p style="font-size: 6;display: inline-block;"><b>Special Privilege Leave</b> (Sec. 21, Rule
-                                XVI,
-                                Omnibus Rules Implementing E.O. No. 292)</p>
+                            <p style="font-size: 6;display: inline-block;"><b>Emergency / Bereavement Leave</b></p>
                         </div>
                         <div style="vertical-align: middle;">
                             <div
@@ -257,22 +244,16 @@
                                     {{ stripos($leaveTypeName, 'solo parent') !== false ? 'X' : '' }}
                                 </p>
                             </div>
-                            <p style="font-size: 6;display: inline-block;"><b>Solo Parent Leave</b> (RA No. 8972 / CSC
-                                MC
-                                No.
-                                8, s. 2004)</p>
+                            <p style="font-size: 6;display: inline-block;"><b>Solo Parent Leave</b> (R.A. No. 8972 / R.A. No. 11861)</p>
                         </div>
                         <div style="vertical-align: middle;">
                             <div
                                 style="margin: 2px;border: solid 1px black;width: 10px;height: 10px;display: inline-block;text-align: center;">
                             <p style="font-size: 5;margin: 0px;">
-                                    {{ stripos($leaveTypeName, 'study') !== false ? 'X' : '' }}
+                                    {{ stripos($leaveTypeName, 'service incentive') !== false || stripos($leaveTypeName, 'sil') !== false ? 'X' : '' }}
                                 </p>
                             </div>
-                            <p style="font-size: 6;display: inline-block;"><b>Study Leave</b> (Sec. 68, Rule XVI,
-                                Omnibus
-                                Rules
-                                Implementing E.O. No. 292)</p>
+                            <p style="font-size: 6;display: inline-block;"><b>Service Incentive Leave (SIL)</b></p>
                         </div>
                         <div style="vertical-align: middle;">
                             <div
@@ -281,34 +262,25 @@
                                     {{ stripos($leaveTypeName, 'vawc') !== false ? 'X' : '' }}
                                 </p>
                             </div>
-                            <p style="font-size: 6;display: inline-block;"><b>10-Day VAWC Leave</b> (RA No. 9262 / CSC
-                                MC
-                                No.
-                                15, s. 2005)</p>
+                            <p style="font-size: 6;display: inline-block;"><b>10-Day VAWC Leave</b> (R.A. No. 9262)</p>
                         </div>
                         <div style="vertical-align: middle;">
                             <div
                                 style="margin: 2px;border: solid 1px black;width: 10px;height: 10px;display: inline-block;text-align: center;">
                             <p style="font-size: 5;margin: 0px;">
-                                    {{ stripos($leaveTypeName, 'rehabilitation') !== false ? 'X' : '' }}
+                                     {{ stripos($leaveTypeName, 'without pay') !== false || stripos($leaveTypeName, 'lwop') !== false ? 'X' : '' }}
                                 </p>
                             </div>
-                            <p style="font-size: 6;display: inline-block;"><b>Rehabilitation Privilege</b> (Sec. 55,
-                                Rule
-                                XVI,
-                                Omnibus Rules Implementing E.O. No. 292)</p>
+                            <p style="font-size: 6;display: inline-block;"><b>Leave Without Pay (LWOP)</b></p>
                         </div>
                         <div style="vertical-align: middle;">
                             <div
                                 style="margin: 2px;border: solid 1px black;width: 10px;height: 10px;display: inline-block;text-align: center;">
                             <p style="font-size: 5;margin: 0px;">
-                                    {{ stripos($leaveTypeName, 'special leave benefits') !== false ? 'X' : '' }}
+                                    {{ stripos($leaveTypeName, 'special leave benefits') !== false || stripos($leaveTypeName, 'women') !== false ? 'X' : '' }}
                                 </p>
                             </div>
-                            <p style="font-size: 6;display: inline-block;"><b>Special Leave Benefits for Women</b> (RA
-                                No.
-                                9710
-                                / CSC MC No. 25, s. 2010)</p>
+                            <p style="font-size: 6;display: inline-block;"><b>Special Leave Benefits for Women</b> (R.A. No. 9710)</p>
                         </div>
                         <div style="vertical-align: middle;">
                             <div
@@ -317,9 +289,7 @@
                                     {{ stripos($leaveTypeName, 'emergency') !== false || stripos($leaveTypeName, 'calamity') !== false ? 'X' : '' }}
                                 </p>
                             </div>
-                            <p style="font-size: 6;display: inline-block;"><b>Special Emergency (Calamity) Leave</b>
-                                (CSC MC
-                                No. 2, s. 2012, as amended)</p>
+                            <p style="font-size: 6;display: inline-block;"><b>Calamity / Emergency Leave</b></p>
                         </div>
                         <div style="vertical-align: middle;">
                             <div
@@ -644,7 +614,7 @@
                                 {{ $leave_signatories[0]->approver_1 ?? '' }}
                             </p>
                             <p style="font-size: 6;text-align: center;border-top: solid 1px black;">
-                                (Authorized Officer)</p>
+                                (HR Officer / Verification)</p>
                         </div>
                     </td>
                     <td style="padding: 5px;width: 100px;border-left: solid 1px black;border-top: solid 1px black;">
@@ -679,7 +649,7 @@
                                 {{ $leave_signatories[0]->approver_2 ?? '' }}
                             </p>
                             <p style="font-size: 6;text-align: center;border-top: solid 1px black;">
-                                (Authorized Officer)</p>
+                                (Immediate Supervisor / Manager)</p>
                         </div>
                     </td>
                 </tr>
@@ -742,7 +712,7 @@
                             </p>
                             <p
                                 style="font-size: 6;text-align: center;border-top: solid 1px black;margin: auto;width: 200px">
-                                (Authorized Official)</p>
+                                (Department Head / Management Approval)</p>
                         </div>
                     </td>
                 </tr>

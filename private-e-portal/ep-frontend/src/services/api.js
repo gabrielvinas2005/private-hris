@@ -320,6 +320,50 @@ class ApiService {
         return this.request('/user-tab-access')
     }
 
+    async getApproverPipelineAccess(userId) {
+        return this.request(`/approver-pipeline-access/${userId}`)
+    }
+
+    async getDtrApproverAccess(userId) {
+        return this.request(`/review-daily-time-records/${userId}`)
+    }
+
+    async approveDtrRequest(id) {
+        return this.request(`/review-daily-time-records/${id}/approve/2`, { method: 'POST' })
+    }
+
+    async disapproveDtrRequest(id) {
+        return this.request(`/review-daily-time-records/${id}/approve/3`, { method: 'POST' })
+    }
+
+    async getWfhApplications() {
+        return this.request('/wfh-applications')
+    }
+
+    async approveWfhApplication(id) {
+        return this.request(`/wfh-applications/${id}/approve`, { method: 'POST' })
+    }
+
+    async disapproveWfhApplication(id, reason = '') {
+        return this.request(`/wfh-applications/${id}/disapprove`, {
+            method: 'POST',
+            body: JSON.stringify({ disapproved_reason: reason })
+        })
+    }
+
+    async getServiceRenderedApprovals(userId) {
+        return this.request(`/review-service-rendered/${userId}`)
+    }
+
+    async approveServiceRendered(id) {
+        return this.request(`/review-service-rendered/${id}/approve/2`, { method: 'POST' })
+    }
+
+    async disapproveServiceRendered(id) {
+        return this.request(`/review-service-rendered/${id}/approve/3`, { method: 'POST' })
+    }
+
+
     // Employee 201 file methods
     async getEmployee201File(userId) {
         return this.request(`/201-files/${userId}`)

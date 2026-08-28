@@ -611,6 +611,24 @@ class DailyTimeRecordController extends Controller
                     ->whereDate('date', '<=', $endDate)
                     ->get();
             } catch (\Exception $e) {}
+
+            try {
+                $approvedLeaveApplications = DB::table('leave_headers as a')
+                    ->join('leave_details as b', 'a.id', '=', 'b.leave_id')
+                    ->where('a.employee_id', $employeeId)
+                    ->where('a.is_cancel', false)
+                    ->where('a.is_cancel_2', false)
+                    ->where('a.is_cancel_3', false)
+                    ->where(function($q) {
+                        $q->where('a.approved', true)
+                          ->orWhere('a.approved_2', true)
+                          ->orWhere('a.approved_3', true);
+                    })
+                    ->whereDate('b.leave_date', '>=', $startDate)
+                    ->whereDate('b.leave_date', '<=', $endDate)
+                    ->select('b.leave_date', 'b.with_pay', 'b.without_pay', 'a.leave_type_id')
+                    ->get();
+            } catch (\Exception $e) {}
         }
 
         foreach ($daily_time_records as $record) {
@@ -689,7 +707,18 @@ class DailyTimeRecordController extends Controller
                 }
 
                 // Leave check
-                $record->is_leave = (float)($record->leave ?? 0) > 0 || (int)($record->is_leave ?? 0) === 1;
+                $leaveMatch = isset($approvedLeaveApplications) ? $approvedLeaveApplications->first(function($l) use ($recordDate) {
+                    return Carbon::parse($l->leave_date)->format('Y-m-d') === $recordDate;
+                }) : null;
+
+                if ($leaveMatch) {
+                    $record->is_leave = true;
+                    if (empty($record->leave) || (float)$record->leave <= 0) {
+                        $record->leave = (float)($leaveMatch->with_pay ?? 1) + (float)($leaveMatch->without_pay ?? 0);
+                    }
+                } else {
+                    $record->is_leave = (float)($record->leave ?? 0) > 0 || (int)($record->is_leave ?? 0) === 1;
+                }
 
                 // Set canonical day_type_label based on evaluated status
                 if ($record->is_work_suspended) {
@@ -706,6 +735,22 @@ class DailyTimeRecordController extends Controller
                     $record->day_type_label = 'Rest Day';
                 } else {
                     $record->day_type_label = 'On-Site';
+                }
+                // Attach fix schedule times so the frontend can compute
+                // late & undertime live for periods not yet processed by the engine.
+                // Only attach for non-rest, non-holiday days where a schedule was found.
+                if ($schedDetail !== null && !$record->is_restday && !$record->is_holiday) {
+                    $record->sched_am_in  = $schedDetail->am_in  ?? null;  // e.g. "07:00:00"
+                    $record->sched_pm_out = $schedDetail->pm_out ?? null;  // e.g. "16:00:00"
+                    $record->sched_grace  = (float)($schedDetail->grace_period ?? 0);
+                    $record->sched_flexi  = (float)($schedDetail->flexi_hours  ?? 0);
+                    $record->sched_hours  = (float)($schedDetail->work_hours   ?? 0);
+                } else {
+                    $record->sched_am_in  = null;
+                    $record->sched_pm_out = null;
+                    $record->sched_grace  = 0;
+                    $record->sched_flexi  = 0;
+                    $record->sched_hours  = 0;
                 }
             }
         }
@@ -1135,13 +1180,35 @@ class DailyTimeRecordController extends Controller
                             ->count();
                     }
 
+                    $detailLog = DB::table('time_data')
+                        ->where('dtr_request_id', $request->id)
+                        ->first();
+
+                    $disapproved = $this->toDtrBool($request->disapproved_1) || $this->toDtrBool($request->disapproved_2);
+                    $approved = $this->isDtrRequestFullyApproved($request);
+
+                    $fieldType = $request->field_type ?? null;
+                    $claimedTime = $request->claimed_time ?? null;
+
                     return [
                         'id' => $request->id,
                         'employee_id' => $request->employee_id,
-                        'request_date' => $request->request_date,
+                        'request_date' => $request->request_date ?? $request->created_at,
+                        'created_at' => $request->created_at ?? $request->request_date,
                         'payroll_period_id' => $request->payroll_period_id ?? 0,
                         'payroll_period' => $request->payroll_period,
                         'attachment_name' => $request->attachment_name ?? null,
+                        'reason' => $request->reason ?? ($detailLog->remarks ?? 'DTR Correction Request'),
+                        'target_date' => $request->target_date ?? ($detailLog->date ?? null),
+                        'field_type' => $fieldType,
+                        'claimed_time' => $claimedTime,
+                        'am_in' => $request->am_in ?? ($fieldType === 'am_in' ? $claimedTime : null),
+                        'am_out' => $request->am_out ?? ($fieldType === 'am_out' ? $claimedTime : null),
+                        'pm_in' => $request->pm_in ?? ($fieldType === 'pm_in' ? $claimedTime : null),
+                        'pm_out' => $request->pm_out ?? ($fieldType === 'pm_out' ? $claimedTime : null),
+                        'remarks' => $request->remarks ?? null,
+                        'approver_remarks' => $request->remarks ?? null,
+                        'day_remarks' => $detailLog->remarks ?? null,
                         'status' => $this->toDtrBool($request->status),
                         'approved_1' => $this->toDtrBool($request->approved_1),
                         'approved_2' => $this->toDtrBool($request->approved_2),
@@ -1149,8 +1216,9 @@ class DailyTimeRecordController extends Controller
                         'disapproved_2' => $this->toDtrBool($request->disapproved_2),
                         'status_label' => $this->formatDtrRequestStatus($request),
                         'entries_count' => $entriesCount,
-                        'has_approved_dtr' => $this->isDtrRequestFullyApproved($request),
+                        'has_approved_dtr' => $approved,
                         'can_edit' => $this->canEmployeeEditDtrApplication($request),
+                        'can_cancel' => !$approved && !$disapproved,
                     ];
                 });
 
@@ -1235,7 +1303,16 @@ class DailyTimeRecordController extends Controller
                 $fileName = $file->getClientOriginalName();
             }
 
-            $requestId = DB::table('time_data_request')->insertGetId([
+            $targetDate = $request->input('target_date');
+            $fieldType = $request->input('field_type');
+            $claimedTime = $request->input('claimed_time');
+            $reason = $request->input('reason');
+            $amIn = $request->input('am_in');
+            $amOut = $request->input('am_out');
+            $pmIn = $request->input('pm_in');
+            $pmOut = $request->input('pm_out');
+
+            $insertData = [
                 'employee_id' => $employeeId,
                 'request_date' => now(),
                 'status' => false,
@@ -1256,7 +1333,36 @@ class DailyTimeRecordController extends Controller
                 'extension' => $extension,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
+            ];
+
+            $this->ensureTimeDataRequestSchema();
+
+            if (Schema::hasColumn('time_data_request', 'target_date')) {
+                $insertData['target_date'] = $targetDate;
+            }
+            if (Schema::hasColumn('time_data_request', 'field_type')) {
+                $insertData['field_type'] = $fieldType;
+            }
+            if (Schema::hasColumn('time_data_request', 'claimed_time')) {
+                $insertData['claimed_time'] = $claimedTime ? substr($claimedTime, 0, 240) : null;
+            }
+            if (Schema::hasColumn('time_data_request', 'reason')) {
+                $insertData['reason'] = $reason;
+            }
+            if ($amIn && Schema::hasColumn('time_data_request', 'am_in')) {
+                $insertData['am_in'] = $amIn;
+            }
+            if ($amOut && Schema::hasColumn('time_data_request', 'am_out')) {
+                $insertData['am_out'] = $amOut;
+            }
+            if ($pmIn && Schema::hasColumn('time_data_request', 'pm_in')) {
+                $insertData['pm_in'] = $pmIn;
+            }
+            if ($pmOut && Schema::hasColumn('time_data_request', 'pm_out')) {
+                $insertData['pm_out'] = $pmOut;
+            }
+
+            $requestId = DB::table('time_data_request')->insertGetId($insertData);
 
             if ($file && $fileName) {
                 $storageName = 'DOCS_REQ' . $employeeId . $requestId . '_' . $fileName;
@@ -1265,16 +1371,9 @@ class DailyTimeRecordController extends Controller
                 $file->storeAs('employee_DTR_documents', $storageName);
             }
 
-            // Sync single-field attendance correction into time_data if provided
-            $targetDate = $request->input('target_date');
-            $fieldType = $request->input('field_type');
-            $claimedTime = $request->input('claimed_time');
-
-            if ($targetDate && $fieldType && $claimedTime) {
+            // Link time_data record for tracking without mutating actual punches while pending
+            if ($targetDate) {
                 try {
-                    $formattedTime = Carbon::parse($claimedTime)->format('H:i:s');
-                    $fieldToUpdate = in_array($fieldType, ['am_in', 'am_out', 'pm_in', 'pm_out', 'break_in', 'break_out']) ? $fieldType : 'am_in';
-
                     $existingLog = DB::table('time_data')
                         ->where('employee_id', $employeeId)
                         ->where('date', $targetDate)
@@ -1284,9 +1383,7 @@ class DailyTimeRecordController extends Controller
                         DB::table('time_data')
                             ->where('id', $existingLog->id)
                             ->update([
-                                $fieldToUpdate => $formattedTime,
                                 'dtr_request_id' => $requestId,
-                                'is_edited' => 1,
                                 'for_approval' => 0
                             ]);
                     } else {
@@ -1294,18 +1391,17 @@ class DailyTimeRecordController extends Controller
                             'employee_id' => $employeeId,
                             'date' => $targetDate,
                             'payroll_period_id' => $request->payroll_period_id ?? 0,
-                            $fieldToUpdate => $formattedTime,
                             'dtr_request_id' => $requestId,
                             'work_hours' => 0,
                             'late' => 0,
                             'undertime' => 0,
                             'absent' => 0,
                             'for_approval' => 0,
-                            'is_edited' => 1
+                            'is_edited' => 0
                         ]);
                     }
                 } catch (\Exception $syncError) {
-                    Log::error('Failed to sync correction request to time_data: ' . $syncError->getMessage());
+                    Log::error('Failed to link correction request to time_data: ' . $syncError->getMessage());
                 }
             }
 
@@ -1422,6 +1518,45 @@ class DailyTimeRecordController extends Controller
             return $this->errorResponse($e->validator->errors()->first(), 422);
         } catch (\Exception $e) {
             return $this->serverErrorResponse('Failed to update DTR application: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Cancel an unapproved DTR correction application.
+     */
+    public function cancelApplication($requestId)
+    {
+        try {
+            $requestRecord = DB::table('time_data_request')->where('id', $requestId)->first();
+
+            if (!$requestRecord) {
+                return $this->errorResponse('DTR application not found.', 404);
+            }
+
+            if ($this->isDtrRequestFullyApproved($requestRecord)) {
+                return $this->errorResponse('Cannot cancel an already approved application.', 400);
+            }
+
+            // Remove dtr_request_id reference from time_data
+            DB::table('time_data')
+                ->where('dtr_request_id', $requestId)
+                ->update([
+                    'dtr_request_id' => 0,
+                    'is_edited' => 0,
+                    'for_approval' => 1
+                ]);
+
+            // Delete file if attached
+            if (!empty($requestRecord->path) && file_exists($requestRecord->path)) {
+                @unlink($requestRecord->path);
+            }
+
+            // Delete request record
+            DB::table('time_data_request')->where('id', $requestId)->delete();
+
+            return $this->successResponse(null, 'DTR application successfully cancelled.');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to cancel application: ' . $e->getMessage());
         }
     }
 
@@ -1684,17 +1819,8 @@ class DailyTimeRecordController extends Controller
         try {
             $app_key = env("APP_KEY", "");
 
-        $emp_id_data = DB::table('users as a')
-            ->join('employees as b', 'b.employee_no', '=', 'a.employee_no')
-            ->selectRaw('case when b.id = null then 0 else b.id end as id')
-            ->where('a.id', Auth::user()->id)
-            ->get();
-
-        if ($emp_id_data->isNotEmpty()) {
-            $emp_id = $emp_id_data[0]->id;
-        } else {
-            $emp_id = 0;
-        }
+        $empRecord = $this->resolveEmployeeFromUserId(Auth::user()->id ?? 0);
+        $emp_id = $empRecord ? $empRecord->id : 0;
 
         $employee = DB::table('time_data_request')->select('employee_id')->where('id', $id)->get();
 
@@ -1793,21 +1919,94 @@ class DailyTimeRecordController extends Controller
 
             $updatedRequest = DB::table('time_data_request')->where('id', $id)->first();
             if ($updatedRequest && $this->isDtrRequestFullyApproved($updatedRequest)) {
-                // Update time_data rows linked to this request
-                DB::table('time_data')
-                    ->where('dtr_request_id', $id)
-                    ->update([
-                        'for_approval' => 1,
-                        'is_edited' => 0
-                    ]);
+                $targetField = $updatedRequest->field_type ?? null;
+                $claimedTime = $updatedRequest->claimed_time ?? null;
+                $targetDate = $updatedRequest->target_date ?? null;
+                $empId = $updatedRequest->employee_id;
 
-                if (!empty($updatedRequest->payroll_period_id) && !empty($updatedRequest->employee_id)) {
+                $updateTimeData = [
+                    'for_approval' => 1,
+                    'is_edited' => 1,
+                    'dtr_request_id' => $id
+                ];
+
+                foreach (['am_in', 'am_out', 'pm_in', 'pm_out'] as $punchKey) {
+                    $val = $updatedRequest->$punchKey ?? null;
+                    if ($val) {
+                        try {
+                            $updateTimeData[$punchKey] = Carbon::parse($val)->format('H:i:s');
+                        } catch (\Exception $e) {
+                            $updateTimeData[$punchKey] = $val;
+                        }
+                    }
+                }
+
+                if ($claimedTime && $targetField && in_array($targetField, ['am_in', 'am_out', 'pm_in', 'pm_out', 'break_in', 'break_out'])) {
+                    if (!isset($updateTimeData[$targetField])) {
+                        try {
+                            $updateTimeData[$targetField] = Carbon::parse($claimedTime)->format('H:i:s');
+                        } catch (\Exception $e) {
+                            $updateTimeData[$targetField] = $claimedTime;
+                        }
+                    }
+                }
+
+                // 1. Attempt update on existing logs linked by dtr_request_id
+                $updatedCount = DB::table('time_data')
+                    ->where('dtr_request_id', $id)
+                    ->update($updateTimeData);
+
+                // 2. Fallback: If no record was updated by dtr_request_id, find by employee_id & target_date
+                if ($updatedCount === 0 && $empId && $targetDate) {
+                    $existingLog = DB::table('time_data')
+                        ->where('employee_id', $empId)
+                        ->where('date', $targetDate)
+                        ->first();
+
+                    if ($existingLog) {
+                        DB::table('time_data')
+                            ->where('id', $existingLog->id)
+                            ->update($updateTimeData);
+                        $updatedCount = 1;
+                    } else {
+                        // 3. If no time_data row exists at all for target_date, insert a new row
+                        $newRecord = array_merge([
+                            'employee_id' => $empId,
+                            'date' => $targetDate,
+                            'payroll_period_id' => $updatedRequest->payroll_period_id ?? 0,
+                            'work_hours' => 0,
+                            'late' => 0,
+                            'undertime' => 0,
+                            'absent' => 0,
+                        ], $updateTimeData);
+
+                        DB::table('time_data')->insert($newRecord);
+                        $updatedCount = 1;
+                    }
+                }
+
+                // Always recalculate work hours for the requested date after approval
+                $affectedLogs = DB::table('time_data')
+                    ->where(function($q) use ($id, $empId, $targetDate) {
+                        $q->where('dtr_request_id', $id);
+                        if ($empId && $targetDate) {
+                            $q->orWhere(function($sub) use ($empId, $targetDate) {
+                                $sub->where('employee_id', $empId)->where('date', $targetDate);
+                            });
+                        }
+                    })->get();
+
+                foreach ($affectedLogs as $tdLog) {
+                    $this->syncTimeDataPayrollPeriodAndHours($tdLog->id);
+                }
+
+                if (!empty($updatedRequest->payroll_period_id) && !empty($empId)) {
                     DB::table('time_data')
-                        ->where('employee_id', $updatedRequest->employee_id)
+                        ->where('employee_id', $empId)
                         ->where('payroll_period_id', $updatedRequest->payroll_period_id)
                         ->update([
                             'for_approval' => 1,
-                            'is_edited' => 0
+                            'is_edited' => 1
                         ]);
                 }
 
@@ -1822,74 +2021,42 @@ class DailyTimeRecordController extends Controller
             }
 
             return $this->successResponse(null, 'Successfully Approved Time logs Request!');
-        } else {
-
+        } elseif ($type_id == 3) {
+            // Disapproval action
             if ($approver_1->isNotEmpty()) {
                 $data = [
                     'disapproved_1' => 1,
                     'disapproved_by_1_id' => $approver_1[0]->id,
-                    'disapproved_date_1' => '',
+                    'disapproved_date_1' => now(),
                     'status' => 1
                 ];
-
-                // update time logs
-                DB::table('time_data')->where('dtr_request_id', $id)
-                    ->update([
-                        'am_in' => null,
-                        'am_out' => null,
-                        'break_in' => null,
-                        'break_out' => null,
-                        'pm_in' => null,
-                        'pm_out' => null,
-                        'for_approval' => 0,
-                        'payroll_period_id' => 0,
-                        'is_edited' => 1,
-                    ]);
             } elseif ($approver_2->isNotEmpty()) {
                 $data = [
                     'disapproved_2' => 1,
                     'disapproved_by_2_id' => $approver_2[0]->id,
-                    'disapproved_date_2' => '',
+                    'disapproved_date_2' => now(),
                     'status' => 1
                 ];
-
-                DB::table('time_data')->where('dtr_request_id', $id)
-                    ->update([
-                        'am_in' => null,
-                        'am_out' => null,
-                        'break_in' => null,
-                        'break_out' => null,
-                        'pm_in' => null,
-                        'pm_out' => null,
-                        'for_approval' => 0,
-                        'payroll_period_id' => 0,
-                        'is_edited' => 1,
-                    ]);
             } elseif ($approver_3->isNotEmpty()) {
                 $data = [
                     'disapproved_2' => 1,
                     'disapproved_by_2_id' => $approver_3[0]->id,
-                    'disapproved_date_2' => '',
+                    'disapproved_date_2' => now(),
                     'status' => 1
                 ];
-
-                DB::table('time_data')->where('dtr_request_id', $id)
-                    ->update([
-                        'am_in' => null,
-                        'am_out' => null,
-                        'break_in' => null,
-                        'break_out' => null,
-                        'pm_in' => null,
-                        'pm_out' => null,
-                        'for_approval' => 0,
-                        'payroll_period_id' => 0,
-                        'is_edited' => 1,
-                    ]);
             } else {
                 return $this->errorResponse('You are not authorized to disapprove this DTR request.', 403);
             }
 
             DB::table('time_data_request')->where('id', $id)->update($data);
+
+            // Detach dtr_request_id without wiping original attendance punch logs
+            DB::table('time_data')
+                ->where('dtr_request_id', $id)
+                ->update([
+                    'dtr_request_id' => 0,
+                    'for_approval' => 0
+                ]);
 
             return $this->successResponse(null, 'Successfully Disapproved Time logs Request!');
         }
@@ -2531,13 +2698,25 @@ class DailyTimeRecordController extends Controller
      */
     private function getDtrApproversForRequestEmployee($empId, $employeeId)
     {
+        $requestEmp = DB::table('employees')->where('id', $employeeId)->first();
+        $deptId = $requestEmp->department_id ?? 0;
+        $divId = $requestEmp->division_id ?? 0;
+        $secId = $requestEmp->section_id ?? 0;
+        $branchId = $requestEmp->branch_id ?? 0;
+
         $approver_1 = DB::table('approver_headers as a')
             ->leftJoin('approver_details as b', 'a.id', '=', 'b.approver_id')
             ->select('a.id', 'a.approver_id_1 as supervisor_id', 'a.approver_id_3')
             ->where('a.approver_id_1', $empId)
             ->where('a.type_id', self::DTR_TYPE_ID)
-            ->where(function ($q) use ($employeeId) {
+            ->where(function ($q) use ($employeeId, $deptId, $divId, $secId, $branchId) {
                 $q->where('b.employee_id', $employeeId)
+                  ->orWhere(function ($qDept) use ($deptId, $divId, $secId, $branchId) {
+                      $qDept->whereRaw('(ISNULL(a.department_id,0) > 0 AND a.department_id = ?)', [$deptId])
+                            ->orWhereRaw('(ISNULL(a.division_id,0) > 0 AND a.division_id = ?)', [$divId])
+                            ->orWhereRaw('(ISNULL(a.section_id,0) > 0 AND a.section_id = ?)', [$secId])
+                            ->orWhereRaw('(ISNULL(a.branch_id,0) > 0 AND a.branch_id = ?)', [$branchId]);
+                  })
                   ->orWhereRaw('NOT EXISTS (SELECT 1 FROM approver_details ad2 WHERE ad2.approver_id = a.id)');
             })
             ->distinct()
@@ -2548,8 +2727,14 @@ class DailyTimeRecordController extends Controller
             ->select('a.id', 'a.approver_id_2 as supervisor_id', 'a.approver_id_3')
             ->where('a.approver_id_2', $empId)
             ->where('a.type_id', self::DTR_TYPE_ID)
-            ->where(function ($q) use ($employeeId) {
+            ->where(function ($q) use ($employeeId, $deptId, $divId, $secId, $branchId) {
                 $q->where('b.employee_id', $employeeId)
+                  ->orWhere(function ($qDept) use ($deptId, $divId, $secId, $branchId) {
+                      $qDept->whereRaw('(ISNULL(a.department_id,0) > 0 AND a.department_id = ?)', [$deptId])
+                            ->orWhereRaw('(ISNULL(a.division_id,0) > 0 AND a.division_id = ?)', [$divId])
+                            ->orWhereRaw('(ISNULL(a.section_id,0) > 0 AND a.section_id = ?)', [$secId])
+                            ->orWhereRaw('(ISNULL(a.branch_id,0) > 0 AND a.branch_id = ?)', [$branchId]);
+                  })
                   ->orWhereRaw('NOT EXISTS (SELECT 1 FROM approver_details ad2 WHERE ad2.approver_id = a.id)');
             })
             ->distinct()
@@ -2562,8 +2747,14 @@ class DailyTimeRecordController extends Controller
                 $q->where('a.approver_id_3', $empId)->orWhere('a.approver_id_4', $empId);
             })
             ->where('a.type_id', self::DTR_TYPE_ID)
-            ->where(function ($q) use ($employeeId) {
+            ->where(function ($q) use ($employeeId, $deptId, $divId, $secId, $branchId) {
                 $q->where('b.employee_id', $employeeId)
+                  ->orWhere(function ($qDept) use ($deptId, $divId, $secId, $branchId) {
+                      $qDept->whereRaw('(ISNULL(a.department_id,0) > 0 AND a.department_id = ?)', [$deptId])
+                            ->orWhereRaw('(ISNULL(a.division_id,0) > 0 AND a.division_id = ?)', [$divId])
+                            ->orWhereRaw('(ISNULL(a.section_id,0) > 0 AND a.section_id = ?)', [$secId])
+                            ->orWhereRaw('(ISNULL(a.branch_id,0) > 0 AND a.branch_id = ?)', [$branchId]);
+                  })
                   ->orWhereRaw('NOT EXISTS (SELECT 1 FROM approver_details ad2 WHERE ad2.approver_id = a.id)');
             })
             ->distinct()
@@ -2647,10 +2838,17 @@ class DailyTimeRecordController extends Controller
                         $j->on('ad.approver_id', '=', 'ah.id')
                           ->on('ad.employee_id', '=', 'tdr.employee_id');
                     })
+                    ->leftJoin('employees as emp_tdr', 'emp_tdr.id', '=', 'tdr.employee_id')
                     ->where('ah.type_id', self::DTR_TYPE_ID)
-                    // Accept if employee is explicitly listed OR header has no details (open rule)
+                    // Accept if employee is explicitly listed, OR matches header department/division/section/branch, OR header has no details (open rule)
                     ->where(function ($q) {
                         $q->whereNotNull('ad.employee_id')
+                          ->orWhere(function ($qDept) {
+                              $qDept->whereRaw('(ISNULL(ah.department_id,0) > 0 AND ah.department_id = emp_tdr.department_id)')
+                                    ->orWhereRaw('(ISNULL(ah.division_id,0) > 0 AND ah.division_id = emp_tdr.division_id)')
+                                    ->orWhereRaw('(ISNULL(ah.section_id,0) > 0 AND ah.section_id = emp_tdr.section_id)')
+                                    ->orWhereRaw('(ISNULL(ah.branch_id,0) > 0 AND ah.branch_id = emp_tdr.branch_id)');
+                          })
                           ->orWhereRaw('NOT EXISTS (SELECT 1 FROM approver_details ad2 WHERE ad2.approver_id = ah.id)');
                     });
 
@@ -2749,11 +2947,19 @@ class DailyTimeRecordController extends Controller
                         $j->on('ad.approver_id', '=', 'ah.id')
                           ->on('ad.employee_id', '=', 'tdr.employee_id');
                     })
+                    ->leftJoin('employees as emp_tdr', 'emp_tdr.id', '=', 'tdr.employee_id')
                     ->where('ah.type_id', self::DTR_TYPE_ID)
-                    // Accept the request if the employee has an explicit approver_details row
+                    // Accept the request if the employee has an explicit approver_details row,
+                    // OR matches the header's department/division/section/branch,
                     // OR if this approver header has NO details rows at all (open/catch-all rule)
                     ->where(function ($q) {
                         $q->whereNotNull('ad.employee_id')
+                          ->orWhere(function ($qDept) {
+                              $qDept->whereRaw('(ISNULL(ah.department_id,0) > 0 AND ah.department_id = emp_tdr.department_id)')
+                                    ->orWhereRaw('(ISNULL(ah.division_id,0) > 0 AND ah.division_id = emp_tdr.division_id)')
+                                    ->orWhereRaw('(ISNULL(ah.section_id,0) > 0 AND ah.section_id = emp_tdr.section_id)')
+                                    ->orWhereRaw('(ISNULL(ah.branch_id,0) > 0 AND ah.branch_id = emp_tdr.branch_id)');
+                          })
                           ->orWhereRaw('NOT EXISTS (SELECT 1 FROM approver_details ad2 WHERE ad2.approver_id = ah.id)');
                     });
 
@@ -2823,35 +3029,120 @@ class DailyTimeRecordController extends Controller
         ];
 
         $statusLabel = $this->formatDtrRequestStatus($statusSource);
-        $isReturned = $statusLabel === 'Returned';
+        $isDisapproved = $statusLabel === 'Disapproved' || $statusLabel === 'Returned';
         $isFullyApproved = $statusLabel === 'Approved';
+
+        // Fetch correction detail fields from time_data_request and linked time_data
+        $requestRecord = DB::table('time_data_request')->where('id', $row->id)->first();
+        $detailLog = DB::table('time_data')->where('dtr_request_id', $row->id)->first();
+
+        if (!$detailLog && $requestRecord && $requestRecord->employee_id) {
+            $tDate = $requestRecord->target_date ?? $row->request_date;
+            if ($tDate) {
+                $detailLog = DB::table('time_data')
+                    ->where('employee_id', $requestRecord->employee_id)
+                    ->where('date', $tDate)
+                    ->first();
+            }
+        }
+
+        $targetDate = $requestRecord->target_date ?? ($detailLog->date ?? $row->request_date ?? null);
+        $fieldType = $requestRecord->field_type ?? null;
+        $claimedTime = $requestRecord->claimed_time ?? null;
+        $reason = $requestRecord->reason ?? ($detailLog->remarks ?? 'DTR Correction Request');
 
         return [
             'id' => $row->id,
             'photo' => $row->photo ?? null,
             'employee_id' => $row->employee_id,
+            'employee_name' => $row->name ?? null,
             'name' => $row->name,
             'request_date' => $row->request_date,
+            'created_at' => $requestRecord->created_at ?? $row->request_date,
             'branch' => $row->branch ?? null,
             'department' => $row->department ?? null,
             'division' => $row->division ?? null,
             'section' => $row->section ?? null,
             'position' => $row->position ?? null,
             'approver_level_id' => $row->approver_level_id ?? null,
+            'reason' => $reason,
+            'target_date' => $targetDate,
+            'field_type' => $fieldType,
+            'claimed_time' => $claimedTime,
+            'am_in' => $requestRecord->am_in ?? ($fieldType === 'am_in' ? $claimedTime : null),
+            'am_out' => $requestRecord->am_out ?? ($fieldType === 'am_out' ? $claimedTime : null),
+            'pm_in' => $requestRecord->pm_in ?? ($fieldType === 'pm_in' ? $claimedTime : null),
+            'pm_out' => $requestRecord->pm_out ?? ($fieldType === 'pm_out' ? $claimedTime : null),
+            'attachment_name' => $requestRecord->attachment_name ?? null,
+            'payroll_period_id' => $requestRecord->payroll_period_id ?? 0,
             'approved_1' => $this->toDtrBool($row->approved_1 ?? 0),
             'approved_2' => $this->toDtrBool($row->approved_2 ?? 0),
             'disapproved_1' => $this->toDtrBool($row->disapproved_1 ?? 0),
             'disapproved_2' => $this->toDtrBool($row->disapproved_2 ?? 0),
             'status' => $isFullyApproved,
-            'is_pending' => !$isFullyApproved && !$isReturned,
+            'is_pending' => !$isFullyApproved && !$isDisapproved,
             'status_label' => $statusLabel,
         ];
+    }
+
+    private function ensureTimeDataRequestSchema()
+    {
+        try {
+            if (!Schema::hasColumn('time_data_request', 'target_date')) {
+                Schema::table('time_data_request', function ($table) {
+                    $table->date('target_date')->nullable();
+                });
+            }
+            if (!Schema::hasColumn('time_data_request', 'field_type')) {
+                Schema::table('time_data_request', function ($table) {
+                    $table->string('field_type', 50)->nullable();
+                });
+            }
+            if (Schema::hasColumn('time_data_request', 'claimed_time')) {
+                try {
+                    DB::statement("ALTER TABLE time_data_request ALTER COLUMN claimed_time VARCHAR(500) NULL");
+                } catch (\Exception $e) {
+                    // Ignore if alter fails
+                }
+            } else {
+                Schema::table('time_data_request', function ($table) {
+                    $table->string('claimed_time', 500)->nullable();
+                });
+            }
+            if (!Schema::hasColumn('time_data_request', 'reason')) {
+                Schema::table('time_data_request', function ($table) {
+                    $table->text('reason')->nullable();
+                });
+            }
+            if (!Schema::hasColumn('time_data_request', 'am_in')) {
+                Schema::table('time_data_request', function ($table) {
+                    $table->string('am_in', 50)->nullable();
+                });
+            }
+            if (!Schema::hasColumn('time_data_request', 'am_out')) {
+                Schema::table('time_data_request', function ($table) {
+                    $table->string('am_out', 50)->nullable();
+                });
+            }
+            if (!Schema::hasColumn('time_data_request', 'pm_in')) {
+                Schema::table('time_data_request', function ($table) {
+                    $table->string('pm_in', 50)->nullable();
+                });
+            }
+            if (!Schema::hasColumn('time_data_request', 'pm_out')) {
+                Schema::table('time_data_request', function ($table) {
+                    $table->string('pm_out', 50)->nullable();
+                });
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to ensure time_data_request schema: ' . $e->getMessage());
+        }
     }
 
     private function formatDtrRequestStatus($request)
     {
         if ($this->toDtrBool($request->disapproved_1 ?? 0) || $this->toDtrBool($request->disapproved_2 ?? 0)) {
-            return 'Returned';
+            return 'Disapproved';
         }
 
         if ($this->isDtrRequestFullyApproved($request)) {
@@ -4112,8 +4403,10 @@ class DailyTimeRecordController extends Controller
             }
         }
 
-        if ($wh > 0) {
-            $updates['work_hours'] = round($wh, 2);
+        $calculatedHours = round($wh, 2);
+        $updates['work_hours'] = $calculatedHours;
+        if (Schema::hasColumn('time_data', 'hours_worked')) {
+            $updates['hours_worked'] = $calculatedHours;
         }
 
         if (!empty($updates)) {

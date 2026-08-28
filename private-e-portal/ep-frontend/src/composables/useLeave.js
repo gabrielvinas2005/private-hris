@@ -840,39 +840,12 @@ export function useLeave() {
       toast.error('Please complete all required fields')
       return
     }
-    if (formData.addAttachments.length === 0) { 
-      toast.error('Please upload at least one file')
-      return 
-    }
-    
+    // Attachments are optional per form UI label "Attachments (Optional)"
+
     // Check if selected leave type has credits
     const selectedLeaveType = state.leaveTypes.find(lt => String(lt.id) === formData.addForm.leave_type_id)
     if (selectedLeaveType && hasZeroCredits(selectedLeaveType)) {
       toast.error(`You cannot apply for ${selectedLeaveType.name} because you have no available credits.`)
-      return
-    }
-
-    if (!otherPurposeSelected && isVacationOrSpecialLeave(formData.addForm.leave_type_id) && !formData.addForm.incase_vacation_leave_id) {
-      toast.error('Please select where you are spending your leave.')
-      return
-    }
-
-    if (!otherPurposeSelected && isSickLeaveTypeById(formData.addForm.leave_type_id) && !formData.addForm.incase_sick_leave_id) {
-      toast.error('Please select sick leave type.')
-      return
-    }
-
-    if (
-      !otherPurposeSelected &&
-      (isSickLeave(formData.addForm.leave_type_id) || formData.addForm.incase_sick_leave_id) &&
-      !String(formData.addForm.incase_sick_leave_specify || '').trim()
-    ) {
-      toast.error('Please specify illness.')
-      return
-    }
-
-    if (!otherPurposeSelected && isStudyLeaveTypeById(formData.addForm.leave_type_id) && !formData.addForm.incase_study_leave_id) {
-      toast.error('Please select study leave type.')
       return
     }
 
@@ -1238,29 +1211,7 @@ export function useLeave() {
       return
     }
 
-    if (!otherPurposeSelected && isVacationOrSpecialLeave(formData.editForm.leave_type_id) && !formData.editForm.incase_vacation_leave_id) {
-      toast.error('Please select where you are spending your leave.')
-      return
-    }
 
-    if (!otherPurposeSelected && isSickLeaveTypeById(formData.editForm.leave_type_id) && !formData.editForm.incase_sick_leave_id) {
-      toast.error('Please select sick leave type.')
-      return
-    }
-
-    if (
-      !otherPurposeSelected &&
-      (isSickLeave(formData.editForm.leave_type_id) || formData.editForm.incase_sick_leave_id) &&
-      !String(formData.editForm.incase_sick_leave_specify || '').trim()
-    ) {
-      toast.error('Please specify illness.')
-      return
-    }
-
-    if (!otherPurposeSelected && isStudyLeaveTypeById(formData.editForm.leave_type_id) && !formData.editForm.incase_study_leave_id) {
-      toast.error('Please select study leave type.')
-      return
-    }
 
     if (formData.editForm.other_purpose_id === '1' && !String(formData.editForm.monetization_amount || '').trim()) {
       toast.error('Please enter leave credits.')

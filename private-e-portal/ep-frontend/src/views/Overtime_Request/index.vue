@@ -1,48 +1,55 @@
 <template>
   <MainLayout :breadcrumbs="breadcrumbs">
-    <div class="w-full h-full">
+    <div class="w-full h-full space-y-6">
       <!-- Header Section -->
-      <div class="mb-6">
-        <h1 class="text-3xl font-bold text-slate-900 mb-2">Overtime List</h1>
-        <p class="text-slate-600">Manage your overtime applications and approvals</p>
+      <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 flex items-center justify-between flex-wrap gap-4">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-md shadow-amber-500/20">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Overtime Requests</h1>
+            <p class="text-xs font-medium text-slate-500">File overtime authorizations, manage service credits, and track supervisor reviews</p>
+          </div>
+        </div>
+
+        <div v-if="state.allowed && state.employeeInfo.id !== 0 && state.overtimeTaxCode.length > 0" class="flex gap-2.5">
+          <el-button
+            type="primary"
+            @click="showOvertimeForm"
+            class="!rounded-xl font-semibold !px-5 !py-2.5 !bg-amber-600 hover:!bg-amber-700 !border-amber-600 shadow-md shadow-amber-600/20 hover:shadow-amber-600/35 hover:-translate-y-0.5 transition-all duration-200"
+          >
+            + Apply Overtime
+          </el-button>
+          <el-button
+            type="success"
+            @click="openOTFormModal"
+            class="!rounded-xl font-semibold !px-4 !py-2.5"
+          >
+            Get OT Authorization Form
+          </el-button>
+        </div>
       </div>
 
       <!-- Warning Messages -->
-      <div v-if="state.employeeInfo.id === 0" class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <p class="text-yellow-800">
-          <span class="font-semibold">INFO:</span> Link Employee Record to user to display Overtime Informations
+      <div v-if="state.employeeInfo.id === 0" class="p-4 bg-amber-50 border border-amber-200/80 rounded-2xl">
+        <p class="text-amber-800 text-xs font-semibold">
+          <span>INFO:</span> Link Employee Record to user to display Overtime Information.
         </p>
       </div>
 
-      <div v-if="state.overtimeTaxCode.length === 0" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p class="text-red-800">
-          <span class="font-semibold">WARNING:</span> Overtime tax setup is empty unable to apply Overtime. Please contact system administrator.
+      <div v-if="state.overtimeTaxCode.length === 0" class="p-4 bg-rose-50 border border-rose-200/80 rounded-2xl">
+        <p class="text-rose-800 text-xs font-semibold">
+          <span>WARNING:</span> Overtime tax setup is empty unable to apply Overtime. Please contact system administrator.
         </p>
       </div>
 
-      <div v-if="!state.allowed" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p class="text-red-800">
-          <span class="font-semibold">WARNING:</span> Approver is not setup, please contact HRD.
+      <div v-if="!state.allowed" class="p-4 bg-rose-50 border border-rose-200/80 rounded-2xl">
+        <p class="text-rose-800 text-xs font-semibold">
+          <span>WARNING:</span> Approver is not setup, please contact HRD.
         </p>
-      </div>
-
-      <!-- Action Buttons -->
-      <div v-if="state.allowed && state.employeeInfo.id !== 0 && state.overtimeTaxCode.length > 0" class="flex flex-wrap gap-3 mb-6">
-        <el-button
-          type="primary"
-          @click="showOvertimeForm"
-          class="flex items-center gap-2"
-        >
-          <el-icon><Plus /></el-icon>
-          Apply Overtime
-        </el-button>
-        <el-button
-          type="success"
-          @click="openOTFormModal"
-          class="flex items-center gap-2"
-        >
-          Get OT Form
-        </el-button>
       </div>
 
       <!-- Employee Overtime Tabs -->

@@ -36,10 +36,10 @@
       </el-card>
 
       <el-card shadow="never" v-loading="loading">
-        <el-table :data="filteredApplications" stripe empty-text="No DTR applications yet">
-          <el-table-column prop="id" label="Ref #" width="80" />
-          <el-table-column label="Request Date" width="140">
-            <template #default="{ row }">{{ formatDate(row.request_date) }}</template>
+        <el-table :data="filteredApplications" stripe empty-text="No DTR applications yet" :default-sort="{ prop: 'request_date', order: 'descending' }">
+          <el-table-column prop="id" label="Ref #" width="80" sortable />
+          <el-table-column prop="request_date" label="Date & Time Filed" width="170" sortable>
+            <template #default="{ row }">{{ formatDate(row.request_date || row.created_at) }}</template>
           </el-table-column>
           <el-table-column prop="payroll_period" label="Payroll Period" min-width="200">
             <template #default="{ row }">{{ row.payroll_period || '—' }}</template>
@@ -314,7 +314,7 @@ export default {
       }
     },
     filteredApplications() {
-      let rows = this.applications
+      let rows = [...this.applications]
       if (this.statusFilter) {
         rows = rows.filter(r => r.status_label === this.statusFilter)
       }
@@ -326,6 +326,16 @@ export default {
           String(r.payroll_period || '').toLowerCase().includes(q)
         )
       }
+      rows.sort((a, b) => {
+        const parseTime = (item) => {
+          const raw = item?.request_date || item?.created_at
+          if (!raw) return Number(item?.id || 0)
+          const str = raw.toString().trim()
+          const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'))
+          return isNaN(d.getTime()) ? Number(item?.id || 0) : d.getTime()
+        }
+        return parseTime(b) - parseTime(a)
+      })
       return rows
     }
   },
@@ -335,8 +345,12 @@ export default {
   methods: {
     formatDate(value) {
       if (!value) return '—'
-      const d = new Date(value)
-      return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString()
+      const str = value.toString().trim()
+      const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'))
+      if (isNaN(d.getTime())) return value
+      const datePart = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+      const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+      return str.includes(' ') || str.includes('T') ? `${datePart} ${timePart}` : datePart
     },
     statusTagType(label) {
       if (label === 'Approved') return 'success'

@@ -214,7 +214,7 @@ export default {
           .print-actions { display: none; }
         }
         .print-container { 
-          font-family: Arial, sans-serif; 
+          font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; 
           max-width: 800px; 
           margin: 0 auto; 
           padding: 20px;

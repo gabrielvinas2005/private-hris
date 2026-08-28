@@ -1794,6 +1794,28 @@ class LeaveController extends Controller
 
                             // insert leave details
                             DB::table('leave_details')->Insert($leave_detail_data);
+
+                            // Sync time_data for DTR consistency
+                            try {
+                                $existingTimeData = DB::table('time_data')
+                                    ->where('employee_id', $leave_headers[0]->employee_id)
+                                    ->whereDate('date', $date)
+                                    ->first();
+                                if ($existingTimeData) {
+                                    DB::table('time_data')
+                                        ->where('id', $existingTimeData->id)
+                                        ->update(['is_leave' => 1, 'leave' => $day_type_value]);
+                                } else {
+                                    DB::table('time_data')->insert([
+                                        'employee_id' => $leave_headers[0]->employee_id,
+                                        'date' => $date,
+                                        'is_leave' => 1,
+                                        'leave' => $day_type_value,
+                                        'absent' => 0,
+                                    ]);
+                                }
+                            } catch (\Exception $e) {}
+
                             $credits = $credits - $day_type_value;
 
                             if ($credits < 0) {
@@ -2249,6 +2271,7 @@ class LeaveController extends Controller
                 DB::raw("b.first_name as first_name"),
                 DB::raw("b.middle_name as middle_name"),
                 DB::raw("b.last_name as last_name"),
+                'b.employee_no',
                 'b.salary_grade_id',
                 'c.name as department',
                 'd.name as position',

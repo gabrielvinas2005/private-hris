@@ -382,9 +382,9 @@
 
     <!-- Global A4 Page Wrapper -->
     <div class="dtr-page-wrapper">
-        <!-- 1. Civil Service Form Header - Positioned at upper left edge -->
+        <!-- 1. Form Header - Positioned at upper left edge -->
         <div class="civil-form-header">
-            <p>CIVIL SERVICE FORM NO. 48</p>
+            <p>EMPLOYEE DAILY TIME RECORD</p>
         </div>
 
         <!-- 2. Title Header Wrapper - Contains title, divider, and employee name -->

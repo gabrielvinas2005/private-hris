@@ -59,7 +59,7 @@
                   <div class="font-semibold text-slate-900 hover:text-blue-600 cursor-pointer transition-colors" @click="handlePreview(row)">
                     {{ row.title }}
                   </div>
-                  <div v-if="row.file_name" class="text-xs text-slate-500 mt-0.5 font-mono">
+                  <div v-if="row.file_name" class="text-xs text-slate-500 mt-0.5  ">
                     {{ row.file_name }}
                   </div>
                   <div v-if="row.description && row.description !== 'HR Setup Downloadable Document'" class="text-xs text-slate-500 mt-1">

@@ -79,40 +79,22 @@
           <span v-if="!isSidebarCollapsed">Time and Attendance</span>
         </router-link>
 
-        <!-- Leave Management -->
+        <!-- Employee Requests (Approvers Setup / Configured Approvers Only) -->
         <router-link
-          to="/leave-management"
+          to="/employee-requests"
           class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
           :class="[
             isSidebarCollapsed ? 'justify-center px-0' : 'px-3.5', 
-            isActive('/leave-management')
+            isActive('/employee-requests') 
               ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25' 
               : (isDarkMode ? 'text-slate-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100')
           ]"
-          v-if="isMenuAccessLoaded && hasMenuAccess('Leave Management')"
+          v-if="isApproverUser"
         >
           <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-          <span v-if="!isSidebarCollapsed">Leave Management</span>
-        </router-link>
-       
-        <!-- Overtime Management -->
-        <router-link
-          to="/overtime-monitoring"
-          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
-          :class="[
-            isSidebarCollapsed ? 'justify-center px-0' : 'px-3.5', 
-            isActive('/overtime-monitoring') 
-              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25' 
-              : (isDarkMode ? 'text-slate-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100')
-          ]"
-          v-if="isMenuAccessLoaded && hasMenuAccess('Overtime Management')"
-        >
-          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <span v-if="!isSidebarCollapsed">Overtime Management</span>
+          <span v-if="!isSidebarCollapsed">Employee Requests</span>
         </router-link>
          
         <!-- Payslip -->
@@ -151,7 +133,7 @@
           <span v-if="!isSidebarCollapsed">Daily Time Record</span>
         </router-link>
         
-        <!-- WFH Application 
+        <!-- WFH Application -->
         <router-link
           to="/wfh-application"
           class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
@@ -161,13 +143,12 @@
               ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25' 
               : (isDarkMode ? 'text-slate-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100')
           ]"
-          v-if="isMenuAccessLoaded && hasMenuAccess('WFH Application')"
         >
           <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
           </svg>
           <span v-if="!isSidebarCollapsed">WFH Application</span>
-        </router-link>-->
+        </router-link>
 
         <!-- Interview Ratings (Panels) -->
         <router-link
@@ -744,6 +725,7 @@ export default {
       hasCpmAccess: false,
       // Panel interview (interviewer) access
       hasPanelInterviewAccess: false,
+      isApproverUser: localStorage.getItem('is_approver_user') === 'true',
       isDivisionChief: false,
       isIpcrAvailable: false,
       isIpcrAgencyHead: false,
@@ -764,9 +746,7 @@ export default {
         notificationInterval: null, // Store interval ID for cleanup
         // Session timers & Clock-out guard state
         inactivityTimer: null,
-        maxSessionTimer: null,
-        INACTIVITY_TIMEOUT_MS: 30 * 60 * 1000, // 30 minutes
-        MAX_SESSION_TIMEOUT_MS: 5 * 60 * 60 * 1000, // 5 hours
+        INACTIVITY_TIMEOUT_MS: 5 * 60 * 60 * 1000, // 5 hours of inactivity
         isReminderDismissed: sessionStorage.getItem('shift_reminder_dismissed') === 'true',
         isQuickClockingOut: false,
         showLogoutGuardModal: false,
@@ -899,6 +879,9 @@ export default {
       }
     }
 
+    // Check if user is an approver for Employee Requests
+    this.checkApproverStatus()
+
     // Check if user is a division chief for IPCR access
     this.checkDivisionChiefAccess()
     // Check OPCR access
@@ -919,10 +902,7 @@ export default {
       localStorage.setItem('session_start_time', Date.now().toString())
     }
 
-    // Start 5-hour max session timer
-    this.initMaxSessionTimer()
-
-    // Start inactivity auto-logout timer (if not clocked in)
+    // Start 5-hour inactivity auto-logout timer (logs out if user does not move/interact for 5 hours)
     this._boundResetInactivity = this.resetInactivityTimer.bind(this)
     ;['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
       document.addEventListener(evt, this._boundResetInactivity, { passive: true })
@@ -944,12 +924,9 @@ export default {
     if (this.notificationInterval) {
       clearInterval(this.notificationInterval)
     }
-    // Clear inactivity and max session timers and remove listeners
+    // Clear inactivity timer and remove listeners
     if (this.inactivityTimer) {
       clearTimeout(this.inactivityTimer)
-    }
-    if (this.maxSessionTimer) {
-      clearTimeout(this.maxSessionTimer)
     }
     if (this._boundResetInactivity) {
       ;['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
@@ -958,6 +935,38 @@ export default {
     }
   },
   methods: {
+    async checkApproverStatus() {
+      try {
+        const userId = this.userData?.id || JSON.parse(localStorage.getItem('user_data') || '{}').id
+        if (!userId) {
+          this.isApproverUser = false
+          localStorage.setItem('is_approver_user', 'false')
+          return
+        }
+        const { default: ApiService } = await import('../services/api.js')
+
+        let isApprover = false
+        try {
+          const res = await ApiService.getApproverPipelineAccess(userId)
+          if (res && res.data && typeof res.data.is_approver !== 'undefined') {
+            isApprover = Boolean(res.data.is_approver)
+          }
+        } catch (_) {
+          const leaveDashboard = await ApiService.getLeaveDashboard(userId).catch(() => null)
+          const dtrAccess = await ApiService.getDtrApproverAccess(userId).catch(() => null)
+          const isLeaveApprover = Boolean(leaveDashboard?.data?.supervisor_id || (leaveDashboard?.data?.leave_for_approvals?.length > 0))
+          const isDtrApprover = Boolean(dtrAccess?.data?.is_approver || dtrAccess?.data?.supervisor_id)
+          isApprover = isLeaveApprover || isDtrApprover
+        }
+
+        this.isApproverUser = isApprover
+        localStorage.setItem('is_approver_user', isApprover ? 'true' : 'false')
+      } catch (e) {
+        console.error('Error checking approver status:', e)
+        this.isApproverUser = false
+        localStorage.setItem('is_approver_user', 'false')
+      }
+    },
     async checkLoginClockReminder(isUpdateOnly = false) {
       const userId = this.userData?.id || JSON.parse(localStorage.getItem('user_data') || '{}').id
       if (!userId) return
@@ -1018,28 +1027,8 @@ export default {
         Boolean(this.userData?.is_clocked_in)
       )
     },
-    initMaxSessionTimer() {
-      if (this.maxSessionTimer) clearTimeout(this.maxSessionTimer)
-      
-      const startTime = parseInt(localStorage.getItem('session_start_time') || Date.now().toString(), 10)
-      const elapsed = Date.now() - startTime
-      const remaining = this.MAX_SESSION_TIMEOUT_MS - elapsed
-
-      if (remaining <= 0) {
-        this.handleInactivityLogout('max_session')
-      } else {
-        this.maxSessionTimer = setTimeout(() => {
-          this.handleInactivityLogout('max_session')
-        }, remaining)
-      }
-    },
     resetInactivityTimer() {
       if (this.inactivityTimer) clearTimeout(this.inactivityTimer)
-      
-      // Clocked-in users do not automatically log out from 30 minutes of inactivity
-      if (this.checkIsClockedIn()) {
-        return
-      }
 
       this.inactivityTimer = setTimeout(() => {
         this.handleInactivityLogout('inactivity')
@@ -1577,6 +1566,7 @@ export default {
         localStorage.removeItem('temp_token')
         localStorage.removeItem('user_data')
         localStorage.removeItem('user_tab_access')
+        localStorage.removeItem('is_approver_user')
         localStorage.removeItem('session_start_time')
 
         // Redirect to login

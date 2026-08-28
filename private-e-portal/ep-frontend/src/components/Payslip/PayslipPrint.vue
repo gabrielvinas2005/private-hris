@@ -1,5 +1,5 @@
 <template>
-  <div class="print-container" style="font-family: Arial, sans-serif; font-size: 14px; width: 210mm; margin: 0 auto;">
+  <div class="print-container" style="font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 14px; width: 210mm; margin: 0 auto;">
     <div style="margin: 0px 130px 0px 130px;">
       <div style="text-align: center;">
         <span style="display: inline-block;">

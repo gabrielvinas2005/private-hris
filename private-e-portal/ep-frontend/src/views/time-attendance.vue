@@ -19,6 +19,7 @@
 
         <!-- Section 2.10: Notifications & Smart Alerts Panel -->
         <AttendanceAlertsPanel
+          :is-clocked-in="todayStatus.status === 'Clocked In' || Boolean(todayStatus.am_in)"
           :is-missed-log-today="todayStatus.is_missed_log"
           :is-clocked-in-over8-hours="todayStatus.status === 'Clocked In' && todayStatus.work_hours > 8"
           :pass-slips-used="todayStatus.pass_slips_used_this_month"
@@ -43,33 +44,35 @@
           :is-work-suspended="todayStatus.is_work_suspended"
           :work-suspension-reason="todayStatus.work_suspension_reason"
           :work-suspension-with-pay="todayStatus.work_suspension_with_pay"
+          :is-loading="isLoadingStatus"
           @request-correction="activeTab = 'correction'"
         />
       </div>
 
-      <!-- 5-Column Main Layout: Left 3 cols (Tabs + Body Content), Right 2 cols (Weekly Schedule) -->
+      <!-- Main Navigation Category Tabs (High Contrast Dark Bar) -->
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-2.5 shadow-xl border border-slate-800">
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+          <button
+            v-for="tab in mainTabs"
+            :key="tab.id"
+            @click="activeTab = tab.id"
+            :class="[
+              activeTab === tab.id
+                ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/30 font-bold'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/70 font-semibold',
+              'px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 whitespace-nowrap transition-all duration-200'
+            ]"
+          >
+            <span>{{ tab.name }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 5-Column Main Layout: Left 4 cols (Body Content), Right 2 cols (Weekly Schedule) -->
       <div class="grid grid-cols-1 lg:grid-cols-6 gap-4 items-start">
 
-        <!-- Left Main Column: Span 3 Columns -->
+        <!-- Left Main Column: Span 4 Columns -->
         <div class="lg:col-span-4 space-y-4">
-          <!-- div5: Main Navigation Tabs -->
-          <div class="bg-white rounded-2xl p-2 shadow-sm border border-slate-200">
-            <div class="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0">
-              <button
-                v-for="tab in mainTabs"
-                :key="tab.id"
-                @click="activeTab = tab.id"
-                :class="[
-                  activeTab === tab.id
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
-                  'px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-2 whitespace-nowrap transition-all duration-200'
-                ]"
-              >
-                <span>{{ tab.name }}</span>
-              </button>
-            </div>
-          </div>
 
           <!-- div7: Body / Active Tab Content -->
           <div class="space-y-4">
@@ -78,46 +81,24 @@
               <AttendanceHistoryTable ref="attendanceHistoryTable" :employee-id="employeeId" />
             </div>
 
-            <!-- Tab 2: Section 2.5 - Overtime Requests -->
-            <div v-else-if="activeTab === 'overtime'" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-6">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="text-lg font-bold text-slate-900">Overtime Requests</h3>
-                  <p class="text-xs text-slate-500">File overtime authorizations and track approval status</p>
-                </div>
-                <el-button type="primary" class="!rounded-xl font-semibold" @click="showOtModal = true">
-                  + File Overtime Request
-                </el-button>
-              </div>
+            <!-- Tab: Leave Applications -->
+            <div v-else-if="activeTab === 'leave'">
+              <LeaveSection />
+            </div>
 
-              <el-table :data="overtimeList" stripe v-loading="otLoading" empty-text="No overtime requests filed">
-                <el-table-column prop="date" label="Date" width="130">
-                  <template #default="{ row }"><span class="text-xs font-semibold">{{ row.date }}</span></template>
-                </el-table-column>
-                <el-table-column label="Time" width="160">
-                  <template #default="{ row }">
-                    <span class="text-xs">{{ row.time_from }} – {{ row.time_to }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="reason" label="Reason / Justification" min-width="200" />
-                <el-table-column label="OT Type" width="130">
-                  <template #default="{ row }">
-                    <span class="text-xs bg-slate-100 px-2.5 py-1 rounded font-medium">{{ row.type_name || 'Regular OT' }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column label="Status" width="140">
-                  <template #default="{ row }">
-                    <span :class="statusBadgeClass(row.status)" class="px-2.5 py-1 rounded-full text-xs font-bold">
-                      {{ row.status || 'Pending' }}
-                    </span>
-                  </template>
-                </el-table-column>
-                <el-table-column label="Approver Trail" min-width="180">
-                  <template #default="{ row }">
-                    <span class="text-xs text-slate-600">{{ row.approver_name || 'Supervisor / HR Review' }}</span>
-                  </template>
-                </el-table-column>
-              </el-table>
+            <!-- Tab: Work From Home Applications -->
+            <div v-else-if="activeTab === 'wfh'">
+              <WFHSection />
+            </div>
+
+            <!-- Tab 2: Section 2.5 - Overtime Requests -->
+            <div v-else-if="activeTab === 'overtime'">
+              <OvertimeSection 
+                :overtime-list="overtimeList" 
+                :ot-types-list="otTypesList" 
+                :loading="otLoading" 
+                @open-modal="showOtModal = true" 
+              />
             </div>
 
             <!-- Tab 3: Section 2.6 - Pass Slip Request -->
@@ -129,38 +110,12 @@
             </div>
 
             <!-- Tab 4: Section 2.7 - Travel Order Request -->
-            <div v-else-if="activeTab === 'travel'" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-6">
-              <div class="flex items-center justify-between">
-                <div>
-                  <h3 class="text-lg font-bold text-slate-900">Travel Order / Official Travel</h3>
-                  <p class="text-xs text-slate-500">File multi-day local/official travel orders</p>
-                </div>
-                <el-button type="primary" class="!rounded-xl font-semibold" @click="showTravelModal = true">
-                  + File Travel Order
-                </el-button>
-              </div>
-
-              <el-table :data="travelList" stripe v-loading="travelLoading" empty-text="No travel orders filed">
-                <el-table-column label="Date Range" min-width="180">
-                  <template #default="{ row }">
-                    <span class="text-xs font-semibold">{{ row.date_from }} to {{ row.date_to }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="destination" label="Destination" min-width="160" />
-                <el-table-column prop="purpose" label="Purpose" min-width="200" />
-                <el-table-column label="Travel Type" width="140">
-                  <template #default="{ row }">
-                    <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-semibold">{{ row.travel_type || 'Local Official' }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column label="Status" width="140">
-                  <template #default="{ row }">
-                    <span :class="statusBadgeClass(row.status)" class="px-2.5 py-1 rounded-full text-xs font-bold">
-                      {{ row.status || 'Pending' }}
-                    </span>
-                  </template>
-                </el-table-column>
-              </el-table>
+            <div v-else-if="activeTab === 'travel'">
+              <TravelSection 
+                :travel-list="travelList" 
+                :loading="travelLoading" 
+                @open-modal="showTravelModal = true" 
+              />
             </div>
 
             <!-- Tab 5: Section 2.8 - Correction / Dispute Request -->
@@ -263,64 +218,163 @@
       />
 
       <!-- Overtime Request Modal -->
-      <el-dialog v-model="showOtModal" title="File Overtime Request" width="480px">
-        <el-form label-position="top">
-          <el-form-item label="Overtime Date">
-            <el-date-picker v-model="otForm.date" type="date" value-format="YYYY-MM-DD" class="w-full" />
+      <el-dialog 
+        v-model="showOtModal" 
+        width="540px" 
+        class="!rounded-3xl overflow-hidden shadow-2xl"
+        :show-close="true"
+      >
+        <template #header>
+          <div class="flex items-center gap-3.5 pb-3 border-b border-slate-100">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-md shadow-amber-500/25">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 leading-tight">File Overtime Request</h3>
+              <p class="text-xs font-medium text-slate-500">File overtime authorization & specify target hours</p>
+            </div>
+          </div>
+        </template>
+
+        <el-form label-position="top" class="pt-2 space-y-2">
+          <el-form-item required>
+            <template #label>
+              <span class="text-xs font-bold text-slate-700">Overtime Date <span class="text-rose-500">*</span></span>
+            </template>
+            <el-date-picker v-model="otForm.date" type="date" value-format="YYYY-MM-DD" class="w-full !rounded-xl" />
           </el-form-item>
+
           <div class="grid grid-cols-2 gap-4">
-            <el-form-item label="Time From">
-              <el-time-picker v-model="otForm.time_from" format="HH:mm" value-format="HH:mm" class="w-full" />
+            <el-form-item required>
+              <template #label>
+                <span class="text-xs font-bold text-slate-700">Time From <span class="text-rose-500">*</span></span>
+              </template>
+              <el-time-picker v-model="otForm.time_from" format="HH:mm" value-format="HH:mm" class="w-full !rounded-xl" />
             </el-form-item>
-            <el-form-item label="Time To">
-              <el-time-picker v-model="otForm.time_to" format="HH:mm" value-format="HH:mm" class="w-full" />
+
+            <el-form-item required>
+              <template #label>
+                <span class="text-xs font-bold text-slate-700">Time To <span class="text-rose-500">*</span></span>
+              </template>
+              <el-time-picker v-model="otForm.time_to" format="HH:mm" value-format="HH:mm" class="w-full !rounded-xl" />
             </el-form-item>
           </div>
-          <el-form-item label="Overtime Type">
-            <el-select v-model="otForm.type" class="w-full">
-              <el-option label="Regular OT" value="1" />
-              <el-option label="Special Holiday OT" value="2" />
-              <el-option label="Rest Day OT" value="3" />
+
+          <el-form-item required>
+            <template #label>
+              <span class="text-xs font-bold text-slate-700">Overtime Type <span class="text-rose-500">*</span></span>
+            </template>
+            <el-select v-model="otForm.type" class="w-full !rounded-xl">
+              <el-option
+                v-for="item in (otTypesList.length ? otTypesList : [{ id: '1', name: 'Regular OT' }, { id: '2', name: 'Special Holiday OT' }, { id: '3', name: 'Rest Day OT' }])"
+                :key="item.id"
+                :label="item.name"
+                :value="String(item.id)"
+              />
             </el-select>
           </el-form-item>
-          <el-form-item label="Reason / Justification">
-            <el-input v-model="otForm.reason" type="textarea" :rows="2" placeholder="Tasks to accomplish..." />
+
+          <el-form-item required>
+            <template #label>
+              <span class="text-xs font-bold text-slate-700">Reason / Work Deliverables <span class="text-rose-500">*</span></span>
+            </template>
+            <el-input v-model="otForm.reason" type="textarea" :rows="3" placeholder="Tasks to accomplish during overtime..." class="!rounded-xl" />
           </el-form-item>
         </el-form>
+
         <template #footer>
-          <el-button @click="showOtModal = false">Cancel</el-button>
-          <el-button type="primary" :loading="otSubmitting" @click="submitOvertime">Submit OT Request</el-button>
+          <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <el-button class="!rounded-xl !px-5 font-semibold" @click="showOtModal = false">Cancel</el-button>
+            <el-button 
+              type="primary" 
+              class="!rounded-xl font-bold !px-6 !py-2.5 !bg-gradient-to-r !from-amber-600 !to-orange-600 hover:!from-amber-700 hover:!to-orange-700 !border-amber-600 shadow-md shadow-amber-500/25 hover:shadow-amber-500/40 hover:-translate-y-0.5 transition-all duration-200" 
+              :loading="otSubmitting" 
+              @click="submitOvertime"
+            >
+              Submit OT Request
+            </el-button>
+          </div>
         </template>
       </el-dialog>
 
       <!-- Travel Order Modal -->
-      <el-dialog v-model="showTravelModal" title="File Travel Order / OB" width="520px">
-        <el-form label-position="top">
+      <el-dialog 
+        v-model="showTravelModal" 
+        width="560px" 
+        class="!rounded-3xl overflow-hidden shadow-2xl"
+        :show-close="true"
+      >
+        <template #header>
+          <div class="flex items-center gap-3.5 pb-3 border-b border-slate-100">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/25">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 leading-tight">File Travel Order / OB</h3>
+              <p class="text-xs font-medium text-slate-500">File multi-day official travel itineraries & transport details</p>
+            </div>
+          </div>
+        </template>
+
+        <el-form label-position="top" class="pt-2 space-y-2">
           <div class="grid grid-cols-2 gap-4">
-            <el-form-item label="Date From">
-              <el-date-picker v-model="travelForm.date_from" type="date" value-format="YYYY-MM-DD" class="w-full" />
+            <el-form-item required>
+              <template #label>
+                <span class="text-xs font-bold text-slate-700">Date From <span class="text-rose-500">*</span></span>
+              </template>
+              <el-date-picker v-model="travelForm.date_from" type="date" value-format="YYYY-MM-DD" class="w-full !rounded-xl" />
             </el-form-item>
-            <el-form-item label="Date To">
-              <el-date-picker v-model="travelForm.date_to" type="date" value-format="YYYY-MM-DD" class="w-full" />
+
+            <el-form-item required>
+              <template #label>
+                <span class="text-xs font-bold text-slate-700">Date To <span class="text-rose-500">*</span></span>
+              </template>
+              <el-date-picker v-model="travelForm.date_to" type="date" value-format="YYYY-MM-DD" class="w-full !rounded-xl" />
             </el-form-item>
           </div>
-          <el-form-item label="Destination">
-            <el-input v-model="travelForm.destination" placeholder="City / Office / Regional station..." />
+
+          <el-form-item required>
+            <template #label>
+              <span class="text-xs font-bold text-slate-700">Destination <span class="text-rose-500">*</span></span>
+            </template>
+            <el-input v-model="travelForm.destination" placeholder="City / Office / Regional station..." class="!rounded-xl" />
           </el-form-item>
-          <el-form-item label="Purpose">
-            <el-input v-model="travelForm.purpose" type="textarea" :rows="2" placeholder="Official mission purpose..." />
+
+          <el-form-item required>
+            <template #label>
+              <span class="text-xs font-bold text-slate-700">Purpose / Official Mission <span class="text-rose-500">*</span></span>
+            </template>
+            <el-input v-model="travelForm.purpose" type="textarea" :rows="3" placeholder="Detailed mission purpose & objectives..." class="!rounded-xl" />
           </el-form-item>
-          <el-form-item label="Mode of Transport">
-            <el-select v-model="travelForm.transport" class="w-full">
+
+          <el-form-item required>
+            <template #label>
+              <span class="text-xs font-bold text-slate-700">Mode of Transport <span class="text-rose-500">*</span></span>
+            </template>
+            <el-select v-model="travelForm.transport" class="w-full !rounded-xl">
               <el-option label="Official Vehicle" value="Official Vehicle" />
               <el-option label="Public Transportation / Commercial Flight" value="Public Transport" />
               <el-option label="Personal Vehicle" value="Personal Vehicle" />
             </el-select>
           </el-form-item>
         </el-form>
+
         <template #footer>
-          <el-button @click="showTravelModal = false">Cancel</el-button>
-          <el-button type="primary" :loading="travelSubmitting" @click="submitTravel">Submit Travel Order</el-button>
+          <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <el-button class="!rounded-xl !px-5 font-semibold" @click="showTravelModal = false">Cancel</el-button>
+            <el-button 
+              type="primary" 
+              class="!rounded-xl font-bold !px-6 !py-2.5 !bg-gradient-to-r !from-indigo-600 !to-blue-600 hover:!from-indigo-700 hover:!to-blue-700 !border-indigo-600 shadow-md shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-200" 
+              :loading="travelSubmitting" 
+              @click="submitTravel"
+            >
+              Submit Travel Order
+            </el-button>
+          </div>
         </template>
       </el-dialog>
     </div>
@@ -338,6 +392,10 @@ import LunchBreakModal from '../components/time-attendance/LunchBreakModal.vue'
 import AttendanceHistoryTable from '../components/time-attendance/AttendanceHistoryTable.vue'
 import PassSlipSection from '../components/time-attendance/PassSlipSection.vue'
 import CorrectionDisputeSection from '../components/time-attendance/CorrectionDisputeSection.vue'
+import LeaveSection from '../components/time-attendance/LeaveSection.vue'
+import WFHSection from '../components/time-attendance/WFHSection.vue'
+import OvertimeSection from '../components/time-attendance/OvertimeSection.vue'
+import TravelSection from '../components/time-attendance/TravelSection.vue'
 import { useToast } from 'vue-toastification'
 
 export default {
@@ -352,7 +410,11 @@ export default {
     LunchBreakModal,
     AttendanceHistoryTable,
     PassSlipSection,
-    CorrectionDisputeSection
+    CorrectionDisputeSection,
+    LeaveSection,
+    WFHSection,
+    OvertimeSection,
+    TravelSection
   },
   data() {
     return {
@@ -400,12 +462,15 @@ export default {
       },
       mainTabs: [
         { id: 'dtr', name: 'Attendance History' },
+        { id: 'leave', name: 'Leave Applications' },
+        { id: 'wfh', name: 'Work From Home' },
         { id: 'overtime', name: 'Overtime Requests' },
         { id: 'travel', name: 'Travel Orders' },
         { id: 'correction', name: 'Corrections & Disputes' },
         { id: 'locator', name: 'Personal Locator Trail' },
       ],
       overtimeList: [],
+      otTypesList: [],
       otLoading: false,
       otForm: {
         date: new Date().toISOString().slice(0, 10),
@@ -443,6 +508,14 @@ export default {
   },
   methods: {
     checkLunchTimeMilestones() {
+      // Disable lunch break alerts and popup modal if employee is not clocked in today
+      const isClockedInToday = this.todayStatus.status === 'Clocked In' || Boolean(this.todayStatus.am_in)
+      if (!isClockedInToday) {
+        this.lunchAlertType = null
+        this.showLunchModal = false
+        return
+      }
+
       const now = new Date()
       const hours = now.getHours()
       const mins = now.getMinutes()
@@ -529,6 +602,7 @@ export default {
             work_cancellations: Array.isArray(d.work_cancellations) ? d.work_cancellations : [],
             weekly_schedule: d.weekly_schedule || []
           }
+          this.checkLunchTimeMilestones()
         }
       } catch (err) {
         console.error('Failed to fetch today status:', err)
@@ -566,6 +640,13 @@ export default {
         const { useOvertime } = await import('../composables/useOvertime.js')
         const { state, loadOvertimeData } = useOvertime()
         await loadOvertimeData()
+
+        if (state.overtimeTypes && state.overtimeTypes.length) {
+          this.otTypesList = state.overtimeTypes
+          if (!this.otForm.type || !this.otTypesList.some(t => String(t.id) === String(this.otForm.type))) {
+            this.otForm.type = String(this.otTypesList[0].id)
+          }
+        }
 
         const formatTime = (val) => {
           if (!val) return ''

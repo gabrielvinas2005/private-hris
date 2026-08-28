@@ -1290,6 +1290,25 @@ class OvertimeApplicationController extends Controller
                 }
             }
 
+            // Ensure valid overtime_type_id exists in overtime_types table
+            $ot_type_id = $request->input('overtime_type_id');
+            $ot_type_exists = DB::table('overtime_types')->where('id', $ot_type_id)->exists();
+            if (!$ot_type_exists) {
+                $first_ot_type = DB::table('overtime_types')->first();
+                if ($first_ot_type) {
+                    $request->merge(['overtime_type_id' => $first_ot_type->id]);
+                } else {
+                    $inserted_id = DB::table('overtime_types')->insertGetId([
+                        'name' => 'Regular OT',
+                        'rate' => 1.25,
+                        'active' => 1,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    $request->merge(['overtime_type_id' => $inserted_id]);
+                }
+            }
+
             $validate = Validator::make(
                 $request->all(),
                 [

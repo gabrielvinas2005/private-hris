@@ -1830,4 +1830,57 @@ class EmployeeRequestController extends Controller
             return $this->serverErrorResponse('Failed to process employee request approval: ' . $e->getMessage());
         }
     }
+
+    public function checkApproverPipelineAccess($id)
+    {
+        try {
+            $user = DB::table('users')->where('id', $id)->first();
+            $empId = 0;
+            if ($user && !empty($user->employee_no)) {
+                $employee = DB::table('employees')->where('employee_no', $user->employee_no)->first();
+                if ($employee) {
+                    $empId = (int) $employee->id;
+                }
+            }
+            if ($empId === 0) {
+                $employee = DB::table('employees')->where('id', $id)->first();
+                if ($employee) {
+                    $empId = (int) $employee->id;
+                }
+            }
+
+            if ($empId === 0) {
+                return $this->successResponse([
+                    'employee_id' => 0,
+                    'is_approver' => false,
+                ], 'User or employee record not found.');
+            }
+
+            $isApprover = DB::table('approver_headers')
+                ->where(function ($q) use ($empId) {
+                    $q->where('approver_id_1', $empId)
+                      ->orWhere('approver_id_2', $empId)
+                      ->orWhere('approver_id_3', $empId)
+                      ->orWhere('approver_id_4', $empId);
+                    if (Schema::hasColumn('approver_headers', 'branch_approver_id_1')) {
+                        $q->orWhere('branch_approver_id_1', $empId);
+                    }
+                    if (Schema::hasColumn('approver_headers', 'division_approver_id_1')) {
+                        $q->orWhere('division_approver_id_1', $empId);
+                    }
+                    if (Schema::hasColumn('approver_headers', 'section_approver_id_1')) {
+                        $q->orWhere('section_approver_id_1', $empId);
+                    }
+                })
+                ->exists();
+
+            return $this->successResponse([
+                'employee_id' => $empId,
+                'is_approver' => (bool) $isApprover,
+            ], 'Approver pipeline access checked successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to check approver pipeline access: ' . $e->getMessage());
+        }
+    }
 }
+

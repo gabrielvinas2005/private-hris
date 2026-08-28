@@ -56,7 +56,14 @@ import DownloadablesView from '../views/Downloadables.vue'
 
 
 
+import EmployeeRequestsView from '../views/EmployeeRequests/index.vue';
+
 const routes = [
+    {
+        path: '/employee-requests',
+        component: EmployeeRequestsView,
+        meta: { requiresAuth: true, requiresApprover: true }
+    },
 
     //downloadables route
     {
@@ -418,6 +425,40 @@ router.beforeEach(async (to, from, next) => {
             return next()
         }
         return next('/dashboard')
+    }
+
+    // Approver route guard — blocks access for users not in the approver pipeline
+    if (isAuthenticated && to.meta.requiresApprover) {
+        try {
+            const userId = user?.id
+            if (!userId) return next('/dashboard')
+            const ApiService = (await import('../services/api.js')).default
+            await ApiService.initSanctum()
+
+            let isApprover = false
+            try {
+                const res = await ApiService.getApproverPipelineAccess(userId)
+                if (res && res.data && typeof res.data.is_approver !== 'undefined') {
+                    isApprover = Boolean(res.data.is_approver)
+                }
+            } catch (_) {
+                const leaveDashboard = await ApiService.getLeaveDashboard(userId).catch(() => null)
+                const dtrAccess = await ApiService.getDtrApproverAccess(userId).catch(() => null)
+                const isLeaveApprover = Boolean(leaveDashboard?.data?.supervisor_id || (leaveDashboard?.data?.leave_for_approvals?.length > 0))
+                const isDtrApprover = Boolean(dtrAccess?.data?.is_approver || dtrAccess?.data?.supervisor_id)
+                isApprover = isLeaveApprover || isDtrApprover
+            }
+
+            localStorage.setItem('is_approver_user', isApprover ? 'true' : 'false')
+            if (!isApprover) {
+                return next('/dashboard')
+            }
+        } catch (e) {
+            console.error('Approver check failed in router guard:', e)
+            if (localStorage.getItem('is_approver_user') !== 'true') {
+                return next('/dashboard')
+            }
+        }
     }
 
     // Employee Portal tab access (`access` + `menus`, module_id = 1) — blocks deep links without rights

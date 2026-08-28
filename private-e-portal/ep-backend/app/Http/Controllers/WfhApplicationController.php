@@ -52,14 +52,7 @@ class WfhApplicationController extends Controller
 
             $employeeId = $employee->id;
 
-            // Check if employee has approver configured for WFH
-            $hasApprover = DB::table('approver_details as ad')
-                ->join('approver_headers as ah', 'ad.approver_id', '=', 'ah.id')
-                ->where('ad.employee_id', $employeeId)
-                ->where('ah.type_id', self::WFH_TYPE_ID)
-                ->exists();
-
-            $allowed = $hasApprover ? 1 : 0;
+            $allowed = 1; // Always allow employee to submit WFH application
 
             // Check if user is an approver
             $isApprover = $this->isApprover($employeeId);
@@ -269,7 +262,7 @@ class WfhApplicationController extends Controller
                 ->exists();
 
             if (!$hasApprover) {
-                return $this->errorResponse('WFH approver is not setup. Notify your HRD.', 400);
+                \Log::info('No explicit approver mapping found for WFH employee ' . $employee->id . '. Proceeding with default routing.');
             }
 
             $data = [

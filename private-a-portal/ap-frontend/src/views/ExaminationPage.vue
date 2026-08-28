@@ -14,7 +14,7 @@
             <div class="text-sm text-gray-600">
               Time Remaining:
               <span
-                class="font-mono font-bold text-lg"
+                class="  font-bold text-lg"
                 :class="timeRemaining <= 300 ? 'text-red-600' : 'text-gray-900'"
               >
                 {{ formatTime(timeRemaining) }}

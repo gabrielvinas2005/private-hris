@@ -1,13 +1,13 @@
 <template>
-  <div v-if="alerts.length > 0" class="space-y-3 mb-6">
+  <div v-if="visibleAlerts.length > 0" class="space-y-3 mb-6">
     <div
-      v-for="alert in alerts"
+      v-for="alert in visibleAlerts"
       :key="alert.id"
       :class="alertCardClass(alert.type)"
       class="p-4 rounded-xl border shadow-sm flex items-start justify-between gap-4 transition-all duration-200"
     >
       <div class="flex items-start gap-3">
-        <div :class="iconBgClass(alert.type)" class="p-2 rounded-lg mt-0.5">
+        <div :class="iconBgClass(alert.type)" class="p-2 rounded-lg mt-0.5 flex-shrink-0">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="alertIconPath(alert.type)" />
           </svg>
@@ -22,13 +22,26 @@
         </div>
       </div>
 
-      <button
-        v-if="alert.actionLabel"
-        @click="$emit('alert-action', alert)"
-        class="text-xs font-bold px-3 py-1.5 rounded-lg bg-white shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors flex-shrink-0"
-      >
-        {{ alert.actionLabel }}
-      </button>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button
+          v-if="alert.actionLabel"
+          @click="$emit('alert-action', alert)"
+          class="text-xs font-bold px-3 py-1.5 rounded-lg bg-white shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors flex-shrink-0 cursor-pointer"
+        >
+          {{ alert.actionLabel }}
+        </button>
+        <button
+          @click="dismissAlert(alert.id)"
+          :class="closeBtnClass(alert.type)"
+          class="p-1.5 rounded-lg transition-colors cursor-pointer"
+          title="Dismiss alert"
+          aria-label="Dismiss alert"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -37,6 +50,7 @@
 export default {
   name: 'AttendanceAlertsPanel',
   props: {
+    isClockedIn: { type: Boolean, default: false },
     isMissedLogToday: { type: Boolean, default: false },
     isOvertimeApproved: { type: Boolean, default: false },
     isClockedInOver8Hours: { type: Boolean, default: false },
@@ -45,52 +59,59 @@ export default {
     lunchAlertType: { type: String, default: null }, // 10_before_lunch, lunch_start, 10_before_end, lunch_end
     setupType: { type: String, default: 'on_site' }
   },
-  emits: ['alert-action'],
+  emits: ['alert-action', 'alert-dismiss'],
+  data() {
+    return {
+      dismissedAlertIds: []
+    }
+  },
   computed: {
     alerts() {
       const list = []
 
-      // 1. Real-Time Lunch Break Banners
-      if (this.lunchAlertType === '10_before_lunch') {
-        list.push({
-          id: 'lunch-10-before',
-          type: 'warning',
-          title: 'Lunch Break Ahead (10 Mins)',
-          message: 'Lunch break starts at 12:00 PM in 10 minutes. Prepare to wrap up your morning tasks!',
-          actionLabel: 'View Details',
-          action: 'lunch_popup'
-        })
-      } else if (this.lunchAlertType === 'lunch_start') {
-        list.push({
-          id: 'lunch-start',
-          type: 'info',
-          title: 'Lunch Break Started (12:00 PM)',
-          message: this.setupType === 'on_site'
-            ? 'Lunch break has officially started! (On-Site setup: AM OUT 12:00 PM & PM IN 1:00 PM are auto-recorded for you).'
-            : 'Lunch break has officially started! Enjoy your meal. Don\'t forget to punch AM OUT on your Web Clock.',
-          actionLabel: 'View Details',
-          action: 'lunch_popup'
-        })
-      } else if (this.lunchAlertType === '10_before_end') {
-        list.push({
-          id: 'lunch-10-end',
-          type: 'warning',
-          title: 'Lunch Break Ending Soon (10 Mins)',
-          message: 'Lunch break ends at 1:00 PM in 10 minutes. Please head back to your workstation for the afternoon shift.',
-          actionLabel: 'View Details',
-          action: 'lunch_popup'
-        })
-      } else if (this.lunchAlertType === 'lunch_end') {
-        list.push({
-          id: 'lunch-end',
-          type: 'info',
-          title: 'Lunch Break Ended — Afternoon Shift (1:00 PM)',
-          message: this.setupType === 'on_site'
-            ? 'Lunch break is over and afternoon shift has begun! Your PM IN (1:00 PM) punch is automatically credited.'
-            : 'Lunch break is over! Welcome back. Remember to punch PM IN on your Web Clock.',
-          actionLabel: 'View Details',
-          action: 'lunch_popup'
-        })
+      // 1. Real-Time Lunch Break Banners (Only if employee is clocked in / active today)
+      if (this.isClockedIn && this.lunchAlertType) {
+        if (this.lunchAlertType === '10_before_lunch') {
+          list.push({
+            id: 'lunch-10-before',
+            type: 'warning',
+            title: 'Lunch Break Ahead (10 Mins)',
+            message: 'Lunch break starts at 12:00 PM in 10 minutes. Prepare to wrap up your morning tasks!',
+            actionLabel: 'View Details',
+            action: 'lunch_popup'
+          })
+        } else if (this.lunchAlertType === 'lunch_start') {
+          list.push({
+            id: 'lunch-start',
+            type: 'info',
+            title: 'Lunch Break Started (12:00 PM)',
+            message: this.setupType === 'on_site'
+              ? 'Lunch break has officially started! (On-Site setup: AM OUT 12:00 PM & PM IN 1:00 PM are auto-recorded for you).'
+              : 'Lunch break has officially started! Enjoy your meal. Don\'t forget to punch AM OUT on your Web Clock.',
+            actionLabel: 'View Details',
+            action: 'lunch_popup'
+          })
+        } else if (this.lunchAlertType === '10_before_end') {
+          list.push({
+            id: 'lunch-10-end',
+            type: 'warning',
+            title: 'Lunch Break Ending Soon (10 Mins)',
+            message: 'Lunch break ends at 1:00 PM in 10 minutes. Please head back to your workstation for the afternoon shift.',
+            actionLabel: 'View Details',
+            action: 'lunch_popup'
+          })
+        } else if (this.lunchAlertType === 'lunch_end') {
+          list.push({
+            id: 'lunch-end',
+            type: 'info',
+            title: 'Lunch Break Ended — Afternoon Shift (1:00 PM)',
+            message: this.setupType === 'on_site'
+              ? 'Lunch break is over and afternoon shift has begun! Your PM IN (1:00 PM) punch is automatically credited.'
+              : 'Lunch break is over! Welcome back. Remember to punch PM IN on your Web Clock.',
+            actionLabel: 'View Details',
+            action: 'lunch_popup'
+          })
+        }
       }
 
       if (this.isMissedLogToday) {
@@ -127,9 +148,18 @@ export default {
       }
 
       return list
+    },
+    visibleAlerts() {
+      return this.alerts.filter(alert => !this.dismissedAlertIds.includes(alert.id))
     }
   },
   methods: {
+    dismissAlert(alertId) {
+      if (!this.dismissedAlertIds.includes(alertId)) {
+        this.dismissedAlertIds.push(alertId)
+      }
+      this.$emit('alert-dismiss', alertId)
+    },
     alertCardClass(type) {
       switch (type) {
         case 'warning': return 'bg-amber-50/90 border-amber-200'
@@ -149,6 +179,13 @@ export default {
         case 'warning': return 'text-amber-800'
         case 'danger': return 'text-rose-800'
         case 'info': default: return 'text-indigo-800'
+      }
+    },
+    closeBtnClass(type) {
+      switch (type) {
+        case 'warning': return 'text-amber-600 hover:text-amber-900 hover:bg-amber-100/60'
+        case 'danger': return 'text-rose-600 hover:text-rose-900 hover:bg-rose-100/60'
+        case 'info': default: return 'text-indigo-600 hover:text-indigo-900 hover:bg-indigo-100/60'
       }
     },
     alertIconPath(type) {

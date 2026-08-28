@@ -321,6 +321,16 @@ export const dtrApiService = {
         }
     },
 
+    async cancelDTRApplication(requestId) {
+        try {
+            const response = await apiClient.delete(`/dtr-applications/request/${requestId}`)
+            return response.data
+        } catch (error) {
+            console.error('Error cancelling DTR application:', error)
+            throw error
+        }
+    },
+
     // Download application-level DTR attachment
     async downloadApplicationAttachment(requestId) {
         try {

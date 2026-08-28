@@ -1,5 +1,19 @@
 <template>
-  <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 h-full flex flex-col justify-between">
+  <div v-if="isLoading" class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 h-full flex flex-col justify-between space-y-4 animate-pulse">
+    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+      <div class="h-4 bg-slate-200 rounded w-1/3"></div>
+      <div class="h-6 bg-slate-200 rounded w-20"></div>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+      <div v-for="i in 4" :key="i" class="p-3 bg-slate-100 rounded-xl space-y-2">
+        <div class="h-3 bg-slate-200 rounded w-12"></div>
+        <div class="h-5 bg-slate-200 rounded w-20"></div>
+      </div>
+    </div>
+    <div class="h-4 bg-slate-200 rounded w-1/4"></div>
+  </div>
+
+  <div v-else class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 h-full flex flex-col justify-between">
     <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-100">
       <div class="flex items-center gap-2.5">
         <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-xl">
@@ -24,7 +38,7 @@
 
     <!-- Work Suspension Alert Banner -->
     <div
-      v-if="isWorkSuspended"
+      v-if="isWorkSuspended && !isWorkSuspensionNoticeDismissed"
       class="mb-3 p-2.5 px-3.5 rounded-xl border bg-indigo-50 border-indigo-200 text-indigo-900 flex items-center justify-between text-xs font-semibold shadow-xs"
     >
       <div class="flex items-center gap-2">
@@ -36,7 +50,19 @@
           <span v-if="workSuspensionReason" class="font-normal block text-[11px] text-indigo-700">{{ workSuspensionReason }}</span>
         </div>
       </div>
-      <span v-if="workSuspensionWithPay" class="px-2 py-0.5 text-[10px] font-extrabold bg-emerald-100 text-emerald-800 rounded-full">WITH PAY</span>
+      <div class="flex items-center gap-2">
+        <span v-if="workSuspensionWithPay" class="px-2 py-0.5 text-[10px] font-extrabold bg-emerald-100 text-emerald-800 rounded-full">WITH PAY</span>
+        <button
+          @click="dismissWorkSuspensionNotice"
+          class="text-indigo-400 hover:text-indigo-700 hover:bg-indigo-100 p-1 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+          title="Dismiss notice"
+          aria-label="Dismiss notice"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Schedule Warning / Late Clock-In Alert Banner -->
@@ -162,20 +188,26 @@ export default {
     isLateForClockin: { type: Boolean, default: false },
     isWorkSuspended: { type: Boolean, default: false },
     workSuspensionReason: { type: String, default: null },
-    workSuspensionWithPay: { type: Boolean, default: false }
+    workSuspensionWithPay: { type: Boolean, default: false },
+    isLoading: { type: Boolean, default: false }
   },
   emits: ['request-correction'],
   data() {
     return {
       now: new Date(),
       timer: null,
-      isLateNoticeDismissed: sessionStorage.getItem('late_clockin_notice_dismissed') === 'true'
+      isLateNoticeDismissed: sessionStorage.getItem('late_clockin_notice_dismissed') === 'true',
+      isWorkSuspensionNoticeDismissed: sessionStorage.getItem('work_suspension_notice_dismissed') === 'true'
     }
   },
   methods: {
     dismissLateNotice() {
       this.isLateNoticeDismissed = true
       sessionStorage.setItem('late_clockin_notice_dismissed', 'true')
+    },
+    dismissWorkSuspensionNotice() {
+      this.isWorkSuspensionNoticeDismissed = true
+      sessionStorage.setItem('work_suspension_notice_dismissed', 'true')
     }
   },
   mounted() {

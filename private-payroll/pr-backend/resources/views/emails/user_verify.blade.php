@@ -9,7 +9,7 @@
         .card { max-width: 640px; margin: 24px auto; background: #ffffff; border-radius: 8px; padding: 24px; border: 1px solid #e5e7eb; }
         .btn { display: inline-block; background: #2563eb; color: #fff; padding: 10px 16px; border-radius: 6px; text-decoration: none; }
         .muted { color: #6b7280; font-size: 14px; }
-        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+        .mono { font-family: ui-monospace, 'Plus Jakarta Sans', 'Inter', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
     </style>
   </head>
   <body>

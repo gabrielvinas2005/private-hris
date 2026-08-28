@@ -251,6 +251,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/dtr-applications/employee/{employeeId}/payroll-periods', 'DailyTimeRecordController@payrollPeriodsForApplication');
     Route::post('/dtr-applications/employee/{employeeId}', 'DailyTimeRecordController@storeApplication');
     Route::post('/dtr-applications/request/{requestId}', 'DailyTimeRecordController@updateApplication');
+    Route::delete('/dtr-applications/request/{requestId}', 'DailyTimeRecordController@cancelApplication');
     Route::get('/dtr-applications/request/{requestId}/download', 'DailyTimeRecordController@downloadApplicationAttachment');
     Route::get('/dtr-applications/request/{requestId}/approved-dtr', 'DailyTimeRecordController@downloadApprovedDtr');
     Route::get('/dtr-approver-access/{id}', 'DailyTimeRecordController@checkDtrApproverAccess');
@@ -462,6 +463,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/review-accomplishment-reports/{id}/approve/{type_id}', 'NonDTRController@approveAccomplishmentRequest');
 
     // Review 201 Updates Routes
+    Route::get('/approver-pipeline-access/{id}', 'EmployeeRequestController@checkApproverPipelineAccess');
     Route::get('/review-201-updates', 'EmployeeRequestController@list');
     Route::get('/review-201-updates/{id}/review', 'EmployeeRequestController@review');
     Route::get('/review-201-updates/{id}/approval/{type_id}', 'EmployeeRequestController@approval');

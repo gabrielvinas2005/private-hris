@@ -38,7 +38,7 @@
               <el-icon><Document /></el-icon>
             </div>
             <div>
-              <div class="text-2xl font-bold font-mono text-white">{{ records.length }}</div>
+              <div class="text-2xl font-bold   text-white">{{ records.length }}</div>
               <div class="text-xs text-slate-400 font-medium">Total Courses</div>
             </div>
           </div>
@@ -48,7 +48,7 @@
               <el-icon><Clock /></el-icon>
             </div>
             <div>
-              <div class="text-2xl font-bold font-mono text-white">{{ totalHours }} <span class="text-xs font-normal text-slate-400">hrs</span></div>
+              <div class="text-2xl font-bold   text-white">{{ totalHours }} <span class="text-xs font-normal text-slate-400">hrs</span></div>
               <div class="text-xs text-slate-400 font-medium">Training Hours</div>
             </div>
           </div>
@@ -58,7 +58,7 @@
               <el-icon><Check /></el-icon>
             </div>
             <div>
-              <div class="text-2xl font-bold font-mono text-white">{{ certifiedCount }}</div>
+              <div class="text-2xl font-bold   text-white">{{ certifiedCount }}</div>
               <div class="text-xs text-slate-400 font-medium">Certified Training</div>
             </div>
           </div>
@@ -151,7 +151,7 @@
 
             <el-table-column prop="duration" label="Duration" width="130" align="center">
               <template #default="{ row }">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-mono font-semibold bg-slate-100 text-slate-800">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs   font-semibold bg-slate-100 text-slate-800">
                   {{ row.duration }} {{ row.duration === 1 ? 'hour' : 'hours' }}
                 </span>
               </template>

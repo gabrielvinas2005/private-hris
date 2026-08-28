@@ -1,43 +1,88 @@
 <template>
   <MainLayout :breadcrumbs="breadcrumbs">
-    <div class="w-full h-full max-w-[1400px] mx-auto px-2 md:px-4">
+    <div class="w-full h-full max-w-[1400px] mx-auto space-y-6">
       <!-- Header Section -->
-      <div class="mb-6">
-        <h1 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2">Leave Management</h1>
-        <p class="text-slate-600 text-sm md:text-base">Manage your leave applications and requests</p>
+      <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 flex items-center justify-between flex-wrap gap-4">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Leave Management</h1>
+            <p class="text-xs font-medium text-slate-500">File applications, manage leave credits, and process employee approvals</p>
+          </div>
+        </div>
+
+        <el-button 
+          v-if="state.allowed"
+          type="primary" 
+          class="!rounded-xl font-semibold !px-5 !py-2.5 shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/35 hover:-translate-y-0.5 transition-all duration-200" 
+          @click="openAddLeave"
+        >
+          + File Leave Application
+        </el-button>
       </div>
 
       <!-- Leave Balance Cards (Top) -->
-      <div v-if="displayedLeaveBalances.length > 0" class="mb-4">
-        <h3 class="text-lg font-semibold text-slate-900 mb-3">Leave Balance</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div v-if="displayedLeaveBalances.length > 0" class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Leave Credit Summary</h3>
+          <span class="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+            {{ displayedLeaveBalances.length }} Active Balances
+          </span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
           <div
             v-for="balance in displayedLeaveBalances"
             :key="balance.type"
-            class="rounded-lg border border-slate-200 bg-white shadow-sm p-4 text-center"
+            class="p-4 bg-gradient-to-br from-slate-50 via-white to-indigo-50/20 rounded-2xl border border-slate-200/80 shadow-xs text-center group hover:shadow-md hover:border-indigo-300 hover:-translate-y-0.5 transition-all duration-200"
           >
-            <div class="text-2xl font-semibold text-slate-900">{{ formatCredits(balance.balance) }}</div>
-            <div class="text-slate-500 text-xs mt-1 uppercase tracking-wide">{{ balance.type }}</div>
+            <div class="text-2xl font-black text-indigo-600   tracking-tight group-hover:scale-105 transition-transform duration-200">{{ formatCredits(balance.balance) }}</div>
+            <div class="text-[11px] font-bold text-slate-700 truncate mt-1 group-hover:text-indigo-900 transition-colors">{{ balance.type }}</div>
+            <div class="mt-2.5 w-full bg-slate-200/70 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-indigo-500 h-full rounded-full transition-all duration-500" :style="{ width: Math.min(100, Math.max(12, (balance.balance / 15) * 100)) + '%' }"></div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Filters and Actions -->
-      <el-card class="mb-4" shadow="never" body-style="padding: 16px;">
-        <div class="flex items-center gap-3 flex-wrap">
-          <el-input v-model="state.search" size="small" placeholder="Search leave type, reason" clearable :style="{ width: '260px' }" />
-          <el-select v-model="state.statusFilter" size="small" placeholder="Pending" clearable :style="{ width: '180px' }">
-            <el-option label="Pending" value="pending" />
-            <el-option label="Approved" value="approved" />
-            <el-option label="Disapproved" value="disapproved" />
-            <el-option label="Cancelled" value="cancelled" />
-            <el-option label="Expired" value="expired" />
-          </el-select>
-          <div class="ml-auto flex gap-2">
-            <el-button v-if="state.allowed" size="small" type="primary" @click="openAddLeave">+ Add Leave</el-button>
-          </div>
+      <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 flex items-center gap-3 flex-wrap">
+        <el-input 
+          v-model="state.search" 
+          size="default" 
+          placeholder="Search leave type or reason..." 
+          clearable 
+          style="width: 280px;" 
+          class="!rounded-xl"
+        >
+          <template #prefix>
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </template>
+        </el-input>
+
+        <div class="flex items-center bg-slate-100 p-1 rounded-xl gap-1 border border-slate-200/60">
+          <button 
+            v-for="st in [
+              { label: 'All', val: '' },
+              { label: 'Pending', val: 'pending' },
+              { label: 'Approved', val: 'approved' },
+              { label: 'Disapproved', val: 'disapproved' },
+              { label: 'Cancelled', val: 'cancelled' }
+            ]" 
+            :key="st.val"
+            @click="state.statusFilter = st.val"
+            class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200"
+            :class="state.statusFilter === st.val ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'"
+          >
+            {{ st.label }}
+          </button>
         </div>
-      </el-card>
+      </div>
 
       <!-- Warning Message -->
       <div v-if="!state.allowed" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">

@@ -4,7 +4,7 @@
     <el-dialog :model-value="showDeleteModal" title="Delete Confirmation" width="420px" @close="cancelDelete">
       <el-alert
         type="warning"
-        :closable="false"
+        :closable="true"
         show-icon
         class="mb-3"
         title="Are you sure you want to delete this leave application? This action cannot be undone."
