@@ -360,11 +360,9 @@ onMounted(async () => {
     localStorage.setItem('session_start_time', Date.now().toString())
   }
 
-  const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes
-  const MAX_SESSION_TIMEOUT_MS = 5 * 60 * 60 * 1000 // 5 hours
+  const INACTIVITY_TIMEOUT_MS = 5 * 60 * 60 * 1000 // 5 hours of inactivity
 
   let inactivityTimer = null
-  let maxSessionTimer = null
 
   async function forceLogout() {
     if (!localStorage.getItem('auth_token')) return
@@ -380,47 +378,18 @@ onMounted(async () => {
     window.location.reload()
   }
 
-  function initMaxSessionTimer() {
-    if (maxSessionTimer) clearTimeout(maxSessionTimer)
-    const startTime = parseInt(localStorage.getItem('session_start_time') || Date.now().toString(), 10)
-    const elapsed = Date.now() - startTime
-    const remaining = MAX_SESSION_TIMEOUT_MS - elapsed
-
-    if (remaining <= 0) {
-      forceLogout()
-    } else {
-      maxSessionTimer = setTimeout(forceLogout, remaining)
-    }
-  }
-
-  function checkIsClockedIn() {
-    return (
-      localStorage.getItem('is_clocked_in') === 'true' ||
-      localStorage.getItem('user_is_clocked_in') === 'true' ||
-      Boolean(userData.value?.is_clocked_in)
-    )
-  }
-
   function resetTimer() {
     if (inactivityTimer) clearTimeout(inactivityTimer)
-    
-    // Clocked-in users do not automatically log out from 30 minutes of inactivity
-    if (checkIsClockedIn()) {
-      return
-    }
-
     inactivityTimer = setTimeout(forceLogout, INACTIVITY_TIMEOUT_MS)
   }
 
   const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click']
   activityEvents.forEach(evt => document.addEventListener(evt, resetTimer, { passive: true }))
   
-  initMaxSessionTimer()
   resetTimer()
 
   onBeforeUnmount(() => {
     if (inactivityTimer) clearTimeout(inactivityTimer)
-    if (maxSessionTimer) clearTimeout(maxSessionTimer)
     activityEvents.forEach(evt => document.removeEventListener(evt, resetTimer))
   })
   // ────────────────────────────────────────────────────────────────────────
