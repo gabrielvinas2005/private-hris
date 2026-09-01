@@ -1,13 +1,13 @@
 <template>
   <PageScaffold
-    title="Payroll Benefits"
-    subtitle="Manage all payroll benefit types in one place"
+    title="Bonuses & Overtime"
+    subtitle="Manage overtime payment and company-defined bonuses"
     :breadcrumbs="[
       { label: 'Payroll Module', to: '/' },
-      { label: 'Payroll Benefits' },
+      { label: 'Bonuses & Overtime' },
     ]"
   >
-    <!-- Benefit type selector (Income/Deduction-style UX) -->
+    <!-- Bonus type selector -->
     <el-row :gutter="16" class="mb-3">
       <el-col :md="12">
         <el-form label-width="140px">

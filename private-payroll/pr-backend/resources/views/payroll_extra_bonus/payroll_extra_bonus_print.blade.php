@@ -133,42 +133,38 @@
         </tfoot>
     </table>
 
-    <div class="signature-section">
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div style="margin-top: 5px;">
+    <table style="border: none; margin-top: 40px; width: 100%;">
+        <tr style="border: none;">
+            <td style="border: none; width: 19%; text-align: center; vertical-align: bottom;">
+                <div style="border-top: 1px solid #000; margin-bottom: 5px;"></div>
                 <strong>{{ $signatories['signatory_1'] ?? 'Authorized Signatory' }}</strong><br>
-                <em>{{ $signatories['signatory_position_1'] ?? 'Position' }}</em>
-            </div>
-        </div>
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div style="margin-top: 5px;">
+                <span style="font-size: 8px; color: #555;">{{ $signatories['signatory_position_1'] ?? 'Position' }}</span>
+            </td>
+            <td style="border: none; width: 1.25%;"></td>
+            <td style="border: none; width: 19%; text-align: center; vertical-align: bottom;">
+                <div style="border-top: 1px solid #000; margin-bottom: 5px;"></div>
                 <strong>{{ $signatories['signatory_2'] ?? 'Accountant' }}</strong><br>
-                <em>{{ $signatories['signatory_position_2'] ?? 'Accountant' }}</em>
-            </div>
-        </div>
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div style="margin-top: 5px;">
+                <span style="font-size: 8px; color: #555;">{{ $signatories['signatory_position_2'] ?? 'Position' }}</span>
+            </td>
+            <td style="border: none; width: 1.25%;"></td>
+            <td style="border: none; width: 19%; text-align: center; vertical-align: bottom;">
+                <div style="border-top: 1px solid #000; margin-bottom: 5px;"></div>
                 <strong>{{ $signatories['signatory_3'] ?? 'HR Manager' }}</strong><br>
-                <em>{{ $signatories['signatory_position_3'] ?? 'Human Resources' }}</em>
-            </div>
-        </div>
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div style="margin-top: 5px;">
+                <span style="font-size: 8px; color: #555;">{{ $signatories['signatory_position_3'] ?? 'Position' }}</span>
+            </td>
+            <td style="border: none; width: 1.25%;"></td>
+            <td style="border: none; width: 19%; text-align: center; vertical-align: bottom;">
+                <div style="border-top: 1px solid #000; margin-bottom: 5px;"></div>
                 <strong>{{ $signatories['signatory_4'] ?? 'Administrator' }}</strong><br>
-                <em>{{ $signatories['signatory_position_4'] ?? 'Administrator' }}</em>
-            </div>
-        </div>
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div style="margin-top: 5px;">
+                <span style="font-size: 8px; color: #555;">{{ $signatories['signatory_position_4'] ?? 'Position' }}</span>
+            </td>
+            <td style="border: none; width: 1.25%;"></td>
+            <td style="border: none; width: 19%; text-align: center; vertical-align: bottom;">
+                <div style="border-top: 1px solid #000; margin-bottom: 5px;"></div>
                 <strong>{{ $signatories['signatory_5'] ?? 'Assistant Treasurer' }}</strong><br>
-                <em>{{ $signatories['signatory_position_5'] ?? 'Assistant Treasurer' }}</em>
-            </div>
-        </div>
-    </div>
+                <span style="font-size: 8px; color: #555;">{{ $signatories['signatory_position_5'] ?? 'Position' }}</span>
+            </td>
+        </tr>
+    </table>
 </body>
 </html> 

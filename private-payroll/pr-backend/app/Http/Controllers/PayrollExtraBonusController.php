@@ -568,12 +568,16 @@ class PayrollExtraBonusController extends Controller
             ];
             
             $companies = DB::table('companies')->get();
+            $orgCompanyName = $companies->first()->name ?? '';
+            $orgCompanyAddress = $companies->first()->address ?? '';
 
             $pdf = PDF::loadView('payroll_extra_bonus.payroll_extra_bonus_print', compact(
                 'extra_bonus_payrolls',
                 'image',
                 'signatories',
                 'companies',
+                'orgCompanyName',
+                'orgCompanyAddress'
             ))
                 ->setOptions(['defaultFont' => 'sans-serif']);
             $pdf->setPaper('tabloid', 'landscape');

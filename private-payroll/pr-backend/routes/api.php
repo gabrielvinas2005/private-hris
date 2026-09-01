@@ -16,12 +16,13 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Public routes (no authentication required)
-Route::get('/vacancies', 'VacanciesController@index');
-Route::get('/position-info/{id}/{type_id}', 'VacanciesController@positions');
-Route::get('/applicant-add/{id}/{plantilla_id}', 'ApplicantsController@add');
-Route::post('/applicant-add/{id}/{plantilla_id}', 'ApplicantsController@store');
-Route::get('/applicant-registration', 'ApplicantsController@register');
-Route::post('/applicant-registration', 'ApplicantsController@register_store');
+// [PRIVATE HRIS] Vacancies & applicant portal routes removed — public-sector recruitment system
+// Route::get('/vacancies', 'VacanciesController@index');
+// Route::get('/position-info/{id}/{type_id}', 'VacanciesController@positions');
+// Route::get('/applicant-add/{id}/{plantilla_id}', 'ApplicantsController@add');
+// Route::post('/applicant-add/{id}/{plantilla_id}', 'ApplicantsController@store');
+// Route::get('/applicant-registration', 'ApplicantsController@register');
+// Route::post('/applicant-registration', 'ApplicantsController@register_store');
 
 // Temporary: 201-file route for testing (remove authentication)
 Route::get('/201-files', 'EmployeeFileController@index');
@@ -455,27 +456,27 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/travel-abroad-endorsements', 'TravelAbroadEndorsementReportController@index');
     Route::post('/travel-abroad-endorsements/print', 'TravelAbroadEndorsementReportController@print');
 
-    // BIR Form 2305
-    Route::get('/bir-form-2305', 'BIRForm2305Controller@index');
-    Route::get('/bir-form-2305/employee/{id}', 'BIRForm2305Controller@getEmployeeDetails');
-    Route::post('/bir-form-2305/print', 'BIRForm2305Controller@print');
+    // [PRIVATE HRIS] BIR Form 2305 — removed (public sector government form)
+    // Route::get('/bir-form-2305', 'BIRForm2305Controller@index');
+    // Route::get('/bir-form-2305/employee/{id}', 'BIRForm2305Controller@getEmployeeDetails');
+    // Route::post('/bir-form-2305/print', 'BIRForm2305Controller@print');
 
-    // GSIS Membership Information Sheet
-    Route::get('/gsis-member-info', 'GSISMemberInfoController@index');
-    Route::get('/gsis-member-info/employee/{id}', 'GSISMemberInfoController@getEmployeeDetails');
-    Route::post('/gsis-member-info/print', 'GSISMemberInfoController@print');
-    Route::post('/gsis-member-info/docx', 'GSISMemberInfoController@generateDocx');
+    // [PRIVATE HRIS] GSIS Member Info Sheet — removed (GSIS is public sector; private uses SSS)
+    // Route::get('/gsis-member-info', 'GSISMemberInfoController@index');
+    // Route::get('/gsis-member-info/employee/{id}', 'GSISMemberInfoController@getEmployeeDetails');
+    // Route::post('/gsis-member-info/print', 'GSISMemberInfoController@print');
+    // Route::post('/gsis-member-info/docx', 'GSISMemberInfoController@generateDocx');
 
-    // PhilHealth PMRF
-    Route::get('/philhealth-pmrf', 'PhilHealthPMRFController@index');
-    Route::get('/philhealth-pmrf/employee/{id}', 'PhilHealthPMRFController@getEmployeeDetails');
-    Route::post('/philhealth-pmrf/print', 'PhilHealthPMRFController@print');
+    // [PRIVATE HRIS] PhilHealth PMRF form filling — removed (contribution tracking kept via separate report)
+    // Route::get('/philhealth-pmrf', 'PhilHealthPMRFController@index');
+    // Route::get('/philhealth-pmrf/employee/{id}', 'PhilHealthPMRFController@getEmployeeDetails');
+    // Route::post('/philhealth-pmrf/print', 'PhilHealthPMRFController@print');
 
-    // Pag-IBIG MDF
-    Route::get('/pagibig-mdf', 'PagIbigMDFController@index');
-    Route::get('/pagibig-mdf/employee/{id}', 'PagIbigMDFController@getEmployeeDetails');
+    // [PRIVATE HRIS] Pag-IBIG MDF form filling — removed (HDMF Premium module handles contributions)
+    // Route::get('/pagibig-mdf', 'PagIbigMDFController@index');
+    // Route::get('/pagibig-mdf/employee/{id}', 'PagIbigMDFController@getEmployeeDetails');
 
-    // PDF Field Mappings
+    // PDF Field Mappings (kept — may still be needed for other forms)
     Route::get('/pdf-field-mappings/{formType}', 'PdfFieldMappingController@getMappings');
     Route::post('/pdf-field-mappings/{formType}', 'PdfFieldMappingController@saveMappings');
 
@@ -636,36 +637,36 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/overtime-payroll/process', 'OvertimePayrollController@index');
     Route::get('/overtime-payroll/print', 'OvertimePayrollController@print');
 
-    // Landbank Text Report (replaces PACSVAL)
-    Route::get('/landbank-text-report', 'LandbankController@index');
-    Route::post('/landbank-text-report/preview', 'LandbankController@previewTextReport');
-    Route::post('/landbank-text-report/export', 'LandbankController@exportTextReport');
+    // [PRIVATE HRIS] Landbank Text Report — removed (government Landbank ATM payroll disbursement)
+    // Route::get('/landbank-text-report', 'LandbankController@index');
+    // Route::post('/landbank-text-report/preview', 'LandbankController@previewTextReport');
+    // Route::post('/landbank-text-report/export', 'LandbankController@exportTextReport');
 
-    // ATM Letter for Landbank
-    Route::get('/atm-letter-landbank', 'LandbankController@atmLetterIndex');
-    Route::post('/atm-letter-landbank/pdf', 'LandbankController@generateAtmLetterPdf');
-    Route::post('/atm-letter-landbank/word', 'LandbankController@generateAtmLetterWord');
+    // [PRIVATE HRIS] ATM Letter for Landbank — removed (government Landbank specific)
+    // Route::get('/atm-letter-landbank', 'LandbankController@atmLetterIndex');
+    // Route::post('/atm-letter-landbank/pdf', 'LandbankController@generateAtmLetterPdf');
+    // Route::post('/atm-letter-landbank/word', 'LandbankController@generateAtmLetterWord');
 
     // Payslip Report
     Route::get('/payment-slip', 'EmployeePayslipReportController@index');
     Route::post('/payment-slip/print', 'EmployeePayslipReportController@print');
     Route::get('/payment-slip/{employee_id}/{interval_id}/periods', 'EmployeePayslipReportController@employeePeriods');
 
-    // Subsistence Report
-    Route::get('/subsistence-report', 'SubsistenceController@index');
-    Route::post('/subsistence-report/print', 'SubsistenceController@generatePdf');
+    // [PRIVATE HRIS] Subsistence Report — removed (public sector allowance)
+    // Route::get('/subsistence-report', 'SubsistenceController@index');
+    // Route::post('/subsistence-report/print', 'SubsistenceController@generatePdf');
 
-    // Pending Deductions
+    // Pending Deductions (keep — applicable to private sector)
     Route::get('/pending-deduction-report', 'PendingDeductionController@index');
     Route::get('/pending-deduction-report/view', 'PendingDeductionController@view');
 
-    // RATA Report
-    Route::get('/rata-payroll-report', 'RATAController@rataReport');
-    Route::post('/rata-payroll/print', 'RATAController@print');
+    // [PRIVATE HRIS] RATA Report — removed (Representative Allowance, public sector only)
+    // Route::get('/rata-payroll-report', 'RATAController@rataReport');
+    // Route::post('/rata-payroll/print', 'RATAController@print');
 
-    // Hazard Pay Allowance Report
-    Route::get('/hazard-pay-report', 'HazardPayController@Report');
-    Route::get('/hazard-pay/print', 'HazardPayController@print');
+    // [PRIVATE HRIS] Hazard Pay Allowance Report — removed (government hazard pay)
+    // Route::get('/hazard-pay-report', 'HazardPayController@Report');
+    // Route::get('/hazard-pay/print', 'HazardPayController@print');
 
     // Process Mid Year Bonus
     Route::post('/process-midyear', 'MidYearBonusController@process');
@@ -686,24 +687,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/midyear-report', 'MidYearBonusController@report');
     Route::post('/midyear/print', 'MidYearBonusController@print');
 
-    // ATM Letter for Mid-Year Bonus
-    Route::get('/atm-letter-midyear', 'MidYearBonusController@atmLetterIndex');
-    Route::post('/atm-letter-midyear/pdf', 'MidYearBonusController@generateAtmLetterPdf');
+    // [PRIVATE HRIS] ATM Letter for Mid-Year — removed (government Landbank ATM)
+    // Route::get('/atm-letter-midyear', 'MidYearBonusController@atmLetterIndex');
+    // Route::post('/atm-letter-midyear/pdf', 'MidYearBonusController@generateAtmLetterPdf');
 
-    // Individual DV for Mid-Year Bonus
-    Route::post('/midyear-individual-dv/pdf', 'MidYearBonusController@generateIndividualDV');
+    // [PRIVATE HRIS] Individual DV for Mid-Year Bonus — removed (government disbursement voucher)
+    // Route::post('/midyear-individual-dv/pdf', 'MidYearBonusController@generateIndividualDV');
 
-    // Year End Bonus Report
+    // Year End Bonus Report (kept — applicable to private sector)
     Route::get('/yearend-report', 'YearEndBonusController@report');
     Route::post('/yearend/print', 'YearEndBonusController@print');
 
-    // Retirement Benefits
-    Route::get('/retirement-benefits', 'RetirementBenefitsController@index');
-    Route::get('/retirement-benefits/retirees', 'RetirementBenefitsController@getRetirees');
-    Route::post('/retirement-benefits/print', 'RetirementBenefitsController@print');
-    Route::post('/retirement-benefits/generate-pdf', 'RetirementBenefitsController@generatePdf');
-    Route::post('/retirement-benefits/generate-docx', 'RetirementBenefitsController@generateDocx');
-    Route::post('/retirement-benefits/generate-excel', 'RetirementBenefitsController@generateExcel');
+    // [PRIVATE HRIS] Retirement Benefits — removed (government GSIS retirement computation)
+    // Route::get('/retirement-benefits', 'RetirementBenefitsController@index');
+    // Route::get('/retirement-benefits/retirees', 'RetirementBenefitsController@getRetirees');
+    // Route::post('/retirement-benefits/print', 'RetirementBenefitsController@print');
+    // Route::post('/retirement-benefits/generate-pdf', 'RetirementBenefitsController@generatePdf');
+    // Route::post('/retirement-benefits/generate-docx', 'RetirementBenefitsController@generateDocx');
+    // Route::post('/retirement-benefits/generate-excel', 'RetirementBenefitsController@generateExcel');
 
     // Philhealth Remittance Report
     Route::get('/philhealth-remittance', 'PhilhealthRemittanceController@report');
@@ -716,10 +717,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/pag-ibig-loan', 'PagIbigLoanController@loan');
     Route::post('/loan/print', 'PagIbigLoanController@loanprint');
 
-    // GSIS Remittance Report
-    Route::get('/gsis-remittance', 'GSISRemittanceController@index');
-    Route::get('/gsis-remittance/periods', 'GSISRemittanceController@periods');
-    Route::post('/gsis-remittance/print', 'GSISRemittanceController@print');
+    // [PRIVATE HRIS] GSIS Remittance Report — removed (GSIS is for public sector; private uses SSS)
+    // Route::get('/gsis-remittance', 'GSISRemittanceController@index');
+    // Route::get('/gsis-remittance/periods', 'GSISRemittanceController@periods');
+    // Route::post('/gsis-remittance/print', 'GSISRemittanceController@print');
+
+    // SSS Contribution Report (NEW — private sector statutory remittance)
+    Route::get('/sss-contribution-report', 'SSSController@contributionReport');
+    Route::get('/sss-contribution-report/print', 'SSSController@printContributionReport');
 
     // Bank Remittance Report
     Route::get('/bank-remittance', 'BankRemittanceController@index');
@@ -729,36 +734,30 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/pagibig-contribution', 'PagIbigContributionController@report');
     Route::post('/pagibig-contribution/print', 'PagIbigContributionController@print');
 
-    // Monetization Payroll
-    Route::get('/monetization-payroll', 'MonetizationController@loadMonetizationPayroll');
-    Route::get('/monetization-payroll/{id}/add', 'MonetizationController@addMonetizationPayroll');
-    Route::post('/monetization-payroll/{id}', 'MonetizationController@storeMonetizationPayroll');
-    Route::post('/monetization-payroll/{id}/employees', 'MonetizationController@storeMonetizationPayrollEmployee');
-    Route::delete('/monetization-payroll/{id}/employees', 'MonetizationController@deleteMonetizationPayrollEmployees');
-    Route::delete('/monetization-payroll/{id}', 'MonetizationController@deleteMonetizationPayroll');
-    Route::post('/monetization-payroll/{id}/{type_id}/process', 'MonetizationController@processMonetizationPayroll');
-    Route::get('/monetization-payroll/report', 'MonetizationController@monetizationReport');
-    Route::get('/monetization-payroll/print', 'MonetizationController@print');
+    // [PRIVATE HRIS] Monetization Payroll — removed (leave monetization is a public-sector benefit)
+    // Route::get('/monetization-payroll', ...);
+    // Route::get('/monetization-payroll/{id}/add', ...);
+    // (all monetization payroll routes removed)
 
-    // Obligation Requests Report
-    Route::get('/ors-payroll-report/{id}', 'ObligationRequestController@orsPayroll');
-    Route::get('/ors-overtime-report/{id}', 'ObligationRequestController@orsOvertime');
-    Route::get('/ors-rata-report/{id}', 'ObligationRequestController@orsRATA');
-    Route::get('/ors-monetization-report/{id}', 'ObligationRequestController@orsMonetization');
-    Route::get('/ors-clothing-report/{id}', 'ObligationRequestController@orsClothing');
-    Route::get('/ors-loyalty-report/{id}', 'ObligationRequestController@orsLoyalty');
-    Route::get('/ors-midyear-report/{year_id}', 'ObligationRequestController@orsMidYear');
-    Route::get('/ors-yearend-report/{year_id}', 'ObligationRequestController@orsYearEnd');
+    // [PRIVATE HRIS] Obligation Requests (ORS) — removed (government budget/accounting documents)
+    // Route::get('/ors-payroll-report/{id}', 'ObligationRequestController@orsPayroll');
+    // Route::get('/ors-overtime-report/{id}', 'ObligationRequestController@orsOvertime');
+    // Route::get('/ors-rata-report/{id}', 'ObligationRequestController@orsRATA');
+    // Route::get('/ors-monetization-report/{id}', 'ObligationRequestController@orsMonetization');
+    // Route::get('/ors-clothing-report/{id}', 'ObligationRequestController@orsClothing');
+    // Route::get('/ors-loyalty-report/{id}', 'ObligationRequestController@orsLoyalty');
+    // Route::get('/ors-midyear-report/{year_id}', 'ObligationRequestController@orsMidYear');
+    // Route::get('/ors-yearend-report/{year_id}', 'ObligationRequestController@orsYearEnd');
 
-    // Disbursement Vouchers Report
-    Route::get('/dv-payroll-report/{id}', 'DisbursementVoucherController@dvPayroll');
-    Route::get('/dv-overtime-report/{id}', 'DisbursementVoucherController@dvOvertime');
-    Route::get('/dv-rata-report/{id}', 'DisbursementVoucherController@dvRATA');
-    Route::get('/dv-monetization-report/{id}', 'DisbursementVoucherController@dvMonetization');
-    Route::get('/dv-clothing-report/{id}', 'DisbursementVoucherController@dvClothing');
-    Route::get('/dv-loyalty-report/{id}', 'DisbursementVoucherController@dvLoyalty');
-    Route::post('/dv-midyear-report', 'DisbursementVoucherController@dvMidYear');
-    Route::get('/dv-yearend-report/{year_id}', 'DisbursementVoucherController@dvYearEnd');
+    // [PRIVATE HRIS] Disbursement Vouchers (DV) — removed (government accounting documents)
+    // Route::get('/dv-payroll-report/{id}', 'DisbursementVoucherController@dvPayroll');
+    // Route::get('/dv-overtime-report/{id}', 'DisbursementVoucherController@dvOvertime');
+    // Route::get('/dv-rata-report/{id}', 'DisbursementVoucherController@dvRATA');
+    // Route::get('/dv-monetization-report/{id}', 'DisbursementVoucherController@dvMonetization');
+    // Route::get('/dv-clothing-report/{id}', 'DisbursementVoucherController@dvClothing');
+    // Route::get('/dv-loyalty-report/{id}', 'DisbursementVoucherController@dvLoyalty');
+    // Route::post('/dv-midyear-report', 'DisbursementVoucherController@dvMidYear');
+    // Route::get('/dv-yearend-report/{year_id}', 'DisbursementVoucherController@dvYearEnd');
 
     // Payroll Extra Bonus
     Route::get('/payroll-extra-bonus', 'PayrollExtraBonusController@index');
@@ -777,19 +776,31 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/pagibig-payroll/employees', 'PagibigPayrollHeaderController@store');
     Route::get('/pagibig-payroll/{employee_id}/{amount}/{payroll_period_id}/validate', 'PagibigPayrollHeaderController@validateAmount');
 
-    // COS Payroll - Contract of Service (non DTR based)
-    Route::get('/cos-payroll', 'CosPayrollController@index');
-    Route::get('/cos-payroll-periods', 'CosPayrollController@periods');
-    // Attachment download must come before {payroll_period_id} routes so "attachments" is not matched as period id
-    Route::get('/cos-payroll/attachments/{attachment_id}/info', 'CosPayrollController@attachmentInfo');
-    Route::get('/cos-payroll/attachments/{attachment_id}/download', 'CosPayrollController@downloadAttachment');
-    Route::get('/cos-payroll/debug/{employee_id}', 'CosPayrollController@debug');
-    Route::get('/cos-payroll/{payroll_period_id}/employees', 'CosPayrollController@employeesByPeriod');
-    Route::post('/cos-payroll/{payroll_period_id}/process', 'CosPayrollController@process');
-    Route::post('/cos-payroll/{payroll_period_id}/post', 'CosPayrollController@post');
-    Route::post('/cos-payroll/{payroll_period_id}/unpost', 'CosPayrollController@unpost');
-    Route::get('/cos-payroll/{payroll_period_id}/tax-employees', 'CosPayrollController@getTaxEmployees');
-    Route::post('/cos-payroll/{payroll_period_id}/adjust-tax', 'CosPayrollController@adjustTax');
+    // [PRIVATE HRIS] COS (Contract of Service) Payroll — removed (government job-order employment type)
+    // Route::get('/cos-payroll', 'CosPayrollController@index');
+    // Route::get('/cos-payroll-periods', 'CosPayrollController@periods');
+    // Route::get('/cos-payroll/attachments/{attachment_id}/info', ...);
+    // Route::get('/cos-payroll/attachments/{attachment_id}/download', ...);
+    // Route::get('/cos-payroll/debug/{employee_id}', ...);
+    // Route::get('/cos-payroll/{payroll_period_id}/employees', ...);
+    // Route::post('/cos-payroll/{payroll_period_id}/process', ...);
+    // Route::post('/cos-payroll/{payroll_period_id}/post', ...);
+    // Route::post('/cos-payroll/{payroll_period_id}/unpost', ...);
+    // Route::get('/cos-payroll/{payroll_period_id}/tax-employees', ...);
+    // Route::post('/cos-payroll/{payroll_period_id}/adjust-tax', ...);
+
+    // NEW: 13th Month Pay (Private Sector)
+    Route::get('/thirteenth-month-pay', 'ThirteenthMonthPayController@index');
+    Route::post('/thirteenth-month-pay/compute', 'ThirteenthMonthPayController@compute');
+    Route::post('/thirteenth-month-pay/post', 'ThirteenthMonthPayController@post');
+    Route::get('/thirteenth-month-pay/export/pdf', 'ThirteenthMonthPayController@exportPdf');
+    Route::get('/thirteenth-month-pay/export/excel', 'ThirteenthMonthPayController@exportExcel');
+
+    // NEW: Final Pay (linked to Offboarding)
+    Route::get('/final-pay/employees', 'FinalPayController@getSeparatedEmployees');
+    Route::post('/final-pay/compute/{employee_id}', 'FinalPayController@compute');
+    Route::post('/final-pay/release/{employee_id}', 'FinalPayController@release');
+    Route::get('/final-pay/{employee_id}/payslip', 'FinalPayController@payslip');
 
     // PagIbig Setup
     Route::get('/pagibig-setup', 'PagibigSetupController@index');
@@ -908,29 +919,29 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/learnings/{id}/edit', 'LearningsController@edit');
     Route::patch('/learnings/{id}', 'LearningsController@update');
 
-    // Plantilla Setup
-    Route::get('/plantillas', 'PlantillasController@index');
-    Route::get('/plantillas/create', 'PlantillasController@add');
-    Route::post('/plantillas', 'PlantillasController@store');
-    Route::get('/plantillas/{id}/edit', 'PlantillasController@edit');
-    Route::patch('/plantillas/{id}', 'PlantillasController@update');
-    Route::get('/plantillas/{type_id}/{id}/delete', 'PlantillasController@delete');
-    Route::delete('/plantillas/{type_id}/{id}', 'PlantillasController@destroy');
-    Route::get('/vacancies', 'VacanciesController@index');
+    // [PRIVATE HRIS] Plantilla Setup — removed (government headcount system)
+    // Route::get('/plantillas', 'PlantillasController@index');
+    // Route::get('/plantillas/create', 'PlantillasController@add');
+    // Route::post('/plantillas', 'PlantillasController@store');
+    // Route::get('/plantillas/{id}/edit', 'PlantillasController@edit');
+    // Route::patch('/plantillas/{id}', 'PlantillasController@update');
+    // Route::get('/plantillas/{type_id}/{id}/delete', 'PlantillasController@delete');
+    // Route::delete('/plantillas/{type_id}/{id}', 'PlantillasController@destroy');
+    // Route::get('/vacancies', 'VacanciesController@index'); // already disabled above
 
-    // Non Plantilla Setup
-    Route::get('/non-plantillas', 'NonPlantillasController@index');
-    Route::get('/non-plantillas/{id}/add', 'NonPlantillasController@add');
-    Route::post('/non-plantillas/{id}', 'NonPlantillasController@store');
+    // [PRIVATE HRIS] Non-Plantilla Setup — removed (government non-plantilla system)
+    // Route::get('/non-plantillas', 'NonPlantillasController@index');
+    // Route::get('/non-plantillas/{id}/add', 'NonPlantillasController@add');
+    // Route::post('/non-plantillas/{id}', 'NonPlantillasController@store');
 
-    // Salary Schedule Setup
-    Route::get('/salary-schedules', 'SalarySchedulesController@index');
-    Route::get('/salary-schedules/create', 'SalarySchedulesController@add');
-    Route::post('/salary-schedules', 'SalarySchedulesController@store');
-    Route::get('/salary-schedules/{id}/edit', 'SalarySchedulesController@edit');
-    Route::patch('/salary-schedules/{id}', 'SalarySchedulesController@update');
-    Route::get('/salary-schedules/{id}/delete', 'SalarySchedulesController@delete');
-    Route::delete('/salary-schedules/{id}', 'SalarySchedulesController@destroy');
+    // [PRIVATE HRIS] Salary Schedule Setup — removed (government salary schedule system)
+    // Route::get('/salary-schedules', 'SalarySchedulesController@index');
+    // Route::get('/salary-schedules/create', 'SalarySchedulesController@add');
+    // Route::post('/salary-schedules', 'SalarySchedulesController@store');
+    // Route::get('/salary-schedules/{id}/edit', 'SalarySchedulesController@edit');
+    // Route::patch('/salary-schedules/{id}', 'SalarySchedulesController@update');
+    // Route::get('/salary-schedules/{id}/delete', 'SalarySchedulesController@delete');
+    // Route::delete('/salary-schedules/{id}', 'SalarySchedulesController@destroy');
 
     // Tax Table Setup
     Route::get('/tax-tables', 'TaxController@index');
@@ -944,14 +955,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/philhealth-tables', 'PhilhealthController@store');
     Route::delete('/philhealth-tables/{id}', 'PhilhealthController@destroy');
 
-    // GSIS Setup
-    Route::get('/gsis-tables', 'GSISController@index');
-    Route::get('/gsis-tables/{id}/delete', 'GSISController@delete');
-    Route::post('/gsis-tables', 'GSISController@store');
-    Route::delete('/gsis-tables/{id}', 'GSISController@destroy');
-    Route::get('/gsis', 'GSISController@index');
-    Route::get('/gsis/{id}/add', 'GSISController@add');
-    Route::post('/gsis/{id}', 'GSISController@storeGSIS');
+    // [PRIVATE HRIS] GSIS Setup — removed (GSIS is public sector; private companies use SSS)
+    // Route::get('/gsis-tables', 'GSISController@index');
+    // Route::get('/gsis-tables/{id}/delete', 'GSISController@delete');
+    // Route::post('/gsis-tables', 'GSISController@store');
+    // Route::delete('/gsis-tables/{id}', 'GSISController@destroy');
+    // Route::get('/gsis', 'GSISController@index');
+    // Route::get('/gsis/{id}/add', 'GSISController@add');
+    // Route::post('/gsis/{id}', 'GSISController@storeGSIS');
 
     // SSS Setup
     Route::get('/sss-tables', 'SSSController@index');
@@ -959,17 +970,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/sss-tables', 'SSSController@store');
     Route::delete('/sss-tables/{id}', 'SSSController@destroy');
 
-    // Salary Step Table Setup
-    Route::get('/salary-steps', 'SalaryStepController@index');
-    Route::get('/salary-steps/{id}/delete', 'SalaryStepController@delete');
-    Route::post('/salary-steps', 'SalaryStepController@store');
-    Route::delete('/salary-steps/{id}', 'SalaryStepController@destroy');
+    // [PRIVATE HRIS] Salary Step Table — removed (government salary step/increment system)
+    // Route::get('/salary-steps', 'SalaryStepController@index');
+    // Route::get('/salary-steps/{id}/delete', 'SalaryStepController@delete');
+    // Route::post('/salary-steps', 'SalaryStepController@store');
+    // Route::delete('/salary-steps/{id}', 'SalaryStepController@destroy');
 
-    // Salary Grade Table Setup
-    Route::get('/salary-grades', 'SalaryGradeController@index');
-    Route::get('/salary-grades/{id}/delete', 'SalaryGradeController@delete');
-    Route::post('/salary-grades', 'SalaryGradeController@store');
-    Route::delete('/salary-grades/{id}', 'SalaryGradeController@destroy');
+    // [PRIVATE HRIS] Salary Grade Table — removed (government salary grade system)
+    // Route::get('/salary-grades', 'SalaryGradeController@index');
+    // Route::get('/salary-grades/{id}/delete', 'SalaryGradeController@delete');
+    // Route::post('/salary-grades', 'SalaryGradeController@store');
+    // Route::delete('/salary-grades/{id}', 'SalaryGradeController@destroy');
 
     // Company Setup
     Route::get('/companies', 'CompanyController@index');
