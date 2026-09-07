@@ -204,6 +204,23 @@
           <span v-if="!isSidebarCollapsed">Announcements</span>
         </router-link>
 
+        <!-- Holiday Calendar -->
+        <router-link
+          to="/holidays/calendar"
+          class="flex items-center py-2.5 space-x-3 text-[13.5px] font-medium transition-all duration-200 rounded-xl group"
+          :class="[
+            isSidebarCollapsed ? 'justify-center px-0' : 'px-3.5',
+            isActive('/holidays/calendar')
+              ? 'bg-gradient-to-r from-[#3B5EFF] to-[#2946D9] text-white font-semibold shadow-lg shadow-[#3B5EFF]/25'
+              : (isDarkMode ? 'text-slate-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100')
+          ]"
+        >
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          <span v-if="!isSidebarCollapsed">Holiday Calendar</span>
+        </router-link>
+
         <!-- Document Request -->
         <router-link
           to="/document-requests"
@@ -1199,6 +1216,7 @@ export default {
         '/payslip': 'Payslip',
         '/dtr': 'Daily Time Record',
         '/announcements': 'Announcements',
+        '/holidays/calendar': 'Holiday Calendar',
         '/ipcr': 'IPCR',
         '/ipcr/agency-head-approval': 'IPCR HoA Approval',
         '/ipcr/hr-recalibration': 'IPCR HR Recalibration',
@@ -1223,6 +1241,7 @@ export default {
         '/payslip': 'View and download your payslips',
         '/dtr': 'Track your daily time records',
         '/announcements': 'View important announcements and updates',
+        '/holidays/calendar': 'View upcoming and declared holidays for the year',
         '/ipcr': 'Individual Performance Commitment and Review',
         '/ipcr/agency-head-approval': 'Approve IPCR records after supervisor calibration',
         '/ipcr/hr-recalibration': 'HR recalibration queue after Head of Agency approval',

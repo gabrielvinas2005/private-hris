@@ -84,17 +84,79 @@ class HolidayController extends Controller
                         $id = $data['id'][$i];
                     }
 
+                    $rawDate = isset($data['date'][$i]) ? $data['date'][$i] : null;
+                    $formattedDate = $rawDate ? \Carbon\Carbon::parse($rawDate)->format('Y-m-d') : null;
+
                     $holiday_data = [
                         'name' => $data['name'][$i],
                         'holiday_type' => isset($data['holiday_type'][$i]) ? $data['holiday_type'][$i] : 0,
                         'branch' => isset($data['branch_id'][$i]) ? $data['branch_id'][$i] : 0,
-                        'date' => isset($data['date'][$i]) ? $data['date'][$i] : null,
+                        'date' => $formattedDate,
                         'active' => $active,
                     ];
 
                     DB::unprepared('SET IDENTITY_INSERT holidays ON');
                     DB::table('holidays')->updateOrInsert(['id' => $id], $holiday_data);
                     DB::unprepared('SET IDENTITY_INSERT holidays OFF');
+
+                    // Auto-apply active holiday to all active employees' time_data records
+                    if ($active && !empty($holiday_data['date'])) {
+                        $dateStr = \Carbon\Carbon::parse($holiday_data['date'])->format('Y-m-d');
+                        $activeEmployees = DB::table('employees')
+                            ->select('id', 'work_schedule_id')
+                            ->where('active', true)
+                            ->where('is_employee', true)
+                            ->get();
+
+                        foreach ($activeEmployees as $emp) {
+                            $existingTd = DB::table('time_data')
+                                ->where('employee_id', $emp->id)
+                                ->whereDate('date', $dateStr)
+                                ->first();
+
+                            if ($existingTd) {
+                                DB::table('time_data')
+                                    ->where('id', $existingTd->id)
+                                    ->update([
+                                        'is_holiday' => 1,
+                                        'holiday_id' => $id,
+                                    ]);
+                            } else {
+                                DB::table('time_data')->insert([
+                                    'employee_id' => $emp->id,
+                                    'payroll_period_id' => 0,
+                                    'date' => $dateStr,
+                                    'am_in' => null,
+                                    'am_out' => null,
+                                    'break_in' => null,
+                                    'break_out' => null,
+                                    'pm_in' => null,
+                                    'pm_out' => null,
+                                    'work_hours' => 0,
+                                    'late' => 0,
+                                    'undertime' => 0,
+                                    'absent' => 0,
+                                    'leave' => 0,
+                                    'is_ob' => false,
+                                    'ob_id' => 0,
+                                    'is_holiday' => 1,
+                                    'holiday_id' => $id,
+                                    'holiday_pay' => 0,
+                                    'is_ot' => false,
+                                    'ot_id' => 0,
+                                    'ot_pay' => 0,
+                                    'nd_pay' => 0,
+                                    'remarks' => '',
+                                    'is_shifting' => true,
+                                    'work_schedule_id' => $emp->work_schedule_id ?? 0,
+                                    'ob_hours' => 0,
+                                    'ot_hours' => 0,
+                                    'for_approval' => 0,
+                                    'is_edited' => 0
+                                ]);
+                            }
+                        }
+                    }
                 }
             }
 

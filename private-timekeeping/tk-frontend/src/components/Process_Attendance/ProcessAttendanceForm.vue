@@ -68,6 +68,7 @@
                   <el-dropdown-menu>
                     <el-dropdown-item command="process">Process Attendance</el-dropdown-item>
                     <el-dropdown-item command="view-processed">View Processed Attendance</el-dropdown-item>
+                    <el-dropdown-item command="retag-holidays">Re-tag Holidays</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -320,7 +321,7 @@
 
 <script setup>
 import { ref, watch, computed, onMounted, nextTick } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Loading, Check, Close, CircleCheck, ArrowDown } from '@element-plus/icons-vue'
 import api, { processAttendanceService } from '../../services/api'
 import { authApi } from '../../services/api'
@@ -1378,6 +1379,49 @@ function onProcessCommand(command) {
       return
     }
     viewProcessedAttendance()
+  } else if (command === 'retag-holidays') {
+    retagHolidays()
+  }
+}
+
+// Re-tag holidays for the selected payroll period
+async function retagHolidays() {
+  if (!canProcess.value) return
+  const selectedPeriod = periods.value.find(p => p.id === form.value.payroll_period_id)
+  const periodLabel = selectedPeriod ? formatPeriodLabel(selectedPeriod) : ''
+
+  try {
+    await ElMessageBox.confirm(
+      `Re-tagging holidays will scan all attendance records in "${periodLabel}" and update holiday flags based on active holiday setup.\n\nAre you sure you want to proceed?`,
+      'Re-tag Holidays Confirmation',
+      {
+        confirmButtonText: 'Yes, Re-tag Holidays',
+        cancelButtonText: 'Cancel',
+        type: 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+
+  const retagLoading = ElLoading.service({
+    lock: true,
+    text: 'Re-tagging holidays for selected period...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
+
+  try {
+    const res = await processAttendanceService.retagHolidays(Number(form.value.payroll_period_id))
+    const msg = res?.message || 'Holiday flags re-tagged successfully.'
+    ElMessage.success(msg)
+    if (isAlreadyProcessed.value) {
+      viewProcessedAttendance()
+    }
+  } catch (err) {
+    const msg = err?.response?.data?.message || err?.message || 'Failed to re-tag holidays.'
+    ElMessage.error(msg)
+  } finally {
+    retagLoading.close()
   }
 }
 

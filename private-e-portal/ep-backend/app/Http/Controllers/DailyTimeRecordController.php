@@ -389,6 +389,24 @@ class DailyTimeRecordController extends Controller
             $displayPeriod
         );
 
+        // Deduplicate records by date (preferring records with punches/data or latest ID)
+        // to prevent duplicate rows when cutoff dates overlap or multiple period IDs are queried
+        $daily_time_records = collect($daily_time_records)
+            ->sortByDesc(function ($item) {
+                $itemObj = (object) $item;
+                $hasPunches = !empty($itemObj->am_in) || !empty($itemObj->am_out) || !empty($itemObj->pm_in) || !empty($itemObj->pm_out);
+                return ($hasPunches ? 1000000 : 0) + (int)($itemObj->id ?? 0);
+            })
+            ->unique(function ($item) {
+                $itemObj = (object) $item;
+                return $itemObj->date ? Carbon::parse($itemObj->date)->format('Y-m-d') : null;
+            })
+            ->sortBy(function ($item) {
+                $itemObj = (object) $item;
+                return $itemObj->date;
+            })
+            ->values();
+
         // get totals
         $totals = DB::table('time_data as a')
             ->join('employees as b', 'a.employee_id', '=', 'b.id')

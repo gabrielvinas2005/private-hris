@@ -1563,6 +1563,11 @@ class ApiService {
         return this.request(`/payslips/${userId}`)
     }
 
+    // Holiday Calendar API methods
+    async getHolidayCalendar(year) {
+        return this.request(`/holidays/calendar/${year}`)
+    }
+
     async getPayslipDetails(employeeId, payrollId) {
         return this.request(`/payslips/${employeeId}/view/${payrollId}`)
     }

@@ -484,6 +484,10 @@ class DailyTimeRecordController extends Controller
                     $biometrics = null;
                 }
 
+                $holidayRec = DB::table('holidays')->whereDate('date', $date)->where('active', 1)->first();
+                $isHoliday = $holidayRec ? true : false;
+                $holidayId = $holidayRec ? $holidayRec->id : 0;
+
                 if ($biometrics != null) {
                     $time_data = array(
                         'employee_id' => $id,
@@ -502,8 +506,8 @@ class DailyTimeRecordController extends Controller
                         'leave' => 0,
                         'is_ob' => false,
                         'ob_id' => 0,
-                        'is_holiday' => false,
-                        'holiday_id' => 0,
+                        'is_holiday' => $isHoliday,
+                        'holiday_id' => $holidayId,
                         'holiday_pay' => 0,
                         'is_ot' => false,
                         'ot_id' => 0,
@@ -511,7 +515,7 @@ class DailyTimeRecordController extends Controller
                         'nd_pay' => 0,
                         'remarks' => '',
                         'is_shifting' => true,
-                        'work_schedule_id' => $employee_data[0]->work_schedule_id,
+                        'work_schedule_id' => $employee_data[0]->work_schedule_id ?? 0,
                         'ob_hours' => 0,
                         'ot_hours' => 0,
                         'for_approval' => 0,
@@ -535,8 +539,8 @@ class DailyTimeRecordController extends Controller
                         'leave' => 0,
                         'is_ob' => false,
                         'ob_id' => 0,
-                        'is_holiday' => false,
-                        'holiday_id' => 0,
+                        'is_holiday' => $isHoliday,
+                        'holiday_id' => $holidayId,
                         'holiday_pay' => 0,
                         'is_ot' => false,
                         'ot_id' => 0,
@@ -544,7 +548,7 @@ class DailyTimeRecordController extends Controller
                         'nd_pay' => 0,
                         'remarks' => '',
                         'is_shifting' => true,
-                        'work_schedule_id' => $employee_data[0]->work_schedule_id,
+                        'work_schedule_id' => $employee_data[0]->work_schedule_id ?? 0,
                         'ob_hours' => 0,
                         'ot_hours' => 0,
                         'for_approval' => 0,

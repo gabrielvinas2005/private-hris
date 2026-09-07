@@ -1131,6 +1131,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/holiday-types/{id}', 'HolidayTypeController@destroy');
 
     // Holidays
+    Route::get('/holidays/calendar/{year}', 'HolidayController@calendar');
     Route::get('/holidays', 'HolidayController@index');
     Route::get('/holidays/{id}/delete', 'HolidayController@delete');
     Route::post('/holidays', 'HolidayController@store');

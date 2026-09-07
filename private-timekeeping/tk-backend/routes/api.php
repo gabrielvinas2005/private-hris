@@ -706,6 +706,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/process-attendance/{id}/{payroll_period_id}/cancel-offset-details', 'ProcessAttendanceController@cancel_offset_details');
     Route::post('/process-attendance/save', 'ProcessAttendanceController@save');
     Route::post('/process-attendance/edit-times', 'ProcessAttendanceController@editTimes');
+    Route::post('/process-attendance/retag-holidays', 'ProcessAttendanceController@retagHolidays');
+    Route::post('/process-attendance/apply-today-holiday', 'ProcessAttendanceController@applyTodayHoliday');
     Route::get('/process-attendance/time-data-by-date', 'ProcessAttendanceController@getTimeDataByDate');
     
     // Leave Approval

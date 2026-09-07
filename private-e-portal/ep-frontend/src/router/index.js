@@ -51,6 +51,8 @@ import ChangePassword from '../views/auth/change-password.vue';
 import DocumentRequestsView from '../views/document-request.vue';
 import TrainingRecordView from '../views/TrainingRecord.vue'
 import DownloadablesView from '../views/Downloadables.vue'
+import HolidayCalendar from '../views/Holidays/HolidayCalendar.vue'
+
 
 
 
@@ -69,6 +71,13 @@ const routes = [
     {
         path: '/downloadables',
         component: DownloadablesView,
+        meta: { requiresAuth: true }
+    },
+
+    // Holiday Calendar route
+    {
+        path: '/holidays/calendar',
+        component: HolidayCalendar,
         meta: { requiresAuth: true }
     },
 

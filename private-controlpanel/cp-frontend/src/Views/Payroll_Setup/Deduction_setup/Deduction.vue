@@ -56,9 +56,6 @@
         <el-table-column v-if="columnVisibility.is_sss" prop="is_sss" label="SSS" width="100" align="center">
           <template #default="{ row }"><el-tag :type="row.is_sss ? 'success' : 'info'">{{ row.is_sss ? 'Yes' : 'No' }}</el-tag></template>
         </el-table-column>
-        <el-table-column v-if="columnVisibility.is_gsis" prop="is_gsis" label="GSIS" width="100" align="center">
-          <template #default="{ row }"><el-tag :type="row.is_gsis ? 'success' : 'info'">{{ row.is_gsis ? 'Yes' : 'No' }}</el-tag></template>
-        </el-table-column>
         <el-table-column v-if="columnVisibility.is_philhealth" prop="is_philhealth" label="Philhealth" width="120" align="center">
           <template #default="{ row }"><el-tag :type="row.is_philhealth ? 'success' : 'info'">{{ row.is_philhealth ? 'Yes' : 'No' }}</el-tag></template>
         </el-table-column>
@@ -105,9 +102,6 @@
           <el-table-column label="SSS" width="90" align="center">
             <template #default="{ row }"><el-switch v-model="row.is_sss" /></template>
           </el-table-column>
-          <el-table-column label="GSIS" width="90" align="center">
-            <template #default="{ row }"><el-switch v-model="row.is_gsis" /></template>
-          </el-table-column>
           <el-table-column label="Philhealth" width="110" align="center">
             <template #default="{ row }"><el-switch v-model="row.is_philhealth" /></template>
           </el-table-column>
@@ -134,7 +128,6 @@
           <el-table-column prop="uacs" label="UACS" min-width="160" />
           <el-table-column prop="mfo_pap" label="MFO/PAP" min-width="160" />
           <el-table-column prop="is_sss" label="SSS" width="90" align="center"><template #default="{ row }"><el-tag :type="row.is_sss ? 'success' : 'info'">{{ row.is_sss ? 'Yes' : 'No' }}</el-tag></template></el-table-column>
-          <el-table-column prop="is_gsis" label="GSIS" width="90" align="center"><template #default="{ row }"><el-tag :type="row.is_gsis ? 'success' : 'info'">{{ row.is_gsis ? 'Yes' : 'No' }}</el-tag></template></el-table-column>
           <el-table-column prop="is_philhealth" label="Philhealth" width="110" align="center"><template #default="{ row }"><el-tag :type="row.is_philhealth ? 'success' : 'info'">{{ row.is_philhealth ? 'Yes' : 'No' }}</el-tag></template></el-table-column>
           <el-table-column prop="is_pagibig" label="Pag-IBIG" width="110" align="center"><template #default="{ row }"><el-tag :type="row.is_pagibig ? 'success' : 'info'">{{ row.is_pagibig ? 'Yes' : 'No' }}</el-tag></template></el-table-column>
           <el-table-column prop="is_bank" label="Bank" width="90" align="center"><template #default="{ row }"><el-tag :type="row.is_bank ? 'success' : 'info'">{{ row.is_bank ? 'Yes' : 'No' }}</el-tag></template></el-table-column>
@@ -172,7 +165,7 @@ function handleAdd() { openForm() }
 async function handleDelete(row) { await deleteDeduction(row.id) }
 
 function getColumnLabel(key) {
-  const map = { serial: '#', name: 'Deduction Name', uacs: 'UACS', mfo_pap: 'MFO/PAP', is_sss: 'SSS', is_gsis: 'GSIS', is_philhealth: 'Philhealth', is_pagibig: 'Pag-IBIG', is_bank: 'Bank', active: 'Active', actions: 'Actions' }
+  const map = { serial: '#', name: 'Deduction Name', uacs: 'UACS', mfo_pap: 'MFO/PAP', is_sss: 'SSS', is_philhealth: 'Philhealth', is_pagibig: 'Pag-IBIG', is_bank: 'Bank', active: 'Active', actions: 'Actions' }
   return map[key] || key
 }
 
@@ -182,7 +175,6 @@ const exportColumns = [
   { key: 'uacs', label: 'UACS' },
   { key: 'mfo_pap', label: 'MFO/PAP' },
   { key: 'is_sss', label: 'SSS', formatter: (row) => row.is_sss ? 'Yes' : 'No' },
-  { key: 'is_gsis', label: 'GSIS', formatter: (row) => row.is_gsis ? 'Yes' : 'No' },
   { key: 'is_philhealth', label: 'Philhealth', formatter: (row) => row.is_philhealth ? 'Yes' : 'No' },
   { key: 'is_pagibig', label: 'Pag-IBIG', formatter: (row) => row.is_pagibig ? 'Yes' : 'No' },
   { key: 'is_bank', label: 'Bank', formatter: (row) => row.is_bank ? 'Yes' : 'No' },

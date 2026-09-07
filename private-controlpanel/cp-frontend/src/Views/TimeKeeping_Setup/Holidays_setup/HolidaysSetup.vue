@@ -73,7 +73,7 @@
         </el-table-column>
 
         <el-table-column v-if="columnVisibility.date" label="Date" width="180" align="center">
-          <template #default="{ row }"><el-date-picker v-model="row.date" type="date" placeholder="Pick date" /></template>
+          <template #default="{ row }"><el-date-picker v-model="row.date" type="date" format="YYYY-MM-DD" value-format="YYYY-MM-DD" placeholder="Pick date" /></template>
         </el-table-column>
 
         <el-table-column v-if="columnVisibility.active" label="Active" width="120" align="center">

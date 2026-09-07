@@ -77,17 +77,28 @@ class HolidayTaggingController extends Controller
             $arr_len = count($dataX['holiday_active']);
             $holiday = [];
             $processed_count = 0;
+            $skipped_count = 0;
 
             for ($i = 0; $i < $arr_len; $i++) {
                 if ($dataX['holiday_active'][$i] != NULL) {
 
                     $holiday = [
-                        'holiday_tagging_id'      => $holiday_tagging_id,
-                        'holiday_id'     => $dataX['holiday_id'][$i],
+                        'holiday_tagging_id' => $holiday_tagging_id,
+                        'holiday_id'         => $dataX['holiday_id'][$i],
                     ];
 
-                    DB::table('holiday_tagging_details')->Insert($holiday);
-                    $processed_count++;
+                    // Guard against duplicate inserts: only insert if not already present
+                    $exists = DB::table('holiday_tagging_details')
+                        ->where('holiday_tagging_id', $holiday_tagging_id)
+                        ->where('holiday_id', $dataX['holiday_id'][$i])
+                        ->exists();
+
+                    if (!$exists) {
+                        DB::table('holiday_tagging_details')->insert($holiday);
+                        $processed_count++;
+                    } else {
+                        $skipped_count++;
+                    }
                 }
             }
 

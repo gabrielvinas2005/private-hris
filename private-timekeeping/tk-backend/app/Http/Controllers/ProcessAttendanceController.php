@@ -10266,4 +10266,267 @@ class ProcessAttendanceController extends Controller
             })
             ->values();
     }
+
+    /**
+     * Re-tag holiday flags on all time_data rows for a given payroll period.
+     *
+     * This is used when a holiday is declared AFTER DTR records have already been
+     * encoded for a period. Running this utility will:
+     *  - Set   is_holiday = 1, holiday_id = <holiday_id>  on rows whose date matches an active holiday
+     *  - Clear is_holiday = 0, holiday_id = 0             on rows whose date NO LONGER matches any active holiday
+     *
+     * @param  \Illuminate\Http\Request  $request  { payroll_period_id: int }
+     */
+    public function retagHolidays(Request $request)
+    {
+        try {
+            $validator = validator($request->all(), [
+                'payroll_period_id' => 'required|integer|exists:payroll_periods,id'
+            ]);
+
+            if ($validator->fails()) {
+                return $this->errorResponse($validator->errors()->first(), 422);
+            }
+
+            $payroll_period_id = (int) $request->payroll_period_id;
+
+            // Fetch date window for this payroll period
+            $period = DB::table('payroll_periods')
+                ->where('id', $payroll_period_id)
+                ->select('attendance_start_date', 'attendance_end_date')
+                ->first();
+
+            if (!$period || !$period->attendance_start_date || !$period->attendance_end_date) {
+                return $this->errorResponse('Payroll period is missing attendance date range.', 422);
+            }
+
+            $from_date = $period->attendance_start_date;
+            $to_date   = $period->attendance_end_date;
+
+            // Fetch all active holidays within the period's date range
+            $holidays = DB::table('holidays')
+                ->select('id', 'date')
+                ->where('active', true)
+                ->whereBetween('date', [$from_date, $to_date])
+                ->get()
+                ->keyBy(function ($h) {
+                    return Carbon::parse($h->date)->format('Y-m-d');
+                });
+
+            $holidayDates = $holidays->keys()->toArray(); // ['2025-06-12', ...]
+
+            // Fetch all active employees
+            $activeEmployees = DB::table('employees')
+                ->select('id', 'work_schedule_id')
+                ->where('active', true)
+                ->where('is_employee', true)
+                ->get();
+
+            // Step 1: Tag rows that fall on an active holiday for ALL active employees
+            $taggedCount = 0;
+            foreach ($holidays as $dateStr => $holiday) {
+                foreach ($activeEmployees as $emp) {
+                    $existingTd = DB::table('time_data')
+                        ->where('employee_id', $emp->id)
+                        ->whereDate('date', $dateStr)
+                        ->first();
+
+                    if ($existingTd) {
+                        DB::table('time_data')
+                            ->where('id', $existingTd->id)
+                            ->update([
+                                'is_holiday' => 1,
+                                'holiday_id' => $holiday->id,
+                                'payroll_period_id' => $payroll_period_id,
+                            ]);
+                        $taggedCount++;
+                    } else {
+                        DB::table('time_data')->insert([
+                            'employee_id' => $emp->id,
+                            'payroll_period_id' => $payroll_period_id,
+                            'date' => $dateStr,
+                            'am_in' => null,
+                            'am_out' => null,
+                            'break_in' => null,
+                            'break_out' => null,
+                            'pm_in' => null,
+                            'pm_out' => null,
+                            'work_hours' => 0,
+                            'late' => 0,
+                            'undertime' => 0,
+                            'absent' => 0,
+                            'leave' => 0,
+                            'is_ob' => false,
+                            'ob_id' => 0,
+                            'is_holiday' => 1,
+                            'holiday_id' => $holiday->id,
+                            'holiday_pay' => 0,
+                            'is_ot' => false,
+                            'ot_id' => 0,
+                            'ot_pay' => 0,
+                            'nd_pay' => 0,
+                            'remarks' => '',
+                            'is_shifting' => true,
+                            'work_schedule_id' => $emp->work_schedule_id ?? 0,
+                            'ob_hours' => 0,
+                            'ot_hours' => 0,
+                            'for_approval' => 0,
+                            'is_edited' => 0
+                        ]);
+                        $taggedCount++;
+                    }
+                }
+            }
+
+            // Step 2: Clear rows that are in the period but NOT on any active holiday
+            $clearedCount = DB::table('time_data')
+                ->where('payroll_period_id', $payroll_period_id)
+                ->where(function ($q) use ($holidayDates) {
+                    if (empty($holidayDates)) {
+                        // No holidays in range — clear everything
+                        $q->whereRaw('1=1');
+                    } else {
+                        $q->whereNotIn(DB::raw("CONVERT(varchar(10), [date], 23)"), $holidayDates);
+                    }
+                })
+                ->where(function ($q) {
+                    $q->where('is_holiday', 1)->orWhereNotNull('holiday_id');
+                })
+                ->update([
+                    'is_holiday' => 0,
+                    'holiday_id' => 0,
+                ]);
+
+            $totalUpdated = $taggedCount + $clearedCount;
+
+            \Log::info('[RetagHolidays] Completed', [
+                'payroll_period_id' => $payroll_period_id,
+                'date_range'        => "$from_date → $to_date",
+                'holidays_in_range' => count($holidays),
+                'rows_tagged'       => $taggedCount,
+                'rows_cleared'      => $clearedCount,
+            ]);
+
+            return $this->successResponse([
+                'payroll_period_id' => $payroll_period_id,
+                'date_range'        => "$from_date to $to_date",
+                'holidays_in_range' => count($holidays),
+                'rows_tagged'       => $taggedCount,
+                'rows_cleared'      => $clearedCount,
+                'total_updated'     => $totalUpdated,
+            ], "Holiday flags refreshed. {$taggedCount} row(s) tagged, {$clearedCount} row(s) cleared.");
+        } catch (\Throwable $th) {
+            \Log::error('[RetagHolidays] Error: ' . $th->getMessage());
+            return $this->serverErrorResponse('Failed to retag holidays: ' . $th->getMessage());
+        }
+    }
+
+    /**
+     * Check if today (or a specific date) is an active holiday in holidays table,
+     * and if so, apply is_holiday = 1 and holiday_id to all active employees.
+     *
+     * @param string|null $targetDate Date string in Y-m-d format (defaults to Asia/Manila today)
+     * @return array
+     */
+    public function applyTodayHolidayToAllActiveEmployees(?string $targetDate = null)
+    {
+        $dateStr = $targetDate ? Carbon::parse($targetDate)->format('Y-m-d') : Carbon::now('Asia/Manila')->toDateString();
+
+        $holiday = DB::table('holidays')
+            ->where('active', true)
+            ->whereDate('date', $dateStr)
+            ->first();
+
+        if (!$holiday) {
+            return [
+                'is_holiday' => false,
+                'date' => $dateStr,
+                'holiday' => null,
+                'message' => "No active holiday declared for date {$dateStr}.",
+                'affected_employees' => 0,
+            ];
+        }
+
+        $activeEmployees = DB::table('employees')
+            ->select('id', 'work_schedule_id')
+            ->where('active', true)
+            ->where('is_employee', true)
+            ->get();
+
+        $appliedCount = 0;
+
+        foreach ($activeEmployees as $emp) {
+            $existing = DB::table('time_data')
+                ->where('employee_id', $emp->id)
+                ->whereDate('date', $dateStr)
+                ->first();
+
+            if ($existing) {
+                DB::table('time_data')
+                    ->where('id', $existing->id)
+                    ->update([
+                        'is_holiday' => 1,
+                        'holiday_id' => $holiday->id,
+                    ]);
+                $appliedCount++;
+            } else {
+                DB::table('time_data')->insert([
+                    'employee_id' => $emp->id,
+                    'payroll_period_id' => 0,
+                    'date' => $dateStr,
+                    'am_in' => null,
+                    'am_out' => null,
+                    'break_in' => null,
+                    'break_out' => null,
+                    'pm_in' => null,
+                    'pm_out' => null,
+                    'work_hours' => 0,
+                    'late' => 0,
+                    'undertime' => 0,
+                    'absent' => 0,
+                    'leave' => 0,
+                    'is_ob' => false,
+                    'ob_id' => 0,
+                    'is_holiday' => 1,
+                    'holiday_id' => $holiday->id,
+                    'holiday_pay' => 0,
+                    'is_ot' => false,
+                    'ot_id' => 0,
+                    'ot_pay' => 0,
+                    'nd_pay' => 0,
+                    'remarks' => '',
+                    'is_shifting' => true,
+                    'work_schedule_id' => $emp->work_schedule_id ?? 0,
+                    'ob_hours' => 0,
+                    'ot_hours' => 0,
+                    'for_approval' => 0,
+                    'is_edited' => 0
+                ]);
+                $appliedCount++;
+            }
+        }
+
+        return [
+            'is_holiday' => true,
+            'date' => $dateStr,
+            'holiday_id' => $holiday->id,
+            'holiday_name' => $holiday->name,
+            'message' => "Date {$dateStr} is a declared active holiday ('{$holiday->name}'). Applied to all {$appliedCount} active employees.",
+            'affected_employees' => $appliedCount,
+        ];
+    }
+
+    /**
+     * API Endpoint to apply today's (or a specified date's) holiday to all active employees.
+     */
+    public function applyTodayHoliday(Request $request)
+    {
+        try {
+            $date = $request->input('date');
+            $result = $this->applyTodayHolidayToAllActiveEmployees($date);
+            return $this->successResponse($result, $result['message']);
+        } catch (\Throwable $th) {
+            return $this->serverErrorResponse('Failed to apply today\'s holiday: ' . $th->getMessage());
+        }
+    }
 }

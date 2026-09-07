@@ -1021,20 +1021,6 @@ class ApiService {
         return this.delete(`/philhealth-tables/${id}`)
     }
 
-    // GSIS Table
-    async getGsisTables() {
-        return this.get('/gsis-tables')
-    }
-    async saveGsisTables(payload) {
-        return this.post('/gsis-tables', payload)
-    }
-    async getGsisForDelete(id) {
-        return this.get(`/gsis-tables/${id}/delete`)
-    }
-    async deleteGsis(id) {
-        return this.delete(`/gsis-tables/${id}`)
-    }
-
     // Salary Steps
     async getSalarySteps() {
         return this.get('/salary-steps')

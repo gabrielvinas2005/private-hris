@@ -751,13 +751,29 @@ export default {
           Number(row.hours_worked || row.work_hours || 0) > 0
         )
 
-        // For On-Site and WFH days: apply auto-absent detection
+        // For On-Site and WFH days: apply auto-absent detection strictly for past dates (or today after 5pm)
         // For Work Suspended, On Leave, Official Business: if employee showed up, count as Present
         const isScheduledWorkShift = label === 'On-Site' || label === 'Work From Home' || label === 'WFH'
+
+        // Date must be in the past OR today after shift end (5:00 PM) — strictly ignore tomorrow onwards
+        let isPastOrTodayPastShift = false
+        if (row.date) {
+          const rDate = new Date(row.date.includes('T') ? row.date : `${row.date}T00:00:00`)
+          rDate.setHours(0, 0, 0, 0)
+          const today = new Date()
+          const todayMid = new Date(today)
+          todayMid.setHours(0, 0, 0, 0)
+          if (rDate < todayMid) {
+            isPastOrTodayPastShift = true
+          } else if (rDate.getTime() === todayMid.getTime()) {
+            isPastOrTodayPastShift = today.getHours() >= 17
+          }
+        }
+
         const isDbAbsent = !!(row.absent || row.is_absent)
 
-        if (isScheduledWorkShift && !hasActualWork && (isDbAbsent || this.isAutoAbsent(row))) {
-          // Absent: On-Site/WFH with no work and no punches, past shift end
+        if (isScheduledWorkShift && !hasActualWork && isPastOrTodayPastShift && (isDbAbsent || this.isAutoAbsent(row))) {
+          // Absent: On-Site/WFH with no work and no punches, past shift end (days gone by only)
           totalAbsences++
         } else if (hasActualWork) {
           // Present: employee has actual attendance data regardless of day type
@@ -979,11 +995,21 @@ export default {
         const response = await dtrApiService.getDTRDetail(this.employeeId, this.selectedPayrollPeriod)
         const data = response?.data || response
         const records = data?.daily_time_records || data?.dtr_records || (Array.isArray(data) ? data : [])
-        this.tableRows = Array.isArray(records) ? records.map(r => ({
+        const rawRows = Array.isArray(records) ? records.map(r => ({
           ...r,
           hours_worked: r.work_hours ?? r.hours_worked ?? 0,
-          day_name: r.day_name || (r.date ? new Date(r.date).toLocaleDateString('en-US', { weekday: 'short' }) : '')
+          day_name: r.day_name || (r.date ? new Date(r.date.includes('T') ? r.date : `${r.date}T00:00:00`).toLocaleDateString('en-US', { weekday: 'short' }) : '')
         })) : []
+
+        const seenDates = new Set()
+        this.tableRows = rawRows.filter(r => {
+          if (!r.date) return true
+          const normalizedDate = r.date.slice(0, 10)
+          if (seenDates.has(normalizedDate)) return false
+          seenDates.add(normalizedDate)
+          return true
+        })
+        this.$emit('records-updated', this.tableRows)
         this.autoAdjustWeekOffsetToPeriod()
         await this.loadPendingApplications()
       } catch (err) {

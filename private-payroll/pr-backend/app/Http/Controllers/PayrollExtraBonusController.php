@@ -580,7 +580,7 @@ class PayrollExtraBonusController extends Controller
                 'orgCompanyAddress'
             ))
                 ->setOptions(['defaultFont' => 'sans-serif']);
-            $pdf->setPaper('tabloid', 'landscape');
+            $pdf->setPaper('tabloid', 'portrait');
             $pdfContent = $pdf->output();
 
             $filename = 'payroll_extra_bonus_report_' . $request->extra_bonus_type_id . '_' . $divisionId . '_' . $request->year_id . '_' . date('Y-m-d') . '.pdf';

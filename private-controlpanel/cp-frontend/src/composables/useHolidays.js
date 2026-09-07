@@ -48,7 +48,8 @@ export function useHolidays() {
             payload.name.push(r.name ?? '')
             payload.holiday_type.push(r.holiday_type ?? 0)
             payload.branch_id.push(r.branch_id ?? 0)
-            payload.date.push(r.date ?? null)
+            const d = r.date ? (typeof r.date === 'string' ? r.date.split('T')[0] : r.date) : null
+            payload.date.push(d)
             if (r.active) payload.active.push(r.id ?? 0)
         })
         return payload

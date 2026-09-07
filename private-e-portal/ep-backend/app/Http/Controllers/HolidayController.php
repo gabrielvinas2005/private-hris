@@ -279,4 +279,38 @@ class HolidayController extends Controller
             return $this->serverErrorResponse('Failed to update holiday: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Get active holidays for a given year — employee-facing calendar view
+     */
+    public function calendar($year)
+    {
+        try {
+            $year = (int) $year;
+
+            if ($year < 2000 || $year > 2100) {
+                return $this->errorResponse('Invalid year provided.', 400);
+            }
+
+            $holidays = DB::table('holidays as a')
+                ->leftJoin('holiday_types as b', 'b.id', '=', 'a.holiday_type')
+                ->select(
+                    'a.id',
+                    'a.name',
+                    'a.date',
+                    'a.active',
+                    'b.name as holiday_type_name',
+                    'b.rate',
+                    'b.absent_with_pay'
+                )
+                ->whereYear('a.date', $year)
+                ->where('a.active', true)
+                ->orderBy('a.date', 'asc')
+                ->get();
+
+            return $this->successResponse($holidays, 'Holiday calendar retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to retrieve holiday calendar: ' . $e->getMessage());
+        }
+    }
 }

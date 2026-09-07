@@ -78,7 +78,11 @@
           <div class="space-y-4">
             <!-- Tab 1: Section 2.4 - Attendance History & DTR View -->
             <div v-if="activeTab === 'dtr'">
-              <AttendanceHistoryTable ref="attendanceHistoryTable" :employee-id="employeeId" />
+              <AttendanceHistoryTable
+                ref="attendanceHistoryTable"
+                :employee-id="employeeId"
+                @records-updated="rows => dtrRecords = rows"
+              />
             </div>
 
             <!-- Tab: Leave Applications -->
@@ -188,12 +192,14 @@
         <!-- Right Column: Span 2 Columns (div3: Calendar / Weekly Schedule) -->
         <div class="lg:col-span-2">
           <WeeklyScheduleCard
+            :employee-id="employeeId"
             :schedule-name="todayStatus.schedule_name"
             :schedule-window="todayStatus.schedule_window"
             :setup-type="todayStatus.setup_type"
             :is-wfh-today="todayStatus.is_wfh_today"
             :weekly-schedule="todayStatus.weekly_schedule"
             :work-cancellations="todayStatus.work_cancellations"
+            :dtr-records="dtrRecords"
           />
         </div>
 
@@ -424,6 +430,7 @@ export default {
         { name: 'Time & Attendance', path: '/time-attendance' }
       ],
       activeTab: 'dtr',
+      dtrRecords: [],
       showClockModal: false,
       showLunchModal: false,
       lunchAlertType: null,

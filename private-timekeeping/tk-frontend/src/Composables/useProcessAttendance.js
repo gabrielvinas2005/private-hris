@@ -242,6 +242,11 @@ export function useProcessAttendance(api) {
         return res?.data ?? res
     }
 
+    const retagHolidays = async (payrollPeriodId) => {
+        const res = await api.post(`${base}/retag-holidays`, { payroll_period_id: payrollPeriodId })
+        return res?.data ?? res
+    }
+
     return {
         index,
         getPayrollPeriods,
@@ -271,7 +276,8 @@ export function useProcessAttendance(api) {
         applyOffset,
         applyOffsetAll,
         calculateOffsetTotalDays,
-        syncTimeDataPayrollPeriod
+        syncTimeDataPayrollPeriod,
+        retagHolidays
     }
 }
 

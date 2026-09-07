@@ -9,7 +9,7 @@ export function useDeduction() {
 
     const formVisible = ref(false)
     const formLoading = ref(false)
-    const formData = ref([{ id: null, name: '', uacs: '', mfo_pap: '', is_sss: false, is_gsis: false, is_philhealth: false, is_pagibig: false, is_bank: false, active: true }])
+    const formData = ref([{ id: null, name: '', uacs: '', mfo_pap: '', is_sss: false, is_philhealth: false, is_pagibig: false, is_bank: false, active: true }])
 
     async function fetchDeductions() {
         loading.value = true
@@ -23,7 +23,6 @@ export function useDeduction() {
                 uacs: row.uacs || '',
                 mfo_pap: row.mfo_pap || '',
                 is_sss: row.is_sss === 1 || row.is_sss === true || row.is_sss === '1',
-                is_gsis: row.is_gsis === 1 || row.is_gsis === true || row.is_gsis === '1',
                 is_philhealth: row.is_philhealth === 1 || row.is_philhealth === true || row.is_philhealth === '1',
                 is_pagibig: row.is_pagibig === 1 || row.is_pagibig === true || row.is_pagibig === '1',
                 is_bank: row.is_bank === 1 || row.is_bank === true || row.is_bank === '1',
@@ -41,11 +40,11 @@ export function useDeduction() {
     function openForm() {
         formVisible.value = true
         formLoading.value = true
-        formData.value = [{ id: null, name: '', uacs: '', mfo_pap: '', is_sss: false, is_gsis: false, is_philhealth: false, is_pagibig: false, is_bank: false, active: true }]
+        formData.value = [{ id: null, name: '', uacs: '', mfo_pap: '', is_sss: false, is_philhealth: false, is_pagibig: false, is_bank: false, active: true }]
         formLoading.value = false
     }
 
-    function addRow() { formData.value.push({ id: null, name: '', uacs: '', mfo_pap: '', is_sss: false, is_gsis: false, is_philhealth: false, is_pagibig: false, is_bank: false, active: true }) }
+    function addRow() { formData.value.push({ id: null, name: '', uacs: '', mfo_pap: '', is_sss: false, is_philhealth: false, is_pagibig: false, is_bank: false, active: true }) }
     function removeRow(index) { formData.value.splice(index, 1) }
 
     async function saveDeductions() {
@@ -59,13 +58,12 @@ export function useDeduction() {
             const uacs = validRows.map((r) => r.uacs ?? '')
             const mfo_pap = validRows.map((r) => r.mfo_pap ?? '')
             const isSSS = validRows.map((r) => !!r.is_sss)
-            const isGSIS = validRows.map((r) => !!r.is_gsis)
             const isPH = validRows.map((r) => !!r.is_philhealth)
             const isPagibig = validRows.map((r) => !!r.is_pagibig)
             const isBank = validRows.map((r) => !!r.is_bank)
             const active = validRows.map((r) => !!r.active)
 
-            const payload = { id: ids, name: names, uacs, mfo_pap, is_sss: isSSS, is_gsis: isGSIS, is_philhealth: isPH, is_pagibig: isPagibig, is_bank: isBank, active }
+            const payload = { id: ids, name: names, uacs, mfo_pap, is_sss: isSSS, is_philhealth: isPH, is_pagibig: isPagibig, is_bank: isBank, active }
 
             const res = await ApiService.saveDeductions(payload)
             if (!res?.success) throw new Error(res?.message || 'Failed to save deductions')
@@ -91,7 +89,7 @@ export function useDeduction() {
 
     const search = ref('')
     const filteredDeductions = computed(() => deductions.value.filter(r => !search.value || r.name.toLowerCase().includes(search.value.toLowerCase())))
-    const columnVisibility = ref({ serial: true, name: true, uacs: true, mfo_pap: true, is_sss: true, is_gsis: true, is_philhealth: true, is_pagibig: true, is_bank: true, active: true, actions: true })
+    const columnVisibility = ref({ serial: true, name: true, uacs: true, mfo_pap: true, is_sss: true, is_philhealth: true, is_pagibig: true, is_bank: true, active: true, actions: true })
 
     return {
         deductions, loading, saving, apiError,
