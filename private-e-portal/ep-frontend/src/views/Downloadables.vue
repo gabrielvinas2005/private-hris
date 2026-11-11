@@ -47,8 +47,11 @@
       </div>
 
       <!-- Main Documents Table -->
-      <el-card shadow="never" class="rounded-xl border border-slate-200/80" v-loading="loading">
-        <el-table :data="filteredDownloadables" stripe empty-text="No downloadable files available">
+      <el-card shadow="never" class="rounded-xl border border-slate-200/80">
+        <div v-if="loading" class="p-6">
+          <el-skeleton animated :rows="6" />
+        </div>
+        <el-table v-else :data="filteredDownloadables" stripe empty-text="No downloadable files available">
           <el-table-column label="Document Title" min-width="280">
             <template #default="{ row }">
               <div class="flex items-start gap-3 py-1">

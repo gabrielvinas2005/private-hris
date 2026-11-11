@@ -82,9 +82,8 @@
 
       <!-- Rating Dialog -->
       <el-dialog v-model="showRating" title="Submit Interview Rating" width="560px" :close-on-click-modal="false">
-        <div v-if="ratingLoading" class="text-center py-6">
-          <el-icon class="is-loading"><Loading /></el-icon>
-          <p class="text-slate-600 mt-2">Loading rating...</p>
+        <div v-if="ratingLoading" class="p-6">
+          <el-skeleton animated :rows="6" />
         </div>
 
         <div v-else>
@@ -136,9 +135,8 @@
         width="720px"
         :close-on-click-modal="false"
       >
-        <div v-if="attachmentsLoading" class="text-center py-6">
-          <el-icon class="is-loading"><Loading /></el-icon>
-          <p class="text-slate-600 mt-2">Loading attachments...</p>
+        <div v-if="attachmentsLoading" class="p-6">
+          <el-skeleton animated :rows="6" />
         </div>
 
         <div v-else>

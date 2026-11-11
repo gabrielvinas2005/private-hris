@@ -15,7 +15,9 @@
         </el-button>
       </div>
 
-      <div v-if="!accessLoaded" class="py-8 text-center text-slate-500">Loading...</div>
+      <div v-if="!accessLoaded" class="py-8 px-4 bg-white rounded-lg border border-slate-100">
+        <el-skeleton animated :rows="3" />
+      </div>
 
       <div v-else-if="!isCosEmployee" class="p-4 bg-amber-50 border border-amber-200 rounded-lg">
         <p class="text-amber-900">
@@ -43,8 +45,11 @@
           </div>
         </el-card>
 
-        <el-card shadow="never" v-loading="loading">
-          <el-table :data="filteredApplications" stripe empty-text="No rendered service applications yet">
+        <el-card shadow="never">
+          <div v-if="loading" class="p-4">
+            <el-skeleton animated :rows="6" />
+          </div>
+          <el-table v-else :data="filteredApplications" stripe empty-text="No rendered service applications yet">
             <el-table-column prop="id" label="Ref #" width="80" />
             <el-table-column label="Submitted" width="130">
               <template #default="{ row }">{{ formatDate(row.request_date) }}</template>
@@ -206,8 +211,8 @@
         :close-on-click-modal="false"
         @closed="closePreview"
       >
-        <div v-if="previewLoading" class="preview-loading">
-          <span class="preview-loading-text">Generating PDF...</span>
+        <div v-if="previewLoading" class="p-6">
+          <el-skeleton animated :rows="6" />
         </div>
         <div v-else-if="previewError" class="preview-error">
           <p>{{ previewError }}</p>

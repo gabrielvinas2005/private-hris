@@ -14,7 +14,10 @@
 				Create Announcement
 			</el-button>
 		</div>
-		<AnnouncementList :items="announcements" />
+		<div v-if="loading" class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+			<el-skeleton animated :rows="6" />
+		</div>
+		<AnnouncementList v-else :items="announcements" />
 
 		<!-- Create Announcement Modal -->
 		<el-dialog
@@ -95,6 +98,7 @@ export default {
 	data() {
 		return {
 			announcements: [],
+			loading: true,
 			hasHRAccess: false,
 			createModalVisible: false,
 			submitting: false,
@@ -155,12 +159,15 @@ export default {
 			}
 		},
 		async loadAnnouncements() {
+			this.loading = true
 			try {
 				const ApiService = (await import('../../services/api.js')).default
 				const res = await ApiService.getAnnouncements()
 				if (res && res.success) this.announcements = Array.isArray(res.data) ? res.data : []
 			} catch (e) {
 				console.error('Failed to load announcements:', e)
+			} finally {
+				this.loading = false
 			}
 		},
 		async loadEmployees() {

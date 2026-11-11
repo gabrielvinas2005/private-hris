@@ -7,9 +7,9 @@
         <p class="text-slate-600">Manage competency assessments for {{ employee?.name || 'Employee' }}</p>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="flex justify-center items-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <!-- Loading State (Skeleton Loader) -->
+      <div v-if="loading" class="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
+        <el-skeleton animated :rows="8" />
       </div>
 
       <!-- Content -->
@@ -41,7 +41,7 @@
 <script>
 import MainLayout from '../../layout/MainLayout.vue'
 import EmployeeCompetencyEdit from '../../components/Competencies/EmployeeCompetencyEdit.vue'
-import { mockApiService } from '../../services/mockData.js'
+import ApiService from '../../services/api.js'
 
 export default {
   name: 'EmployeeDetailsView',
@@ -64,18 +64,22 @@ export default {
   },
   methods: {
     async loadEmployeeCompetencies() {
+      this.loading = true
       try {
-        this.loading = true
         const employeeId = this.$route.params.id
-        const response = await mockApiService.getEmployeeCompetency(employeeId)
-        
-        this.employee = response.data.employee
-        this.competencies = response.data.competencies
-        this.subCompetencies = response.data.subCompetencies
+        if (!employeeId) {
+          this.loading = false
+          return
+        }
+        const response = await ApiService.getEmployeeCompetencyDetails(employeeId)
+        const d = response?.data || response
+        if (d) {
+          this.employee = d.employee || { name: 'Employee' }
+          this.competencies = Array.isArray(d.competencies) ? d.competencies : (Array.isArray(d) ? d : [])
+          this.subCompetencies = Array.isArray(d.subCompetencies) ? d.subCompetencies : []
+        }
       } catch (error) {
         console.error('Error loading employee competencies:', error)
-        this.$toast.error('Failed to load employee competencies')
-        this.$router.push('/competencies/employees')
       } finally {
         this.loading = false
       }
@@ -83,14 +87,14 @@ export default {
     async handleUpdate(data) {
       try {
         const employeeId = this.$route.params.id
-        await mockApiService.updateEmployeeCompetency(employeeId, data)
-        this.$toast.success('Employee competencies updated successfully')
+        await ApiService.updateEmployeeCompetency(employeeId, data)
+        if (this.$toast) this.$toast.success('Employee competencies updated successfully')
         this.$router.push('/competencies/employees')
       } catch (error) {
         console.error('Error updating employee competencies:', error)
-        this.$toast.error('Failed to update employee competencies')
+        if (this.$toast) this.$toast.error('Failed to update employee competencies')
       }
     }
   }
 }
-</script> 
+</script>

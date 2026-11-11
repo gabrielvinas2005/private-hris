@@ -2051,6 +2051,54 @@ class ApiService {
             method: 'POST'
         })
     }
+
+    // Competency API methods
+    async getEmployeeCompetencies() {
+        return this.request('/employees-competency')
+    }
+
+    async getEmployeeCompetencyDetails(employeeId) {
+        return this.request(`/employees-competency/${employeeId}/details`)
+    }
+
+    async getEmployeeCompetencyEdit(employeeId) {
+        return this.request(`/employees-competency/${employeeId}/edit`)
+    }
+
+    async updateEmployeeCompetency(employeeId, data) {
+        return this.request(`/employees-competency/${employeeId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        })
+    }
+
+    async getCompetencies() {
+        return this.request('/competencies')
+    }
+
+    async getCompetency(id) {
+        return this.request(`/competencies/${id}/edit`)
+    }
+
+    async createCompetency(data) {
+        return this.request('/competencies', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        })
+    }
+
+    async updateCompetency(id, data) {
+        return this.request(`/competencies/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        })
+    }
+
+    async deleteCompetency(typeId, id) {
+        return this.request(`/competencies/${typeId}/${id}`, {
+            method: 'DELETE'
+        })
+    }
 }
 
 export default new ApiService()

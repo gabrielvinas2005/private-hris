@@ -7,10 +7,9 @@
         <p class="text-slate-600">Manage your time logs and attendance</p>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="flex justify-center items-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <span class="ml-3 text-slate-600">Loading employee information...</span>
+      <!-- Loading State (Skeleton Loader) -->
+      <div v-if="loading" class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-6">
+        <el-skeleton animated :rows="8" />
       </div>
 
       <!-- Error State -->

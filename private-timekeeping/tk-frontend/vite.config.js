@@ -17,8 +17,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    port: 5176,
+    host: true,
+  },
   define: {
     // Define environment variables for development
     'import.meta.env.VITE_DEV_AUTH_ENABLED': JSON.stringify(process.env.NODE_ENV === 'development' ? 'true' : 'false'),
   },
 })
+

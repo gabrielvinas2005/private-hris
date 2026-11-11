@@ -48,8 +48,6 @@
 </template>
 
 <script>
-import { mockApiService } from '../../services/mockData.js'
-
 export default {
   name: 'CancelOvertimeModal',
   data() {
@@ -111,12 +109,10 @@ export default {
       this.errorMessage = ''
 
       try {
-        const formData = new FormData()
-        formData.append('reason', this.form.reason)
-        formData.append('attachment', this.form.attachment)
-
-        await mockApiService.cancelOvertimeApplication(formData)
-        this.$emit('cancelled')
+        this.$emit('cancelled', {
+          reason: this.form.reason,
+          attachment: this.form.attachment
+        })
       } catch (error) {
         console.error('Error cancelling overtime application:', error)
         this.errorMessage = 'Failed to cancel overtime application'

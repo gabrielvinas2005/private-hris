@@ -143,7 +143,7 @@
 
 <script>
 import MainLayout from '../../layout/MainLayout.vue'
-import { mockApiService } from '../../services/mockData.js'
+import ApiService from '../../services/api.js'
 
 export default {
   name: 'AddCompetencyView',
@@ -184,7 +184,7 @@ export default {
           subCompetencies: this.subCompetencies
         }
         
-        await mockApiService.createCompetency(competencyData)
+        await ApiService.createCompetency(competencyData)
         this.$toast.success('Competency created successfully')
         this.$router.push('/competencies')
       } catch (error) {

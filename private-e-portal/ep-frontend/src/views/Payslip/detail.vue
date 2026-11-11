@@ -7,7 +7,16 @@
         <p class="text-slate-600">View detailed payslip information</p>
       </div>
 
-      <PayslipDetailCard :payslip="payslip" />
+      <!-- Skeleton Loader -->
+      <div v-if="loading" class="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+        <el-skeleton animated :rows="10" />
+      </div>
+
+      <PayslipDetailCard v-else-if="payslip" :payslip="payslip" />
+
+      <div v-else class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center text-slate-500">
+        No payslip details available for this record.
+      </div>
 
       <!-- Footer -->
       <div class="mt-6 text-center">
@@ -20,7 +29,7 @@
 <script>
 import MainLayout from '../../layout/MainLayout.vue'
 import PayslipDetailCard from '../../components/Payslip/PayslipDetailCard.vue'
-import { mockApiService } from '../../services/mockData.js'
+import ApiService from '../../services/api.js'
 
 export default {
   name: 'PayslipDetailView',
@@ -32,7 +41,8 @@ export default {
         { name: 'Payslip List', path: '/payslip' },
         { name: 'Employee Payslip', path: '/payslip/detail' }
       ],
-      payslip: null
+      payslip: null,
+      loading: true
     }
   },
   async mounted() {
@@ -42,12 +52,15 @@ export default {
   },
   methods: {
     async loadPayslipDetail(employeeId, payslipId) {
+      this.loading = true
       try {
-        const response = await mockApiService.getPayslipDetail(employeeId, payslipId)
-        this.payslip = response.data
+        const response = await ApiService.getPayslipDetails(employeeId, payslipId)
+        this.payslip = response?.data || response
       } catch (error) {
         console.error('Error loading payslip detail:', error)
-        this.$toast.error('Failed to load payslip detail')
+        if (this.$toast) this.$toast.error('Failed to load payslip detail')
+      } finally {
+        this.loading = false
       }
     }
   }

@@ -17,8 +17,13 @@
         </button>
       </div>
 
+      <!-- Skeleton Loader -->
+      <div v-if="loading" class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <el-skeleton animated :rows="6" />
+      </div>
+
       <!-- Competencies Table -->
-      <div class="bg-white rounded-lg shadow-sm border border-slate-200">
+      <div v-else class="bg-white rounded-lg shadow-sm border border-slate-200">
         <div class="p-6">
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200">
@@ -77,7 +82,7 @@
 
 <script>
 import MainLayout from '../../layout/MainLayout.vue'
-import { mockApiService } from '../../services/mockData.js'
+import ApiService from '../../services/api.js'
 
 export default {
   name: 'CompetenciesView',
@@ -88,7 +93,8 @@ export default {
         { name: 'Dashboard', path: '/dashboard' },
         { name: 'Competencies Setup', path: '/competencies' }
       ],
-      competencies: []
+      competencies: [],
+      loading: true
     }
   },
   async mounted() {
@@ -96,12 +102,15 @@ export default {
   },
   methods: {
     async loadCompetencies() {
+      this.loading = true
       try {
-        const response = await mockApiService.getCompetencies()
-        this.competencies = response.data.competencies
+        const response = await ApiService.getCompetencies()
+        const data = response?.data || response
+        this.competencies = Array.isArray(data) ? data : (Array.isArray(data?.competencies) ? data.competencies : [])
       } catch (error) {
         console.error('Error loading competencies:', error)
-        this.$toast.error('Failed to load competencies')
+      } finally {
+        this.loading = false
       }
     },
     addCompetency() {
@@ -112,4 +121,4 @@ export default {
     }
   }
 }
-</script> 
+</script>

@@ -6,22 +6,54 @@
       <div class="greeting">
         <div class="greeting-left">
           <div class="greeting-eyebrow">{{ greetingTime }}</div>
-          <div class="greeting-name display">{{ userData.name || 'Employee' }}</div>
+          <div class="greeting-name display">
+            <template v-if="loading && !userData.name">
+              <el-skeleton animated style="display:inline-block; width: 180px;">
+                <template #template>
+                  <el-skeleton-item variant="text" style="height: 32px; width: 160px;" />
+                </template>
+              </el-skeleton>
+            </template>
+            <template v-else>
+              {{ userData.name || 'Employee' }}
+            </template>
+          </div>
           <div class="greeting-meta">
             {{ userRoleTitle }} · {{ userDepartment }} · Employee ID <span class="mono">{{ userEmployeeNo }}</span>
           </div>
         </div>
         <div class="greeting-stats">
           <div class="g-stat">
-            <div class="v mono">{{ dashboardData.leave_balance?.total_balance ?? 14 }}</div>
+            <template v-if="loading">
+              <el-skeleton animated style="display:inline-block; width: 50px;">
+                <template #template>
+                  <el-skeleton-item variant="text" style="height: 24px; width: 44px; margin-bottom: 2px;" />
+                </template>
+              </el-skeleton>
+            </template>
+            <div v-else class="v mono">{{ dashboardData.leave_balance?.total_balance ?? 0 }}</div>
             <div class="l">Days off left</div>
           </div>
           <div class="g-stat">
-            <div class="v mono">{{ payslipSummary ? formatCurrency(payslipSummary.net_pay) : '₱42.6K' }}</div>
+            <template v-if="loading">
+              <el-skeleton animated style="display:inline-block; width: 70px;">
+                <template #template>
+                  <el-skeleton-item variant="text" style="height: 24px; width: 65px; margin-bottom: 2px;" />
+                </template>
+              </el-skeleton>
+            </template>
+            <div v-else class="v mono">{{ payslipSummary ? formatCurrency(payslipSummary.net_pay) : '—' }}</div>
             <div class="l">Last payslip</div>
           </div>
           <div class="g-stat">
-            <div class="v mono">96%</div>
+            <template v-if="loading">
+              <el-skeleton animated style="display:inline-block; width: 50px;">
+                <template #template>
+                  <el-skeleton-item variant="text" style="height: 24px; width: 44px; margin-bottom: 2px;" />
+                </template>
+              </el-skeleton>
+            </template>
+            <div v-else class="v mono">{{ attendanceRateDisplay }}</div>
             <div class="l">Attendance rate</div>
           </div>
         </div>
@@ -124,12 +156,20 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
             </span>
           </div>
-          <div class="kpi-value mono">
-            {{ dashboardData.leave_balance?.total_balance ?? 14 }}<span class="unit">days</span>
-          </div>
-          <div class="kpi-foot">
-            <b>{{ leaveVacationBalance }}</b> vacation · <b>{{ leaveSickBalance }}</b> sick
-          </div>
+          <template v-if="loading">
+            <div class="my-2 space-y-2">
+              <el-skeleton-item variant="text" style="height: 28px; width: 60px;" />
+              <el-skeleton-item variant="text" style="height: 14px; width: 140px; margin-top: 6px;" />
+            </div>
+          </template>
+          <template v-else>
+            <div class="kpi-value mono">
+              {{ dashboardData.leave_balance?.total_balance ?? 0 }}<span class="unit">days</span>
+            </div>
+            <div class="kpi-foot">
+              <b>{{ leaveVacationBalance }}</b> vacation · <b>{{ leaveSickBalance }}</b> sick
+            </div>
+          </template>
         </div>
 
         <!-- KPI 2: Next Payslip -->
@@ -140,12 +180,20 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </span>
           </div>
-          <div class="kpi-value mono">
-            {{ payslipSummary?.period_label || 'Aug 30' }}
-          </div>
-          <div class="kpi-foot">
-            Est. <b>{{ payslipSummary ? formatCurrency(payslipSummary.net_pay) : '₱43.1K' }}</b> net pay
-          </div>
+          <template v-if="loading">
+            <div class="my-2 space-y-2">
+              <el-skeleton-item variant="text" style="height: 28px; width: 75px;" />
+              <el-skeleton-item variant="text" style="height: 14px; width: 120px; margin-top: 6px;" />
+            </div>
+          </template>
+          <template v-else>
+            <div class="kpi-value mono">
+              {{ payslipPeriodDisplay }}
+            </div>
+            <div class="kpi-foot">
+              {{ payslipFootDisplay }}
+            </div>
+          </template>
         </div>
 
         <!-- KPI 3: Attendance (MTD) -->
@@ -156,10 +204,20 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="var(--violet)" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
             </span>
           </div>
-          <div class="kpi-value mono">
-            96<span class="unit">%</span>
-          </div>
-          <div class="kpi-foot"><b>1</b> late arrival this month</div>
+          <template v-if="loading">
+            <div class="my-2 space-y-2">
+              <el-skeleton-item variant="text" style="height: 28px; width: 55px;" />
+              <el-skeleton-item variant="text" style="height: 14px; width: 130px; margin-top: 6px;" />
+            </div>
+          </template>
+          <template v-else>
+            <div class="kpi-value mono">
+              {{ attendanceRateDisplay }}
+            </div>
+            <div class="kpi-foot">
+              <b>{{ latesCountThisMonth }}</b> late arrival(s) this month
+            </div>
+          </template>
         </div>
 
         <!-- KPI 4: My Requests -->
@@ -170,12 +228,20 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
             </span>
           </div>
-          <div class="kpi-value mono">
-            {{ dashboardData.pending_requests?.total ?? 2 }}<span class="unit">pending</span>
-          </div>
-          <div class="kpi-foot">
-            <b>{{ dashboardData.pending_requests?.leaves ?? 1 }}</b> leave · <b>{{ dashboardData.pending_requests?.overtime ?? 1 }}</b> overtime
-          </div>
+          <template v-if="loading">
+            <div class="my-2 space-y-2">
+              <el-skeleton-item variant="text" style="height: 28px; width: 70px;" />
+              <el-skeleton-item variant="text" style="height: 14px; width: 130px; margin-top: 6px;" />
+            </div>
+          </template>
+          <template v-else>
+            <div class="kpi-value mono">
+              {{ dashboardData.pending_requests?.total ?? 0 }}<span class="unit">pending</span>
+            </div>
+            <div class="kpi-foot">
+              <b>{{ dashboardData.pending_requests?.leaves ?? 0 }}</b> leave · <b>{{ dashboardData.pending_requests?.overtime ?? 0 }}</b> overtime
+            </div>
+          </template>
         </div>
       </div>
 
@@ -194,26 +260,23 @@
                   <span class="sub">Entitlement used this year</span>
                 </div>
               </div>
-              <div class="lv-row">
-                <div class="lbl">Vacation</div>
-                <div class="track"><div class="fill" style="width:66%;background:var(--accent);"></div></div>
-                <div class="val mono">10 / 15</div>
-              </div>
-              <div class="lv-row">
-                <div class="lbl">Sick</div>
-                <div class="track"><div class="fill" style="width:40%;background:var(--success);"></div></div>
-                <div class="val mono">4 / 10</div>
-              </div>
-              <div class="lv-row">
-                <div class="lbl">Emergency</div>
-                <div class="track"><div class="fill" style="width:0%;background:var(--warning);"></div></div>
-                <div class="val mono">3 / 3</div>
-              </div>
-              <div class="lv-row">
-                <div class="lbl">Bereavement</div>
-                <div class="track"><div class="fill" style="width:0%;background:var(--violet);"></div></div>
-                <div class="val mono">5 / 5</div>
-              </div>
+              <template v-if="loading">
+                <div class="p-4 space-y-4">
+                  <el-skeleton animated :rows="4" />
+                </div>
+              </template>
+              <template v-else-if="leaveTypesList.length > 0">
+                <div v-for="item in leaveTypesList" :key="item.name" class="lv-row">
+                  <div class="lbl">{{ item.name }}</div>
+                  <div class="track"><div class="fill" :style="{ width: item.percent + '%', background: item.color }"></div></div>
+                  <div class="val mono">{{ item.balance }} / {{ item.credits }}</div>
+                </div>
+              </template>
+              <template v-else>
+                <div class="py-8 text-center text-xs text-slate-400">
+                  No leave credit records available
+                </div>
+              </template>
             </div>
 
             <!-- Attendance Trend Card -->
@@ -224,7 +287,12 @@
                   <span class="sub">Last 6 months</span>
                 </div>
               </div>
-              <div class="chart-wrap">
+              <template v-if="loading">
+                <div class="p-4 space-y-3">
+                  <el-skeleton animated :rows="4" />
+                </div>
+              </template>
+              <div v-show="!loading" class="chart-wrap">
                 <canvas id="chartAttendanceCanvas"></canvas>
               </div>
             </div>
@@ -232,7 +300,7 @@
 
           <!-- REQUEST TRACKER -->
           <p class="section-label display">
-            My Requests <span class="n mono">{{ dashboardData.pending_requests?.total ?? 2 }} pending</span>
+            My Requests <span class="n mono">{{ dashboardData.pending_requests?.total ?? 0 }} pending</span>
           </p>
 
           <div class="card" style="margin-bottom:24px;">
@@ -244,49 +312,32 @@
               </button>
             </div>
 
-            <div class="track-row">
-              <div class="track-icon" style="background:var(--accent-soft);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <template v-if="loading">
+              <div class="p-4 space-y-3">
+                <el-skeleton animated :rows="3" />
               </div>
-              <div class="track-body">
-                <div class="track-title">Vacation Leave</div>
-                <div class="track-meta">Aug 24–26 · 3 days · Submitted Aug 18</div>
+            </template>
+            <template v-else-if="trackedRequests.length > 0">
+              <div v-for="req in trackedRequests" :key="req.id" class="track-row">
+                <div class="track-icon" :style="{ background: req.iconBg }">
+                  <svg viewBox="0 0 24 24" fill="none" :stroke="req.iconColor" stroke-width="2">
+                    <rect v-if="req.type === 'leave'" x="3" y="4" width="18" height="18" rx="2"/><path v-if="req.type === 'leave'" d="M16 2v4M8 2v4M3 10h18"/>
+                    <circle v-else-if="req.type === 'overtime'" cx="12" cy="12" r="9"/><path v-else-if="req.type === 'overtime'" d="M12 7v5l3 3"/>
+                    <path v-else d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  </svg>
+                </div>
+                <div class="track-body">
+                  <div class="track-title">{{ req.title }}</div>
+                  <div class="track-meta">{{ req.meta }}</div>
+                </div>
+                <span class="status-chip" :class="req.statusClass">{{ req.status }}</span>
               </div>
-              <span class="status-chip pending">Pending</span>
-            </div>
-
-            <div class="track-row">
-              <div class="track-icon" style="background:var(--warning-soft);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </template>
+            <template v-else>
+              <div class="py-8 text-center text-xs text-slate-400">
+                No recent request activity
               </div>
-              <div class="track-body">
-                <div class="track-title">Travel Reimbursement / Official Business</div>
-                <div class="track-meta">Client visit · ₱1,850 · Submitted Aug 15</div>
-              </div>
-              <span class="status-chip pending">Pending</span>
-            </div>
-
-            <div class="track-row">
-              <div class="track-icon" style="background:var(--success-soft);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-              </div>
-              <div class="track-body">
-                <div class="track-title">Sick Leave</div>
-                <div class="track-meta">Aug 20 · 1 day · Submitted Aug 20</div>
-              </div>
-              <span class="status-chip approved">Approved</span>
-            </div>
-
-            <div class="track-row">
-              <div class="track-icon" style="background:var(--danger-soft);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              </div>
-              <div class="track-body">
-                <div class="track-title">Equipment Reimbursement</div>
-                <div class="track-meta">Home office chair · ₱6,200 · Submitted Aug 5</div>
-              </div>
-              <span class="status-chip rejected">Rejected</span>
-            </div>
+            </template>
           </div>
         </div>
 
@@ -330,23 +381,14 @@
               </button>
             </div>
             
-            <AnnouncementList v-if="announcements.length" :announcements="announcements" />
-            <div v-else class="feed-list">
-              <div class="feed-item">
-                <span class="feed-tag">Announcement</span>
-                <div class="feed-title">Updated hybrid work policy takes effect Sept 1</div>
-                <div class="feed-meta">Posted by People Ops · 2 days ago</div>
+            <template v-if="loadingAnnouncements">
+              <div class="p-4 space-y-3">
+                <el-skeleton animated :rows="3" />
               </div>
-              <div class="feed-item">
-                <span class="feed-tag">Recognition</span>
-                <div class="feed-title">You were kudos'd by Nathan Ong</div>
-                <div class="feed-meta">"Great work on the design system!" · Yesterday</div>
-              </div>
-              <div class="feed-item">
-                <span class="feed-tag">Reminder</span>
-                <div class="feed-title">Benefits open enrollment closes Aug 31</div>
-                <div class="feed-meta">People Ops · 3 days ago</div>
-              </div>
+            </template>
+            <AnnouncementList v-else-if="announcements.length" :announcements="announcements" />
+            <div v-else class="py-8 text-center text-xs text-slate-400">
+              No announcements available at this time
             </div>
           </div>
 
@@ -355,36 +397,28 @@
             <div class="card-head">
               <div class="card-title display">Upcoming</div>
             </div>
-            <div class="upcoming-row">
-              <div class="date-box">
-                <div class="d mono">28</div>
-                <div class="m">Aug</div>
+            <template v-if="loading">
+              <div class="p-4 space-y-3">
+                <el-skeleton animated :rows="3" />
               </div>
-              <div>
-                <div class="upcoming-title">Ninoy Aquino Day</div>
-                <div class="upcoming-meta">Regular holiday · Office closed</div>
+            </template>
+            <template v-else-if="upcomingEvents.length > 0">
+              <div v-for="(item, idx) in upcomingEvents" :key="idx" class="upcoming-row">
+                <div class="date-box">
+                  <div class="d mono">{{ item.day }}</div>
+                  <div class="m">{{ item.month }}</div>
+                </div>
+                <div>
+                  <div class="upcoming-title">{{ item.title }}</div>
+                  <div class="upcoming-meta">{{ item.meta }}</div>
+                </div>
               </div>
-            </div>
-            <div class="upcoming-row">
-              <div class="date-box">
-                <div class="d mono">30</div>
-                <div class="m">Aug</div>
+            </template>
+            <template v-else>
+              <div class="py-8 text-center text-xs text-slate-400">
+                No upcoming events scheduled
               </div>
-              <div>
-                <div class="upcoming-title">Payday</div>
-                <div class="upcoming-meta">Payslip available same day</div>
-              </div>
-            </div>
-            <div class="upcoming-row">
-              <div class="date-box">
-                <div class="d mono">01</div>
-                <div class="m">Sep</div>
-              </div>
-              <div>
-                <div class="upcoming-title">Hybrid policy effective</div>
-                <div class="upcoming-meta">3 days in-office minimum</div>
-              </div>
-            </div>
+            </template>
           </div>
         </div>
 
@@ -555,6 +589,8 @@ export default {
       },
       announcements: [],
       loading: false,
+      loadingAnnouncements: false,
+      trackedRequests: [],
       hasHrmAccess: false,
       hasHrpAccess: false,
       hasHrtAccess: false,
@@ -601,17 +637,96 @@ export default {
       )
     },
     userEmployeeNo() {
-      return this.userData.employee_no || (this.userData.id ? `EMP-${String(this.userData.id).padStart(4, '0')}` : 'EMP-02481')
+      return this.userData.employee_no || (this.userData.id ? `EMP-${String(this.userData.id).padStart(4, '0')}` : '—')
     },
     leaveVacationBalance() {
       const types = this.dashboardData.leave_balance?.leave_types || []
-      const found = types.find(t => String(t.name).toLowerCase().includes('vacation'))
-      return found ? found.balance : 10
+      const found = types.find(t => String(t.name || t.type || '').toLowerCase().includes('vacation'))
+      return found ? (found.balance ?? found.credits ?? 0) : 0
     },
     leaveSickBalance() {
       const types = this.dashboardData.leave_balance?.leave_types || []
-      const found = types.find(t => String(t.name).toLowerCase().includes('sick'))
-      return found ? found.balance : 4
+      const found = types.find(t => String(t.name || t.type || '').toLowerCase().includes('sick'))
+      return found ? (found.balance ?? found.credits ?? 0) : 0
+    },
+    leaveTypesList() {
+      const types = this.dashboardData.leave_balance?.leave_types || []
+      const colors = ['var(--accent)', 'var(--success)', 'var(--warning)', 'var(--violet)', 'var(--info)']
+      return types.map((t, idx) => {
+        const credits = Number(t.credits || t.total || t.balance || 0)
+        const balance = Number(t.balance !== undefined ? t.balance : credits)
+        const percent = credits > 0 ? Math.min(100, Math.max(0, Math.round((balance / credits) * 100))) : 0
+        return {
+          name: t.name || t.type || 'Leave',
+          credits,
+          balance,
+          percent,
+          color: colors[idx % colors.length]
+        }
+      })
+    },
+    payslipPeriodDisplay() {
+      return this.payslipSummary?.period_label || this.payslipSummary?.interval || '—'
+    },
+    payslipFootDisplay() {
+      if (this.payslipSummary) {
+        return `Est. ${this.formatCurrency(this.payslipSummary.net_pay)} net pay`
+      }
+      return 'No payslip available'
+    },
+    attendanceRateDisplay() {
+      if (this.dashboardData?.attendance_rate !== undefined) {
+        return `${this.dashboardData.attendance_rate}%`
+      }
+      return '—'
+    },
+    latesCountThisMonth() {
+      return this.dashboardData?.lates_count ?? (this.isLateForClockin ? 1 : 0)
+    },
+    upcomingEvents() {
+      const list = []
+      if (this.isWorkSuspended) {
+        list.push({
+          day: new Date().getDate(),
+          month: new Date().toLocaleDateString('en-US', { month: 'short' }),
+          title: 'Work Suspended Today',
+          meta: this.workSuspensionReason || 'Official suspension notice'
+        })
+      }
+      if (this.payslipSummary?.release_date) {
+        const pDate = new Date(this.payslipSummary.release_date)
+        if (!isNaN(pDate.getTime())) {
+          list.push({
+            day: pDate.getDate(),
+            month: pDate.toLocaleDateString('en-US', { month: 'short' }),
+            title: 'Payday',
+            meta: `Payslip released for ${this.payslipSummary.interval || 'current period'}`
+          })
+        }
+      }
+      if (this.contractExpiringSoon) {
+        const cDate = new Date(this.contractExpiringSoon)
+        if (!isNaN(cDate.getTime())) {
+          list.push({
+            day: cDate.getDate(),
+            month: cDate.toLocaleDateString('en-US', { month: 'short' }),
+            title: 'Contract / Period Review',
+            meta: `Valid until ${this.formatDate(this.contractExpiringSoon)}`
+          })
+        }
+      }
+      if (Array.isArray(this.dashboardData?.upcoming_events)) {
+        for (const ev of this.dashboardData.upcoming_events) {
+          const d = new Date(ev.date || ev.start_date)
+          list.push({
+            day: !isNaN(d.getTime()) ? d.getDate() : '—',
+            month: !isNaN(d.getTime()) ? d.toLocaleDateString('en-US', { month: 'short' }) : '—',
+            title: ev.title || ev.name,
+            meta: ev.description || ev.meta || ''
+          })
+        }
+      }
+      return list
     },
     companyPortalSubtitle() {
       return this.company.name
@@ -693,12 +808,22 @@ export default {
       if (!canvas) return
       if (this.attendanceChart) this.attendanceChart.destroy()
       Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif"
+
+      const months = []
+      const now = new Date()
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        months.push(d.toLocaleDateString('en-US', { month: 'short' }))
+      }
+
+      const trendData = this.dashboardData?.attendance_trend || [100, 100, 100, 100, 100, 100]
+
       this.attendanceChart = new Chart(canvas, {
         type: 'line',
         data: {
-          labels: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+          labels: months,
           datasets: [{
-            data: [98, 95, 97, 94, 96, 96],
+            data: trendData,
             borderColor: '#3457D5',
             backgroundColor: 'rgba(52, 87, 213, 0.08)',
             fill: true,
@@ -846,6 +971,19 @@ export default {
 
         if (response && response.success) {
           this.dashboardData = { ...this.dashboardData, ...response.data }
+          if (Array.isArray(response.data?.recent_activity) && response.data.recent_activity.length > 0) {
+            this.trackedRequests = response.data.recent_activity.map((r, i) => ({
+              id: r.id || i,
+              type: r.type || 'leave',
+              title: r.title || r.name || 'Request',
+              meta: r.meta || r.date || '',
+              status: r.status || 'Pending',
+              statusClass: String(r.status || '').toLowerCase().includes('approv') ? 'approved' :
+                           String(r.status || '').toLowerCase().includes('reject') || String(r.status || '').toLowerCase().includes('disapprov') ? 'rejected' : 'pending',
+              iconBg: 'var(--accent-soft)',
+              iconColor: 'var(--accent-ink)'
+            }))
+          }
           if (response.data?.employee_info) {
             if (response.data.employee_info.position && !this.userData.position) {
               this.userData.position = response.data.employee_info.position
@@ -1329,7 +1467,7 @@ export default {
 .card-title .sub {
   display: block;
   font-family: inherit;
-  font-size: 11.5px;
+  font-size: 7px;
   font-weight: 400;
   color: var(--ink-muted);
   margin-top: 2px;

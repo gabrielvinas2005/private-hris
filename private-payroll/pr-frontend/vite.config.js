@@ -35,7 +35,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 5173,
+    port: 5174,
     proxy: {
       "/api": {
         // Update to the backend port actually running (matches src/config/api.js)
@@ -46,3 +46,4 @@ export default defineConfig({
     },
   },
 });
+
