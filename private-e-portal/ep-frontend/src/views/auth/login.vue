@@ -287,7 +287,7 @@ export default {
               this.errorMessage = data.message || 'Please check your input.'
             }
           } else if (status >= 500) {
-            this.errorMessage = 'Server error. Please try again later.'
+            this.errorMessage = (data && data.message) ? data.message : 'Server error. Please try again later.'
           } else {
             this.errorMessage = data.message || 'Login failed. Please try again.'
           }

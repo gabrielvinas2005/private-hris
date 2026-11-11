@@ -4,6 +4,7 @@ import router from './router'
 import './assets/style.css'
 import axios from 'axios'
 import { applyCompanyBranding } from './services/companyPublic.js'
+import { resolveApiBaseUrl } from './config/api.js'
 import Toast from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
 import ElementPlus from 'element-plus'
@@ -11,7 +12,7 @@ import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 // Configure axios
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || ''
+axios.defaults.baseURL = resolveApiBaseUrl()
 axios.defaults.timeout = 15000
 axios.defaults.withCredentials = true
 axios.defaults.withXSRFToken = true

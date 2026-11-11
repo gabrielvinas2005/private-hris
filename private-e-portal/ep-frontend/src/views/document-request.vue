@@ -33,8 +33,11 @@
       </el-card>
 
       <!-- Requests Table -->
-      <el-card shadow="never" v-loading="loading">
-        <el-table :data="filteredRequests" stripe empty-text="No document requests yet">
+      <el-card shadow="never">
+        <div v-if="loading" class="p-6">
+          <el-skeleton animated :rows="6" />
+        </div>
+        <el-table v-else :data="filteredRequests" stripe empty-text="No document requests yet">
           <el-table-column prop="id" label="Ref #" width="75" />
           <el-table-column label="Requested" width="120">
             <template #default="{ row }">{{ formatDate(row.request_date) }}</template>

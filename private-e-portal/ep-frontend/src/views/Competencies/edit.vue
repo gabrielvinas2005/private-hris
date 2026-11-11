@@ -7,8 +7,13 @@
         <p class="text-slate-600">Update competency information and sub-competencies</p>
       </div>
 
+      <!-- Skeleton Loader -->
+      <div v-if="loading" class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <el-skeleton animated :rows="6" />
+      </div>
+
       <!-- Form -->
-      <div class="bg-white rounded-lg shadow-sm border border-slate-200">
+      <div v-else class="bg-white rounded-lg shadow-sm border border-slate-200">
         <div class="p-6">
           <form @submit.prevent="updateCompetency">
             <!-- Competency Name -->
@@ -143,7 +148,7 @@
 
 <script>
 import MainLayout from '../../layout/MainLayout.vue'
-import { mockApiService } from '../../services/mockData.js'
+import ApiService from '../../services/api.js'
 
 export default {
   name: 'EditCompetencyView',
@@ -160,6 +165,7 @@ export default {
         active: false
       },
       subCompetencies: [],
+      loading: true,
       isSubmitting: false
     }
   },
@@ -168,18 +174,22 @@ export default {
   },
   methods: {
     async loadCompetency() {
+      this.loading = true
       try {
         const competencyId = this.$route.params.id
-        const response = await mockApiService.getCompetency(competencyId)
-        const competency = response.data.competency
+        const response = await ApiService.getCompetency(competencyId)
+        const d = response?.data || response
+        const competency = d.competency || d
         
-        this.form.name = competency.name
-        this.form.active = competency.active
-        this.subCompetencies = competency.subCompetencies || []
+        if (competency) {
+          this.form.name = competency.name || ''
+          this.form.active = Boolean(competency.active)
+          this.subCompetencies = competency.subCompetencies || []
+        }
       } catch (error) {
         console.error('Error loading competency:', error)
-        this.$toast.error('Failed to load competency')
-        this.$router.push('/competencies')
+      } finally {
+        this.loading = false
       }
     },
     addSubCompetency() {
@@ -203,12 +213,12 @@ export default {
           subCompetencies: this.subCompetencies
         }
         
-        await mockApiService.updateCompetency(competencyId, competencyData)
-        this.$toast.success('Competency updated successfully')
+        await ApiService.updateCompetency(competencyId, competencyData)
+        if (this.$toast) this.$toast.success('Competency updated successfully')
         this.$router.push('/competencies')
       } catch (error) {
         console.error('Error updating competency:', error)
-        this.$toast.error('Failed to update competency')
+        if (this.$toast) this.$toast.error('Failed to update competency')
       } finally {
         this.isSubmitting = false
       }

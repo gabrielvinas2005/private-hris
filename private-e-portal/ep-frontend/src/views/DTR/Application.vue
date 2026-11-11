@@ -35,8 +35,11 @@
         </div>
       </el-card>
 
-      <el-card shadow="never" v-loading="loading">
-        <el-table :data="filteredApplications" stripe empty-text="No DTR applications yet">
+      <el-card shadow="never">
+        <div v-if="loading" class="p-4">
+          <el-skeleton animated :rows="6" />
+        </div>
+        <el-table v-else :data="filteredApplications" stripe empty-text="No DTR applications yet">
           <el-table-column prop="id" label="Ref #" width="80" />
           <el-table-column label="Request Date" width="140">
             <template #default="{ row }">{{ formatDate(row.request_date) }}</template>
@@ -167,7 +170,9 @@
 
       <!-- Detail Dialog -->
       <el-dialog v-model="detailVisible" title="DTR Application Details" width="80%" top="5vh">
-        <div v-if="detailLoading" class="py-8 text-center text-slate-500">Loading...</div>
+        <div v-if="detailLoading" class="py-6 px-4">
+          <el-skeleton animated :rows="6" />
+        </div>
         <div v-else-if="detailData">
           <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
             <div><span class="text-slate-500">Employee:</span> {{ detailHeader?.name }}</div>

@@ -11,8 +11,11 @@
         </el-button>
       </div>
 
-      <el-card shadow="never" v-loading="loading">
-        <el-table :data="records" stripe empty-text="No training records yet">
+      <el-card shadow="never">
+        <div v-if="loading" class="p-6">
+          <el-skeleton animated :rows="6" />
+        </div>
+        <el-table v-else :data="records" stripe empty-text="No training records yet">
           <el-table-column prop="training_name" label="Training Name" min-width="200" />
           <el-table-column label="Date Attended" width="130">
             <template #default="{ row }">{{ formatDate(row.date_attended) }}</template>

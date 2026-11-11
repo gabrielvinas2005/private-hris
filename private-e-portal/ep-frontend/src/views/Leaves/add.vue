@@ -7,9 +7,9 @@
         <p class="text-slate-600">{{ isEdit ? 'Update your leave application' : 'Submit a new leave application' }}</p>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="flex justify-center items-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <!-- Loading State (Skeleton Loader) -->
+      <div v-if="loading" class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 mb-6">
+        <el-skeleton animated :rows="8" />
       </div>
 
       <!-- Form -->

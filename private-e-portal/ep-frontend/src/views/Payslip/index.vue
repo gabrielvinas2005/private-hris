@@ -7,12 +7,9 @@
         <p class="text-slate-600">View and manage your payslip records</p>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="state.loading" class="flex items-center justify-center h-64">
-        <div class="text-center">
-          <div class="w-12 h-12 mx-auto mb-4 border-b-2 border-blue-600 rounded-full animate-spin"></div>
-          <p class="text-slate-600">Loading payslip data...</p>
-        </div>
+      <!-- Loading State (Skeleton Loader) -->
+      <div v-if="state.loading" class="p-6 mb-6 bg-white border rounded-lg shadow-sm border-slate-200">
+        <el-skeleton animated :rows="6" />
       </div>
 
       <!-- Error State -->
@@ -112,11 +109,8 @@
           </div>
           
           <div class="overflow-hidden border rounded-lg bg-slate-50">
-            <div v-if="state.printLoading" class="flex items-center justify-center h-96">
-              <div class="text-center">
-                <div class="w-12 h-12 mx-auto mb-4 border-b-2 border-blue-600 rounded-full animate-spin"></div>
-                <p class="text-slate-600">Generating PDF...</p>
-              </div>
+            <div v-if="state.printLoading" class="p-8">
+              <el-skeleton animated :rows="8" />
             </div>
             
             <div v-else-if="state.printError" class="flex items-center justify-center h-96">

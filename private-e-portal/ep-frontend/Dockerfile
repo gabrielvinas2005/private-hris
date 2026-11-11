@@ -13,7 +13,7 @@ ENV VITE_API_ORIGIN=${VITE_API_ORIGIN}
 ARG VITE_API_URL=/api
 ENV VITE_API_URL=${VITE_API_URL}
 # Build the application
-RUN npm run build
+RUN node ./node_modules/vite/bin/vite.js build
 # Production stage with Nginx
 FROM nginx:alpine AS production
 # Copy built application from builder stage

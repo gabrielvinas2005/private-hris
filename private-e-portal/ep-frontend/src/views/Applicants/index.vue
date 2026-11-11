@@ -13,9 +13,8 @@
           <!-- Vacancies Tab -->
           <el-tab-pane label="Vacancies" name="vacancies">
             <div class="p-6">
-              <div v-if="loading" class="text-center py-8">
-                <el-icon class="is-loading"><Loading /></el-icon>
-                <p class="text-slate-600 mt-2">Loading vacancies...</p>
+              <div v-if="loading" class="p-4">
+                <el-skeleton animated :rows="5" />
               </div>
               
               <div v-else-if="error" class="text-center py-8">
@@ -75,9 +74,8 @@
                 <el-button @click="goBackToVacancies">Back to Vacancies</el-button>
               </div>
 
-              <div v-if="loadingApplicants" class="text-center py-8">
-                <el-icon class="is-loading"><Loading /></el-icon>
-                <p class="text-slate-600 mt-2">Loading applicants...</p>
+              <div v-if="loadingApplicants" class="p-4">
+                <el-skeleton animated :rows="6" />
               </div>
 
               <div v-else-if="applicantError" class="text-center py-8">
@@ -184,9 +182,8 @@
         width="80%"
         :close-on-click-modal="false"
       >
-        <div v-if="loadingDetails" class="text-center py-8">
-          <el-icon class="is-loading"><Loading /></el-icon>
-          <p class="text-slate-600 mt-2">Loading applicant details...</p>
+        <div v-if="loadingDetails" class="p-6">
+          <el-skeleton animated :rows="6" />
         </div>
         <div v-else-if="applicantDetails">
           <el-tabs v-model="activeDetailTab" type="border-card">
@@ -538,9 +535,8 @@
             <p><strong>Uploaded:</strong> {{ formatDate(selectedAttachment.created_at) }}</p>
           </div>
           <div class="attachment-preview">
-            <div v-if="attachmentPreviewLoading" class="text-center py-8">
-              <el-icon class="is-loading"><Loading /></el-icon>
-              <p class="text-slate-600 mt-2">Loading preview...</p>
+            <div v-if="attachmentPreviewLoading" class="p-6">
+              <el-skeleton animated :rows="6" />
             </div>
             <div v-else-if="attachmentPreviewError" class="text-center py-8">
               <p class="text-red-600">{{ attachmentPreviewError }}</p>

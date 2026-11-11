@@ -280,6 +280,7 @@ class AuthController extends Controller
                 return $this->errorResponse('Invalid credentials', 401);
             }
         } catch (\Exception $e) {
+            Log::error('Login exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return $this->serverErrorResponse('Login failed: ' . $e->getMessage());
         }
     }

@@ -17,22 +17,33 @@
         <!-- Card -->
         <div class="overflow-hidden border shadow-2xl bg-white/95 backdrop-blur-md rounded-2xl border-white/20">
           <!-- Brand header strip -->
-          <div class="px-8 pt-10 pb-6 text-center ">
-            <div v-if="companyLogo" class="inline-flex items-center justify-center w-28 h-28 mb-5 overflow-hidden rounded-2xl">
-              <img
-                :src="companyLogo"
-                :alt="company.name ? `${company.name} logo` : 'Company logo'"
-                class="object-contain w-full h-full p-2"
-              />
-            </div>
+          <div class="px-8 pt-10 pb-6 text-center">
+            <template v-if="loading">
+              <el-skeleton animated class="flex flex-col items-center mb-4">
+                <template #template>
+                  <el-skeleton-item variant="circle" style="width: 80px; height: 80px; margin: 0 auto 16px auto;" />
+                  <el-skeleton-item variant="h3" style="width: 220px; height: 24px; margin: 0 auto 8px auto;" />
+                  <el-skeleton-item variant="text" style="width: 160px; height: 16px; margin: 0 auto;" />
+                </template>
+              </el-skeleton>
+            </template>
+            <template v-else>
+              <div v-if="companyLogo" class="inline-flex items-center justify-center w-28 h-28 mb-5 overflow-hidden rounded-2xl">
+                <img
+                  :src="companyLogo"
+                  :alt="company.name ? `${company.name} logo` : 'Company logo'"
+                  class="object-contain w-full h-full p-2"
+                />
+              </div>
 
-            <h1 class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              {{ company.name || 'Employee Portal' }}
-            </h1>
+              <h1 class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                {{ company.name || 'Employee Portal' }}
+              </h1>
 
-            <p class="mt-2 text-sm font-medium tracking-wide text-blue-700 uppercase">
-              Human Resource Management Platform
-            </p>
+              <p class="mt-2 text-sm font-medium tracking-wide text-blue-700 uppercase">
+                Human Resource Management Platform
+              </p>
+            </template>
           </div>
 
           <!-- Details -->
@@ -98,6 +109,7 @@ export default {
   name: 'Home',
   data() {
     return {
+      loading: true,
       company: {
         name: '',
         address: '',
@@ -114,7 +126,11 @@ export default {
     }
   },
   async mounted() {
-    this.company = await fetchCompanyPublic()
+    try {
+      this.company = await fetchCompanyPublic()
+    } finally {
+      this.loading = false
+    }
   },
   methods: {
     goToLogin() {

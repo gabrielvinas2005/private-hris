@@ -541,9 +541,8 @@
 
         <!-- Print Preview Dialog -->
         <el-dialog v-model="previewVisible" title="OPCR Print Preview" width="80%" :close-on-click-modal="false" @close="closePreview">
-          <div v-if="previewLoading" class="flex items-center justify-center py-8">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <span class="ml-3 text-slate-600">Generating PDF...</span>
+          <div v-if="previewLoading" class="p-8">
+            <el-skeleton animated :rows="8" />
           </div>
           <div v-else style="height:80vh;">
             <iframe :src="previewUrl" ref="previewFrame" style="width:100%;height:100%;border:0;"></iframe>

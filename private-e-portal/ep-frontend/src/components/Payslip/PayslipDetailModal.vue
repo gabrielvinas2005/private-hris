@@ -7,12 +7,9 @@
     @close="closeModal"
   >
 
-      <!-- Loading State -->
-      <div v-if="loading" class="flex justify-center items-center h-64">
-        <div class="text-center">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p class="text-slate-600">Loading payslip details...</p>
-        </div>
+      <!-- Loading State (Skeleton Loader) -->
+      <div v-if="loading" class="p-6">
+        <el-skeleton animated :rows="8" />
       </div>
 
       <!-- Error State -->

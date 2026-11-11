@@ -16,15 +16,28 @@
         </div>
       </el-card>
 
-      <!-- Loading State -->
-      <el-card v-if="loading" shadow="hover">
-        <div class="flex items-center justify-center py-8">
-          <el-icon class="is-loading" size="32" color="#409EFF">
-            <Loading />
-          </el-icon>
-          <span class="ml-3 text-slate-600">Loading employee data...</span>
+      <!-- Loading State (Skeleton Loader) -->
+      <div v-if="loading" class="space-y-6">
+        <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center gap-6">
+          <el-skeleton animated style="display: flex; align-items: center; gap: 24px; width: 100%;">
+            <template #template>
+              <el-skeleton-item variant="circle" style="width: 100px; height: 100px; flex-shrink: 0;" />
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+                <el-skeleton-item variant="h1" style="width: 35%; height: 26px;" />
+                <el-skeleton-item variant="text" style="width: 25%; height: 18px;" />
+                <div style="display: flex; gap: 16px; margin-top: 8px;">
+                  <el-skeleton-item variant="text" style="width: 80px; height: 16px;" />
+                  <el-skeleton-item variant="text" style="width: 80px; height: 16px;" />
+                  <el-skeleton-item variant="text" style="width: 80px; height: 16px;" />
+                </div>
+              </div>
+            </template>
+          </el-skeleton>
         </div>
-      </el-card>
+        <el-card shadow="hover">
+          <el-skeleton animated :rows="7" />
+        </el-card>
+      </div>
 
       <!-- Error State -->
       <el-card v-else-if="error" shadow="hover">

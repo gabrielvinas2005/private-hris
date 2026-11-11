@@ -7,7 +7,13 @@
         <p class="text-slate-600">Generate and preview payroll payment slip reports</p>
       </div>
 
+      <!-- Skeleton Loader -->
+      <div v-if="loading" class="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+        <el-skeleton animated :rows="6" />
+      </div>
+
       <PayslipReportForm
+        v-else
         :intervals="intervals"
         :departments="departments"
         :employees="employees"
@@ -25,7 +31,7 @@
 <script>
 import MainLayout from '../../layout/MainLayout.vue'
 import PayslipReportForm from '../../components/Payslip/PayslipReportForm.vue'
-import { mockApiService } from '../../services/mockData.js'
+import ApiService from '../../services/api.js'
 
 export default {
   name: 'PayslipReportListView',
@@ -38,7 +44,8 @@ export default {
       ],
       intervals: [],
       departments: [],
-      employees: []
+      employees: [],
+      loading: true
     }
   },
   async mounted() {
@@ -46,19 +53,25 @@ export default {
   },
   methods: {
     async loadReportData() {
+      this.loading = true
       try {
-        const response = await mockApiService.getPayslipReportFilters()
-        const data = response.data
-        this.intervals = data.intervals
-        this.departments = data.departments
-        this.employees = data.employees
+        const [userDataRaw] = [localStorage.getItem('user_data')]
+        const userData = userDataRaw ? JSON.parse(userDataRaw) : {}
+        const userId = userData.id || userData.employee_id
+        if (userId) {
+          const res = await ApiService.getPayslipList(userId)
+          const list = res?.data || res || []
+          if (Array.isArray(list)) {
+            this.intervals = [...new Set(list.map(p => p.payroll_interval).filter(Boolean))].map(name => ({ id: name, name }))
+          }
+        }
       } catch (error) {
         console.error('Error loading report filters:', error)
-        this.$toast.error('Failed to load report filters')
+      } finally {
+        this.loading = false
       }
     },
     previewReport(form) {
-      // Open preview in new tab (simulate report preview)
       window.open('/payslip/report/preview', '_blank')
     }
   }

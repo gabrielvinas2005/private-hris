@@ -7,8 +7,13 @@
         <p class="text-slate-600">Manage employee competency assessments</p>
       </div>
 
+      <!-- Skeleton Loader -->
+      <div v-if="loading" class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <el-skeleton animated :rows="8" />
+      </div>
+
       <!-- Employees Table -->
-      <div class="bg-white rounded-lg shadow-sm border border-slate-200">
+      <div v-else class="bg-white rounded-lg shadow-sm border border-slate-200">
         <div class="p-6">
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200">
@@ -58,43 +63,40 @@
                       <img 
                         :src="employee.photo ? `data:image/jpeg;base64,${employee.photo}` : '/src/assets/img/profile.png'"
                         @error="$event.target.src = '/src/assets/img/profile.png'"
-                        class="w-8 h-8 rounded-full"
-                        alt="Employee Photo"
-                      >
+                        alt="Employee Photo" 
+                        class="h-10 w-10 rounded-full object-cover"
+                      />
                     </div>
                   </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                  <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
                     {{ employee.employee_no }}
                   </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-900 font-medium">
                     {{ employee.name }}
                   </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {{ employee.employment_type }}
+                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {{ employee.employment_type || '—' }}
                   </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {{ employee.plantilla_code }}
+                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {{ employee.plantilla_code || '—' }}
                   </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {{ employee.position }}
+                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {{ employee.position || '—' }}
                   </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {{ employee.branch }}
+                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {{ employee.branch || '—' }}
                   </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {{ employee.department }}
+                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {{ employee.department || '—' }}
                   </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                    {{ employee.salary_grade_id }}
+                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {{ employee.salary_grade_id || '—' }}
                   </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                    <button 
+                  <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
                       @click="manageCompetency(employee)"
-                      class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors duration-200 text-xs"
+                      class="text-blue-600 hover:text-blue-900 transition-colors duration-200"
                     >
-                      <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                      </svg>
                       Manage Competency
                     </button>
                   </td>
@@ -110,7 +112,7 @@
 
 <script>
 import MainLayout from '../../layout/MainLayout.vue'
-import { mockApiService } from '../../services/mockData.js'
+import ApiService from '../../services/api.js'
 
 export default {
   name: 'EmployeeCompetenciesView',
@@ -121,7 +123,8 @@ export default {
         { name: 'Dashboard', path: '/dashboard' },
         { name: 'Employee Competencies', path: '/competencies/employees' }
       ],
-      employees: []
+      employees: [],
+      loading: true
     }
   },
   async mounted() {
@@ -129,12 +132,15 @@ export default {
   },
   methods: {
     async loadEmployees() {
+      this.loading = true
       try {
-        const response = await mockApiService.getEmployeeCompetencies()
-        this.employees = response.data.employees
+        const response = await ApiService.getEmployeeCompetencies()
+        const data = response?.data || response
+        this.employees = Array.isArray(data) ? data : (Array.isArray(data?.employees) ? data.employees : [])
       } catch (error) {
         console.error('Error loading employees:', error)
-        this.$toast.error('Failed to load employees')
+      } finally {
+        this.loading = false
       }
     },
     manageCompetency(employee) {
@@ -142,4 +148,4 @@ export default {
     }
   }
 }
-</script> 
+</script>

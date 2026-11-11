@@ -37,11 +37,8 @@
 
       <!-- PDF Content -->
       <div class="border rounded-lg overflow-hidden bg-slate-50">
-        <div v-if="loading" class="flex justify-center items-center h-96">
-          <div class="text-center">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p class="text-slate-600">Loading PDF...</p>
-          </div>
+        <div v-if="loading" class="p-8">
+          <el-skeleton animated :rows="8" />
         </div>
         
         <div v-else-if="error" class="flex justify-center items-center h-96">
