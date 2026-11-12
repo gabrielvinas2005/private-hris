@@ -294,6 +294,7 @@ class PersonalDataSheetController extends Controller
                     'b.weight',
                     'i.name as blood_type',
                     DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.email ELSE dbo.ufn_DecryptString(b.email,'$app_key') END as email"),
+                    'b.company_email',
                     DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.mobile_no ELSE dbo.ufn_DecryptString(b.mobile_no,'$app_key') END as mobile_no"),
                     DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.telephone_no ELSE dbo.ufn_DecryptString(b.telephone_no,'$app_key') END as telephone_no"),
                     'f.name as citizenship',
@@ -546,6 +547,13 @@ class PersonalDataSheetController extends Controller
                 $quesionaires = DB::table('pds_questionaires')->orderBy('id', 'asc')->get();
             }
 
+            $service_records = \Illuminate\Support\Facades\Schema::hasTable('service_records')
+                ? DB::table('service_records')->where('employee_id', $emp_id)->orderBy('start_date', 'desc')->get()
+                : collect();
+            $ipcr_details = (\Illuminate\Support\Facades\Schema::hasTable('ipcr_details') && \Illuminate\Support\Facades\Schema::hasColumn('ipcr_details', 'employee_id'))
+                ? DB::table('ipcr_details')->where('employee_id', $emp_id)->get()
+                : collect();
+
             $pdf = PDF::loadView('pds.pds_print', compact(
                 'info',
                 'children',
@@ -554,6 +562,8 @@ class PersonalDataSheetController extends Controller
                 'educations_voc',
                 'educations_col',
                 'educations_grad',
+                'service_records',
+                'ipcr_details',
                 'employments',
                 'examinations',
                 'trainings',
@@ -637,6 +647,7 @@ class PersonalDataSheetController extends Controller
                     'b.weight',
                     'i.name as blood_type',
                     DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.email ELSE dbo.ufn_DecryptString(b.email,'$app_key') END as email"),
+                    'b.company_email',
                     DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.mobile_no ELSE dbo.ufn_DecryptString(b.mobile_no,'$app_key') END as mobile_no"),
                     DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.telephone_no ELSE dbo.ufn_DecryptString(b.telephone_no,'$app_key') END as telephone_no"),
                     'f.name as citizenship',
@@ -892,6 +903,13 @@ class PersonalDataSheetController extends Controller
                 $quesionaires = DB::table('pds_questionaires')->orderBy('id', 'asc')->get();
             }
 
+            $service_records = \Illuminate\Support\Facades\Schema::hasTable('service_records')
+                ? DB::table('service_records')->where('employee_id', $emp_id)->orderBy('start_date', 'desc')->get()
+                : collect();
+            $ipcr_details = (\Illuminate\Support\Facades\Schema::hasTable('ipcr_details') && \Illuminate\Support\Facades\Schema::hasColumn('ipcr_details', 'employee_id'))
+                ? DB::table('ipcr_details')->where('employee_id', $emp_id)->get()
+                : collect();
+
             $pdf = PDF::loadView('pds.pds_print', compact(
                 'info',
                 'children',
@@ -900,6 +918,8 @@ class PersonalDataSheetController extends Controller
                 'educations_voc',
                 'educations_col',
                 'educations_grad',
+                'service_records',
+                'ipcr_details',
                 'employments',
                 'examinations',
                 'trainings',

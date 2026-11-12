@@ -187,8 +187,7 @@ class Update201ScheduleController extends Controller
 
             // Get employee requests within the schedule date range
             $employees = DB::table('employee_requests as er')
-                ->join('employees_temps as et', 'er.id', '=', 'et.request_id')
-                ->join('employees as e', 'et.employee_id', '=', 'e.id')
+                ->join('employees as e', 'er.employee_id', '=', 'e.id')
                 ->select(
                     'er.id as request_id',
                     'er.status_id',
@@ -198,7 +197,7 @@ class Update201ScheduleController extends Controller
                     'e.employee_no',
                     'e.photo',
                     DB::raw("CONCAT(e.first_name,' ',COALESCE(LEFT(e.middle_name, 1), ''),'. ',e.last_name) as name"),
-                    DB::raw("CONCAT(et.first_name,' ',COALESCE(LEFT(et.middle_name, 1), ''),'. ',et.last_name) as temp_name")
+                    DB::raw("CONCAT(e.first_name,' ',COALESCE(LEFT(e.middle_name, 1), ''),'. ',e.last_name) as temp_name")
                 )
                 ->whereBetween('er.request_date', [$schedule->date_from, $schedule->date_to])
                 ->orderBy('er.request_date', 'asc')

@@ -3,2171 +3,837 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- Google Font: Source Sans Pro -->
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="{{ asset('plugins/fontawesome-free/css/all.min.css') }}">
-    <!-- Theme style -->
-    <link rel="stylesheet" href="{{ asset('dist/css/adminlte.min.css') }}">
-
-    <title>Personal Data Sheet</title>
-
+    <title>Employee 201 File (Personnel Record)</title>
     <style>
         @page {
-            size: A4 portrait;
-            margin: 10mm;
+            margin: 10mm 10mm 10mm 10mm;
         }
 
-        html,
         body {
-            font-family: 'Arial ' sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 8.5px;
+            color: #111827;
             margin: 0;
             padding: 0;
         }
 
-        p {
-            padding: 5px;
-            margin: 0;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 6px;
         }
 
-        table,
         th,
         td {
-            border: 1px solid black;
-            border-collapse: collapse;
-            padding: 1px;
-            font-size: 6px;
-        }
-
-        input[type="checkbox"] {
+            border: 1px solid #374151;
+            padding: 3px 5px;
             vertical-align: middle;
         }
 
-        label,
-        input {
-            display: inline-block;
-            vertical-align: middle;
-        }
-
-        .main {
-            padding: 2px;
-        }
-
-        .page-break {
-            /* Avoid double page breaks (page-break-after + page-break-before) causing blank pages in dompdf */
-            page-break-before: auto;
-        }
-
-        /* Ensure each PDS block prints as a page */
-        .pds-page {
-            page-break-after: always;
-        }
-
-        .pds-page-last {
-            page-break-after: auto;
-        }
-
-        /* Keep table header rows with the next row */
-        tr {
-            page-break-inside: avoid;
-        }
-
-        tr.pds-allow-break {
-            page-break-inside: auto !important;
-        }
-
-        tbody.pds-footer-group {
-            page-break-inside: avoid;
-        }
-
-        tbody.pds-footer-group tr,
-        tbody.pds-page-end tr {
-            page-break-inside: auto !important;
-        }
-
-        tbody.pds-page-end {
-            page-break-inside: avoid;
-        }
-
-        .pds-page-number {
-            text-align: right;
-            margin: 1px 0 0 0;
-            padding: 0;
-            font-size: 6px;
-            line-height: 1;
+        .no-border td,
+        .no-border th {
             border: none;
         }
 
-        .pds-signature-row {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
+        .header-company {
+            font-size: 12px;
+            font-weight: bold;
+            text-align: left;
+            border: none;
+            padding: 1px 0;
         }
 
-        .pds-signature-row td {
-            border: 1px solid black;
+        .header-address {
+            font-size: 8.5px;
+            color: #374151;
+            border: none;
+            padding: 1px 0 4px 0;
+        }
+
+        .doc-title {
+            font-size: 13px;
+            font-weight: bold;
+            background-color: #1e3a8a;
+            color: #ffffff;
+            padding: 5px 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .doc-subtitle {
+            font-size: 8px;
+            font-style: italic;
+            color: #4b5563;
+            padding: 2px 0 6px 0;
+            border: none;
+        }
+
+        .section-bar {
+            background-color: #1e3a8a;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 9px;
+            padding: 4px 6px;
+            text-transform: uppercase;
+        }
+
+        .sub-bar {
+            background-color: #dbeafe;
+            color: #1e3a8a;
+            font-weight: bold;
+            font-size: 8.5px;
+            padding: 3px 6px;
+        }
+
+        .tbl-header th {
+            background-color: #e5e7eb;
+            color: #111827;
+            font-weight: bold;
+            text-align: left;
+            font-size: 8px;
+        }
+
+        .lbl {
+            background-color: #f3f4f6;
+            font-weight: bold;
+            color: #1f2937;
+            width: 18%;
+        }
+
+        .val {
+            background-color: #ffffff;
+            color: #111827;
+            width: 32%;
+        }
+
+        .photo-box {
+            width: 90px;
+            height: 90px;
+            text-align: center;
             vertical-align: middle;
+            font-size: 8px;
+            color: #6b7280;
+            background-color: #f9fafb;
         }
 
-        .pds-signature-row .sig-label {
-            width: 15%;
-            background-color: lightgray;
-            color: black;
-            padding: 6px 4px;
+        .page-break {
+            page-break-before: always;
+        }
+
+        .text-center {
             text-align: center;
         }
 
-        .pds-signature-row .sig-field {
-            width: 42%;
-            color: red;
-            padding: 6px 4px;
+        .text-right {
+            text-align: right;
+        }
+
+        .sig-line {
+            border-top: 1px solid #111827;
+            padding-top: 3px;
             text-align: center;
-        }
-
-        .pds-signature-row .date-label {
-            width: 10%;
-            background-color: lightgray;
-            color: black;
-            padding: 6px 4px;
-            text-align: center;
-        }
-
-        .pds-signature-row .date-field {
-            width: 33%;
-            padding: 6px 4px;
-            min-height: 18px;
-        }
-
-        /* dompdf has limited support for :last-child; keep after-break and trim in controller if needed */
-
-        /* Prevent AdminLTE card spacing from causing overflow */
-        .card {
-            margin: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-        }
-
-        .p-4 {
-            padding: 0 !important;
-        }
-
-        /* Empty box shown in “Tick appropriate boxes …” instruction line */
-        .instruction-checkbox {
-            display: inline-block;
-            width: 7px;
-            height: 7px;
-            border: 1px solid #000;
-            vertical-align: middle;
-            margin: 0 2px;
-            background: #fff;
-        }
-
-        table.citizenship-box,
-        table.citizenship-box td {
-            border: none !important;
-        }
-
-        .citizenship-box {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 0;
-        }
-
-        .citizenship-box td {
-            padding: 2px 4px;
-            font-size: 6px;
-            vertical-align: top;
-        }
-
-        .citizenship-box label {
-            margin: 0;
-            white-space: nowrap;
-        }
-
-        td.civil-status-label {
-            padding: 3px 5px !important;
-            vertical-align: top !important;
-            line-height: 1;
-        }
-
-        td.civil-status-cell {
-            padding: 2px 4px !important;
-            vertical-align: top !important;
-            line-height: 1;
-            font-size: 5.3px;
-        }
-
-        .civil-status-cell label {
-            margin: 0 4px 0 0;
-            padding: 0;
-            line-height: 0.95;
-            white-space: nowrap;
-            display: inline-block;
-            vertical-align: middle;
-        }
-
-        .civil-status-cell br {
-            line-height: 0.3;
-            margin: 0;
-        }
-
-        td.res-addr-compact {
-            padding: 0 2px !important;
-            line-height: 0.95;
-        }
-
-        /* Address field pairs: no vertical divider between left/right columns */
-        td.addr-col-left {
-            border-right: none !important;
-        }
-
-        td.addr-col-right {
-            border-left: none !important;
+            font-weight: bold;
+            font-size: 8px;
         }
     </style>
 </head>
 
 <body>
-    <!-- Main content -->
-    @foreach ($info as $info)
-        <div class="p-4 card pds-page">
-            <div class="main" style="width: 100%;">
-                <div>
-                    <table style="width: 100%; padding:10px; border: none;">
-                        <tr>
-                            <td colspan="9"
-                                style="border-bottom: none; font-size: 10px; font-style: italic; font-weight: bold;">CS
-                                Form No. 212</td>
-                        </tr>
-                        <tr>
-                            <td colspan="9" style="border-bottom: none; border-top: none; font-style: italic;">
-                                Revised 2025</td>
-                        </tr>
-                        <tr>
-                            <td colspan="9"
-                                style="border-bottom: none; border-top: none; padding: 2px; font-size: 20px; font-weight: bold; ">
-                                <center>PERSONAL DATA SHEET</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="9" style="border-bottom: none; border-top: none; font-style: italic;">
-                                <b>WARNING: Any misrepresentation made in the Personal Data Sheet and the Work
-                                    Experience Sheet shall cause the filing of administrative/criminal case/s against
-                                    the person concerned.</b>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="9" style="border-bottom: none;border-top: none;">
-                                <b style="font-style: italic;">READ THE ATTACHED GUIDE TO FILLING OUT THE PERSONAL DATA
-                                    SHEET (PDS) BEFORE
-                                    ACCOMPLISHING THE PDS FORM.</b>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="9" style="border-bottom: none;border-top: none;"><u>Print legibly if accomplished through own handwriting. Tick
-                                appropriate boxes (<span class="instruction-checkbox"></span>) and use separate sheet if
-                                necessary. Indicate N/A if not applicable.</u> <b>DO NOT ABBREVIATE.</b>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="9"
-                                style="background-color: gray;color: white; font-size: 7px; font-weight: bold; font-style: italic;">
-                                I. PERSONAL INFORMATION
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray; color: black; border-bottom: none; padding: 5px;">
-                                1. SURNAME
-                            </td>
-                            <td colspan="8" style="padding-left: 5px;">
-                                {{ $info->last_name ?: 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray; color: black; border-bottom: none; border-top: none ; padding: 5px;">
-                                2. FIRST NAME
-                            </td>
-                            <td colspan="7" style="padding-left: 5px;">
-                                {{ $info->first_name ?: 'N/A' }}
-                            </td>
-                            <td style="background-color: lightgray;color: black; padding-bottom: 10px;">
-                                NAME EXTENSION (JR., SR) {{ $info->suffix }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray; color: black; border-bottom: none; border-top: none; padding: 5px 5px 5px 11px;">
-                                MIDDLE NAME
-                            </td>
-                            <td colspan="8" style="padding-left: 5px;">
-                                {{ $info->middle_name ?: 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray; color: black; border-bottom: none; padding: 5px;">
-                                3. DATE OF BIRTH
-                            </td>
-                            <td colspan="2" style="border-bottom: none; border-top: none; padding: 5px;">
-                                {{ date('m/d/Y', strtotime($info->birthdate)) ?: 'N/A' }}
-                            </td>
-                            <td colspan="3" rowspan="3"
-                                style="background-color: lightgray; color: black; border-bottom: none; padding: 5px; vertical-align: top;">
-                                <div>16. CITIZENSHIP</div>
-                                <div style="margin-top: 28px; text-align: center; font-size: 6px;">If holder of dual citizenship,</div>
-                            </td>
-                            <td colspan="3" rowspan="3" style="padding: 4px 6px; border-bottom: none; vertical-align: top;">
-                                <table class="citizenship-box">
-                                    <tr>
-                                        <td style="width: 42%;">
-                                            <label>
-                                                <input type="checkbox" style="transform: scale(0.8);"
-                                                    {{ $info->is_dual_citizent == false ? 'checked' : '' }}>Filipino
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label>
-                                                <input type="checkbox" style="transform: scale(0.8);"
-                                                    {{ $info->is_dual_citizent == true ? 'checked' : '' }}>Dual Citizenship
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td>
-                                            <label style="margin-right: 10px;">
-                                                <input type="checkbox" style="transform: scale(0.8);"
-                                                    {{ $info->by_birth == true ? 'checked' : '' }}>by Birth
-                                            </label>
-                                            <label>
-                                                <input type="checkbox" style="transform: scale(0.8);"
-                                                    {{ $info->by_naturalization == true ? 'checked' : '' }}>by Naturalization
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td>
-                                            Pls. indicate country: {{ $info->indicate_country ?: 'N/A' }}
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray; color: black; border-bottom: none; border-top: none; padding-left: 15px; vertical-align: top;">
-                                (mm/dd/yyyy)
-                            </td>
-                            <td colspan="2" style="border-bottom: none; border-top: none; padding: 5px;"></td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray; color: black; border-bottom: none; padding: 5px;">
-                                4. PLACE OF BIRTH
-                            </td>
-                            <td colspan="2" style="border-bottom: none; padding: 5px;">
-                                {{ $info->birth_place ?: 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray; color: black; border-bottom: none; padding: 5px;">
-                                5. SEX
-                            </td>
-                            <td colspan="2" style="border-bottom: none; vertical-align: middle;">
-                                <label style="  margin-bottom: -8px; margin-right: 19.5px;">
-                                    <input type="checkbox" style="transform: scale(0.8); "
-                                        {{ $info->gender == 'Male' ? 'checked' : '' }}>Male
-                                </label>
-                                <label style=" margin-bottom: -8px;">
-                                    <input type="checkbox" style="transform: scale(0.8);"
-                                        {{ $info->gender == 'Female' ? 'checked' : '' }}>Female
-                                </label>
-                                </label>
-                            </td>
-                            <td colspan="3"
-                                style="background-color: lightgray; color: black; border-bottom: none; border-top: none; padding: 5px;">
-                                <center>Please indicate the details.</center>
-                            </td>
-                            <td colspan="3">
-                                <center>{{ $info->indicate_country ?: 'N/A' }}</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td rowspan="3" class="civil-status-label" style="background-color: lightgray;color: black; border-bottom: none;">
-                                6. CIVIL STATUS
-                            </td>
-                            <td colspan="2" rowspan="3" class="civil-status-cell" style="border-bottom: none;">
-                                <label>
-                                    <input type="checkbox" style="transform: scale(0.6); vertical-align: middle;"
-                                        {{ $info->civil_status == 'Single' ? 'checked' : '' }}>Single
-                                </label>
-                                <label>
-                                    <input type="checkbox" style="transform: scale(0.6); vertical-align: middle;"
-                                        {{ $info->civil_status == 'Married' ? 'checked' : '' }}>Married
-                                </label>
-                                <br>
-                                <label>
-                                    <input type="checkbox" style="transform: scale(0.6); vertical-align: middle;"
-                                        {{ $info->civil_status == 'Widowed' ? 'checked' : '' }}>Widowed
-                                </label>
-                                <label>
-                                    <input type="checkbox" style="transform: scale(0.6); vertical-align: middle;"
-                                        {{ $info->civil_status == 'Separated' ? 'checked' : '' }}>Separated
-                                </label>
-                                <label>
-                                    <input type="checkbox" style="transform: scale(0.6); vertical-align: middle;"
-                                        {{ $info->civil_status == 'Other' ? 'checked' : '' }}>Other
-                                </label>
-                            </td>
-                            <td colspan="2" class="res-addr-compact"
-                                style="background-color: lightgray;color: black; border-bottom: none;">
-                                17. RESIDENTIAL ADDRESS
-                            </td>
-                            <td colspan="2" class="addr-col-left res-addr-compact" style="border-bottom-color: lightgrey;">
-                                <center>{{ $info->ra_house_no ?: 'N/A' }}</center>
-                            </td>
-                            <td colspan="2" class="addr-col-right res-addr-compact" style="border-bottom-color: lightgrey;">
-                                <center>{{ $info->ra_street ?? 'N/A' }}</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" class="res-addr-compact"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td colspan="2" class="addr-col-left res-addr-compact" style="font-style: italic; border-top-color: lightgrey;">
-                                <center>House/Block/Lot No.</center>
-                            </td>
-                            <td colspan="2" class="addr-col-right res-addr-compact" style="font-style: italic; border-top-color: lightgrey;">
-                                <center>Street</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" class="res-addr-compact"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td colspan="2" class="addr-col-left res-addr-compact" style="border-bottom: none;">
-                                <center>{{ $info->ra_village ?? 'N/A' }}</center>
-                            </td>
-                            <td colspan="2" class="addr-col-right res-addr-compact" style="border-bottom: none;">
-                                <center>{{ $address['ra_brgy'] ?? '' ?: 'N/A' }}</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none; padding: 5px;">
-                            </td>
-                            <td colspan="2" style="border-bottom: none;border-top: none;padding: 5px;">
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td colspan="2" class="addr-col-left" style="font-style: italic; border-top-color: lightgrey;">
-                                <center>Subdivision/Village</center>
-                            </td>
-                            <td colspan="2" class="addr-col-right" style="font-style: italic; border-top-color: lightgrey;">
-                                <center>Barangay</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray;color: black; border-bottom: none; padding: 5px;">
-                                7. HEIGHT (m)
-                            </td>
-                            <td colspan="2" style="border-bottom: none; padding: 5px;">
-                                {{ $info->height ?? 'N/A' }}
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                                <center></center>
-                            </td>
-                            <td colspan="2" class="addr-col-left" style="border-bottom: none;">
-                                <center>{{ $address['ra_city'] ?? '' ?: 'N/A' }}</center>
-                            </td>
-                            <td colspan="2" class="addr-col-right" style="border-bottom: none;border-top: none;">
-                                <center>{{ $address['ra_province'] ?? '' ?: 'N/A' }}</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none; padding: 5px;">
-                            </td>
-                            <td colspan="2" style="border-bottom: none;border-top: none; padding: 5px;">
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black;border-bottom: none;border-top: none;">
-                            </td>
-                            <td colspan="2" class="addr-col-left" style="font-style: italic; border-top-color: lightgrey;">
-                                <center>City/Municipality</center>
-                            </td>
-                            <td colspan="2" class="addr-col-right" style="font-style: italic; border-top-color: lightgrey;">
-                                <center>Province</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray;color: black; border-bottom: none; padding: 5px;">
-                                8. WEIGHT (kg)
-                            </td>
-                            <td colspan="2" style="border-bottom: none; padding: 5px;">
-                                {{ $info->weight ?? 'N/A' }}
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                                <center>ZIP CODE</center>
-                            </td>
-                            <td colspan="4">
-                                <center>{{ $address['ra_zip_code'] ?? '' ?: 'N/A' }}</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray;color: black; border-bottom: none; padding: 5px;">
-                                9. BLOOD TYPE
-                            </td>
-                            <td colspan="2" style="border-bottom: none; padding: 5px;">
-                                {{ $info->blood_type ?? 'N/A' }}
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; padding: 5px;">
-                                18. PERMANENT ADDRESS
-                            </td>
-                            <td colspan="2" class="addr-col-left" style="border-bottom-color: lightgrey;">
-                                <center>{{ $info->pa_house_no ?? 'N/A' }}</center>
-                            </td>
-                            <td colspan="2" class="addr-col-right" style="border-bottom-color: lightgrey;">
-                                <center>{{ $info->pa_street ?? 'N/A' }}</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black;border-bottom: none; border-top: none; padding: 5px;">
-                            </td>
-                            <td colspan="2" style="border-bottom: none;border-top: none;padding: 5px;">
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td colspan="2" class="addr-col-left" style="font-style: italic; border-top-color: lightgrey;">
-                                <center>House/Block/Lot No.</center>
-                            </td>
-                            <td colspan="2" class="addr-col-right" style="font-style: italic; border-top-color: lightgrey;">
-                                <center>Street</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray;color: black; border-bottom: none; padding: 5px;">
-                                10. GSIS ID NO.
-                            </td>
-                            <td colspan="2" style="border-bottom: none; padding: 5px;">
-                                {{ $info->gsis_no ?? '' ?: 'N/A' }}
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td colspan="2" class="addr-col-left" style="border-bottom: none;">
-                                <center>{{ $info->pa_village ?? '' ?: 'N/A' }}</center>
-                            </td>
-                            <td colspan="2" class="addr-col-right" style="border-bottom: none;">
-                                <center>{{ $address['pa_brgy'] ?? '' ?: 'N/A' }}</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black;border-bottom: none;border-top: none;padding: 5px;">
-                            </td>
-                            <td colspan="2" style="border-bottom: none;border-top: none;padding: 5px;">
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td colspan="2" class="addr-col-left" style="font-style: italic; border-top-color: lightgrey;">
-                                <center>Subdivision/Village</center>
-                            </td>
-                            <td colspan="2" class="addr-col-right" style="font-style: italic; border-top-color: lightgrey;">
-                                <center>Barangay</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray;color: black; border-bottom: none; padding: 5px;">
-                                11. PAG-IBIG ID NO.
-                            </td>
-                            <td colspan="2" style="border-bottom: none; padding: 5px;">
-                                {{ $info->pagibig_no ?? '' ?: 'N/A' }}
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td colspan="2" class="addr-col-left" style="border-bottom: none;">
-                                <center>{{ $address['pa_city'] ?? '' ?: 'N/A' }}</center>
-                            </td>
-                            <td colspan="2" class="addr-col-right" style="border-bottom: none;">
-                                <center>{{ $address['pa_province'] ?? '' ?: 'N/A' }}</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black;border-bottom: none;border-top: none;padding: 5px;">
-                            </td>
-                            <td colspan="2" style="border-bottom: none;border-top: none;padding: 5px;">
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td colspan="2" class="addr-col-left" style="font-style: italic; border-top-color: lightgrey;">
-                                <center>City/Municipality</center>
-                            </td>
-                            <td colspan="2" class="addr-col-right" style="font-style: italic; border-top-color: lightgrey;">
-                                <center>Province</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray;color: black;border-bottom: none;padding: 5px;">
-                                12. PHILHEALTH NO.
-                            </td>
-                            <td colspan="2" style="border-bottom: none; padding: 5px;">
-                                {{ $info->philhealth_no ?? '' ?: 'N/A' }}
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                                <center>ZIP CODE</center>
-                            </td>
-                            <td colspan="4" style="border-bottom: none;">
-                                <center>{{ $address['pa_zip_code'] ?? '' ?: 'N/A' }}</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray;color: black;border-bottom: none;padding: 5px;">
-                                13. PhilSys Number (PSN)
-                            </td>
-                            <td colspan="2" style="border-bottom: none; padding: 5px;">
-                                {{ $info->sss_no ?? 'N/A' }}
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; padding: 5px;">
-                                19. TELEPHONE NO.
-                            </td>
-                            <td colspan="4" style="border-bottom: none;">
-                                <center>{{ $info->telephone_no ?? 'N/A' }}</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray;color: black; border-bottom: none; padding: 5px;">
-                                14. TIN NO.
-                            </td>
-                            <td colspan="2" style="border-bottom: none; padding: 5px;">
-                                {{ $info->tin_no ?? 'N/A' }}
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; padding: 5px;">
-                                20. MOBILE NO.
-                            </td>
-                            <td colspan="4" style="border-bottom: none;">
-                                <center>{{ $info->mobile_no ?? 'N/A' }}</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black; border-bottom: none; padding: 5px; font-size: 5.8px;">
-                                15. AGENCY EMPLOYEE NO.
-                            </td>
-                            <td colspan="2" style="border-bottom: none; padding: 5px;">
-                                {{ $info->employee_no ?? 'N/A' }}
-                            </td>
-                            <td colspan="2"
-                                style="background-color: lightgray; color: black; border-bottom: none; padding: 5px;">
-                                21. E-MAIL ADDRESS (if any)
-                            </td>
-                            <td colspan="4" style="border-bottom: none;">
-                                <center>{{ $info->email ?? 'N/A' }}</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="9"
-                                style="background-color: gray;color: white; font-size: 7px; font-weight: bold; font-style: italic;">
-                                II. FAMILY BACKGROUND
-                            </td>
-                        </tr>
-                        <!-- Spouse Name -->
-                        <tr>
-                            <td style="background-color: lightgray; color: black; border-bottom: none; padding: 5px;">
-                                22. SPOUSE'S SURNAME
-                            </td>
-                            <td colspan="4" style="padding: 5px;">
-                                {{ $info->spouse_last_name ?: 'N/A' }}
-                            </td>
-                            <td colspan="3" style="background-color: lightgray;color: black; padding: 5px;">
-                                23. NAME of CHILDREN (Write full name and list all)
-                            </td>
-                            <td style="background-color: lightgray;color: black; padding: 5px;">
-                                DATE OF BIRTH (mm/dd/yyyy)
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black; border-bottom: none;border-top: none; padding: 5px 5px 5px 15px;">
-                                FIRST NAME
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ $info->spouse_first_name ?: 'N/A' }}
-                            </td>
-                            <td style="background-color: lightgray;color: black; padding-bottom: 10px;">
-                                NAME EXTENSION (JR., SR) {{ $info->spouse_suffix ?: 'N/A' }}
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ isset($children[0]->row) && $children[0]->row == 1 ? $children[0]->child_name : 'N/A' }}
-                            </td>
-                            <td style="padding: 5px;">
-                                {{ isset($children[0]->row) && $children[0]->row == 1 ? date('m/d/Y', strtotime($children[0]->child_birthdate)) : 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black;border-bottom: none;border-top: none;padding: 5px 5px 5px 15px;">
-                                MIDDLE NAME
-                            </td>
-                            <td colspan="4" style="padding: 5px;">{{ $info->spouse_middle_name ?: 'N/A' }}</td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ isset($children[1]->row) && $children[1]->row == 2 ? $children[1]->child_name : 'N/A' }}
-                            </td>
-                            <td style="padding: 5px;">
-                                {{ isset($children[1]->row) && $children[1]->row == 2 ? date('m/d/Y', strtotime($children[1]->child_birthdate)) : 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none; padding: 5px 5px 5px 15px;">
-                                OCCUPATION</td>
-                            <td colspan="4" style="padding: 5px;">
-                                {{ $info->spouse_occupation ?? 'N/A' }}
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ isset($children[2]->row) && $children[2]->row == 3 ? $children[2]->child_name : 'N/A' }}
-                            </td>
-                            <td style="padding: 5px;">
-                                {{ isset($children[2]->row) && $children[2]->row == 3 ? date('m/d/Y', strtotime($children[2]->child_birthdate)) : 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black;border-bottom: none;border-top: none;padding: 5px 5px 5px 15px;">
-                                EMPLOYER/BUSINESS NAME
-                            </td>
-                            <td colspan="4" style="padding: 5px;">
-                                {{ $info->spouse_employer ?? 'N/A' }}
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ isset($children[3]->row) && $children[3]->row == 4 ? $children[3]->child_name : 'N/A' }}
-                            </td>
-                            <td style="padding: 5px;">
-                                {{ isset($children[3]->row) && $children[3]->row == 4 ? date('m/d/Y', strtotime($children[3]->child_birthdate)) : 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black;border-bottom: none;border-top: none;padding: 5px 5px 5px 15px;">
-                                BUSINESS ADDRESS
-                            </td>
-                            <td colspan="4" style="padding: 5px;">
-                                {{ $info->spouse_business_address ?? 'N/A' }}
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ isset($children[4]->row) && $children[4]->row == 5 ? $children[4]->child_name : 'N/A' }}
-                            </td>
-                            <td style="padding: 5px;">
-                                {{ isset($children[4]->row) && $children[4]->row == 5 ? date('m/d/Y', strtotime($children[4]->child_birthdate)) : 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black;border-bottom: none;border-top: none;padding: 5px 5px 5px 15px;">
-                                TELEPHONE NO.
-                            </td>
-                            <td colspan="4" style="padding: 5px;">
-                                {{ $info->spouse_business_telephone_no ?? 'N/A' }}
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ isset($children[5]->row) && $children[5]->row == 6 ? $children[5]->child_name : 'N/A' }}
-                            </td>
-                            <td style="padding: 5px;">
-                                {{ isset($children[5]->row) && $children[5]->row == 6 ? date('m/d/Y', strtotime($children[5]->child_birthdate)) : 'N/A' }}
-                            </td>
-                        </tr>
-                        <!-- Fathers Name -->
-                        <tr>
-                            <td style="background-color: lightgray;color: black;border-bottom: none;padding: 5px;">
-                                24. FATHER'S SURNAME
-                            </td>
-                            <td colspan="4" style="padding: 5px;">
-                                {{ $info->father_last_name ?: 'N/A' }}
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ isset($children[6]->row) && $children[6]->row == 7 ? $children[6]->child_name : 'N/A' }}
-                            </td>
-                            <td style="padding: 5px;">
-                                {{ isset($children[6]->row) && $children[6]->row == 7 ? date('m/d/Y', strtotime($children[6]->child_birthdate)) : 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none; padding: 5px 5px 5px 15px;">
-                                FIRST NAME
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ $info->father_first_name ?: 'N/A' }}
-                            </td>
-                            <td style="background-color: lightgray;color: black;padding-bottom: 10px;">
-                                NAME EXTENSION(JR., SR) {{ $info->father_suffix ?: 'N/A' }}
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ isset($children[7]->row) && $children[7]->row == 8 ? $children[7]->child_name : 'N/A' }}
-                            </td>
-                            <td style="padding: 5px;">
-                                {{ isset($children[7]->row) && $children[7]->row == 8 ? date('m/d/Y', strtotime($children[7]->child_birthdate)) : 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray;color: black;border-bottom: none; border-top: none; padding: 5px 5px 5px 15px;">
-                                MIDDLE NAME</td>
-                            <td colspan="4" style="padding: 5px;">
-                                {{ $info->father_middle_name ?: 'N/A' }}
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ isset($children[8]->row) && $children[8]->row == 9 ? $children[8]->child_name : 'N/A' }}
-                            </td>
-                            <td style="padding: 5px;">
-                                {{ isset($children[8]->row) && $children[8]->row == 9 ? date('m/d/Y', strtotime($children[8]->child_birthdate)) : 'N/A' }}
-                            </td>
-                        </tr>
-                        <!-- Mother's Name -->
-                        <tr>
-                            <td colspan="5"
-                                style="background-color: lightgray; color: black; border-bottom: none; padding: 5px;">
-                                25. MOTHER'S MAIDEN NAME
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ isset($children[9]->row) && $children[9]->row == 10 ? $children[9]->child_name : 'N/A' }}
-                            </td>
-                            <td style="padding: 5px;">
-                                {{ isset($children[9]->row) && $children[9]->row == 10 ? date('m/d/Y', strtotime($children[9]->child_birthdate)) : 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray; color: black; border-bottom: none; border-top: none; padding: 5px 5px 5px 15px;">
-                                SURNAME
-                            </td>
-                            <td colspan="4" style="padding: 5px;">
-                                {{ $info->mother_last_name ?: 'N/A' }}
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ isset($children[10]->row) && $children[10]->row == 11 ? $children[10]->child_name : 'N/A' }}
-                            </td>
-                            <td style="padding: 5px;">
-                                {{ isset($children[10]->row) && $children[10]->row == 11 ? date('m/d/Y', strtotime($children[10]->child_birthdate)) : 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray; color: black; border-bottom: none; border-top: none; padding: 5px 5px 5px 15px;">
-                                FIRST NAME
-                            </td>
-                            <td colspan="4" style="padding: 5px;">
-                                {{ $info->mother_first_name ?: 'N/A' }}
-                            </td>
-                            <td colspan="3" style="padding: 5px;">
-                                {{ isset($children[11]->row) && $children[11]->row == 12 ? $children[11]->child_name : 'N/A' }}
-                            </td>
-                            <td style="padding: 5px;">
-                                {{ isset($children[11]->row) && $children[11]->row == 12 ? date('m/d/Y', strtotime($children[11]->child_birthdate)) : 'N/A' }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="background-color: lightgray; color: black; border-bottom: none; border-top: none; padding: 5px 5px 5px 15px;">
-                                MIDDLE NAME
-                            </td>
-                            <td colspan="4" style="padding: 5px;">
-                                {{ $info->mother_middle_name ?: 'N/A' }}
-                            </td>
-                            <td colspan="4" style="background-color: lightgray;color: red;">
-                                <center><i>(Continue on separate sheet if necessary)</i></center>
-                            </td>
-                        </tr>
-                        <!-- Education -->
-                        <tr>
-                            <td colspan="9"
-                                style="background-color: gray;color: white; font-size: 7px; font-weight: bold; font-style: italic;">
-                                III. EDUCATIONAL BACKGROUND
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>26. LEVEL</center>
-                            </td>
-                            <td
-                                style="background-color: lightgray;color: black; white-space: nowrap; border-bottom: none;">
-                                <center>NAME OF SCHOOL <br> (Write in full)</center>
-                            </td>
-                            <td
-                                style="background-color: lightgray; color: black; white-space: nowrap; border-bottom: none;">
-                                <center>BASIC EDUCATION/DEGREE/COURSE<br>(Write in full)</center>
-                            </td>
-                            <td colspan="2" style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>PERIOD OF ATTENDANCE</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>HIGHEST LEVEL/ <br> UNITS EARNED <br> (if not graduated)</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>YEAR <br> GRADUATED </center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>SCHOLARSHIP/ <br> ACADEMIC <br> HONORS <br> RECEIVED</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td style="background-color: lightgray;color: black;">
-                                <center>From</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black;">
-                                <center>To</center>
-                            </td>
-                            <td
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                            <td
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; padding: 5px 5px 5px 15px;">
-                                ELEMENTARY
-                            </td>
-                            @if (!$educations_elem->isEmpty())
-                                @foreach ($educations_elem as $education)
-                                    <td>
-                                        <center>{{ $education->school_name ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->program ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->from ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->to ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->units_earned ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->graduated_year ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->honors ?? '' }}</center>
-                                    </td>
-                                @endforeach
-                            @else
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                            @endif
-                        </tr>
-                        <tr>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; padding: 5px 5px 5px 15px;">
-                                SECONDARY
-                            </td>
-                            @if (!$educations_sec->isEmpty())
-                                @foreach ($educations_sec as $education)
-                                    <td>
-                                        <center>{{ $education->school_name ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->program ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->from ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->to ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->units_earned ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->graduated_year ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->honors ?? '' }}</center>
-                                    </td>
-                                @endforeach
-                            @else
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                            @endif
-                        </tr>
-                        <tr>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; padding: 5px 5px 5px 15px;">
-                                VOCATIONAL / TRADE COURSE
-                            </td>
-                            @if (!$educations_voc->isEmpty())
-                                @foreach ($educations_voc as $education)
-                                    <td>
-                                        <center>{{ $education->school_name ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->program ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->from ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->to ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->units_earned ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->graduated_year ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->honors ?? '' }}</center>
-                                    </td>
-                                @endforeach
-                            @else
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                            @endif
-                        </tr>
-                        <tr>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; padding: 5px 5px 5px 15px;">
-                                COLLEGE
-                            </td>
-                            @if (!$educations_col->isEmpty())
-                                @foreach ($educations_col as $education)
-                                    <td>
-                                        <center>{{ $education->school_name ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->program ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->from ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->to ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->units_earned ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->graduated_year ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->honors ?? '' }}</center>
-                                    </td>
-                                @endforeach
-                            @else
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                            @endif
-                        </tr>
-                        <tr>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; padding: 5px 5px 5px 15px;">
-                                GRADUATE STUDIES
-                            </td>
-                            @if (!$educations_grad->isEmpty())
-                                @foreach ($educations_grad as $education)
-                                    <td>
-                                        <center>{{ $education->school_name ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->program ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->from ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->to ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->units_earned ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->graduated_year ?? '' }}</center>
-                                    </td>
-                                    <td>
-                                        <center>{{ $education->honors ?? '' }}</center>
-                                    </td>
-                                @endforeach
-                            @else
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                                <td>
-                                    <center> N/A </center>
-                                </td>
-                            @endif
-                        </tr>
-                        <tbody class="pds-page-end">
-                        <tr>
-                            <td colspan="9" style="background-color: lightgray;color: red;padding: 0px;">
-                                <center><i>(Continue on separate sheet if necessary)</i></center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="9" style="padding: 0; border: none;">
-                                <table class="pds-signature-row">
-                                    <tr>
-                                        <td class="sig-label"><b>SIGNATURE</b></td>
-                                        <td class="sig-field">(wet signature/e-signature/digital certificate)</td>
-                                        <td class="date-label"><b>Date</b></td>
-                                        <td class="date-field">&nbsp;</td>
-                                    </tr>
-                                </table>
-                                <p class="pds-page-number"><i>CS FORM 212 (Revised 2025), Page 1 of 4</i></p>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <!-- Page 2 -->
-        <div class="p-4 card page-break pds-page">
-            <div class="main" style="width: 100%;">
-                <div>
-                    <table style="width: 100%; padding:10px; border: none;">
-                        <!-- Eligibility -->
-                        <tr>
-                            <td colspan="8"
-                                style="background-color: gray;color: white; font-size: 7px; font-weight: bold; font-style: italic;">
-                                IV. CIVIL SERVICE ELIGIBILITY
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2"
-                                style="background-color: lightgray;color: black; white-space: nowrap; padding: 5px 10px; border-bottom: none;">
-                                <center>
-                                    27. CES/CSEE/CAREER SERVICE/RA 1080 (BOARD/ <br> BAR)/UNDER SPECIAL LAWS/CATEGORY
-                                    II/ IV
-                                    <br>ELIGIBILITY and ELIGIBILITIES FOR UNIFORMED <br> PERSONNEL
-                                </center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>RATING <br> (If Applicable)</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>DATE OF <br> EXAMINATION /<br> CONFERMENT</center>
-                            </td>
-                            <td colspan="2" style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>PLACE OF EXAMINATION / CONFERMENT</center>
-                            </td>
-                            <td colspan="2" style="background-color: lightgray;color: black;">
-                                <center>LICENSE (if applicable)</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" style="background-color: lightgray;color: black; border-top: none;">
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-top: none;"></td>
-                            <td style="background-color: lightgray;color: black; border-top: none;"></td>
-                            <td colspan="2" style="background-color: lightgray;color: black; border-top: none;">
-                            </td>
-                            <td style="background-color: lightgray;color: black;">
-                                <center>NUMBER</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black;">
-                                <center>VALID UNTIL</center>
-                            </td>
-                        </tr>
-                        @foreach ($examinations as $examination)
-                            <tr>
-                                <td colspan="2" style="padding: 10px;">
-                                    <center>{{ $examination->eligibility }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ $examination->exam_rating }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ date('m/d/Y', strtotime($examination->exam_date)) }}</center>
-                                </td>
-                                <td colspan="2" style="padding: 10px;">
-                                    <center>{{ $examination->place_of_exam }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ $examination->license_number }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ date('m/d/Y', strtotime($examination->date_released)) }}</center>
-                                </td>
-                            </tr>
-                        @endforeach
-                        @if (count($examinations) < 7)
-                            @for ($i = count($examinations); $i < 7; $i++)
-                                <tr>
-                                    <td colspan="2" style="padding: 8px;">
-                                        <center>N/A</center>
-                                    </td>
-                                    <td>
-                                        <center>N/A</center>
-                                    </td>
-                                    <td>
-                                        <center>N/A</center>
-                                    </td>
-                                    <td colspan="2">
-                                        <center>N/A</center>
-                                    </td>
-                                    <td>
-                                        <center>N/A</center>
-                                    </td>
-                                    <td>
-                                        <center>N/A</center>
-                                    </td>
-                                </tr>
-                            @endfor
+    @foreach ($info as $emp)
+        @php
+            $val = function ($v, $fallback = '') {
+                return (!empty($v) && $v !== 'N/A') ? $v : $fallback;
+            };
+            $presentAddress = trim(implode(', ', array_filter([
+                $val($emp->ra_house_no),
+                $val($emp->ra_street),
+                $val($emp->ra_village),
+                $val($address['ra_brgy'] ?? $emp->ra_barangay),
+                $val($address['ra_city'] ?? $emp->ra_city),
+                $val($address['ra_province'] ?? $emp->ra_province),
+                $val($address['ra_region'] ?? $emp->ra_region),
+            ])));
+            $permanentAddress = trim(implode(', ', array_filter([
+                $val($emp->pa_house_no),
+                $val($emp->pa_street),
+                $val($emp->pa_village),
+                $val($address['pa_brgy'] ?? $emp->pa_barangay),
+                $val($address['pa_city'] ?? $emp->pa_city),
+                $val($address['pa_province'] ?? $emp->pa_province),
+                $val($address['pa_region'] ?? $emp->pa_region),
+            ])));
+            $movements = isset($service_records) ? $service_records : collect();
+            $evals = isset($ipcr_details) ? $ipcr_details : collect();
+        @endphp
+
+        <!-- REPORT HEADER -->
+        <table class="no-border" style="margin-bottom: 2px;">
+            <tr>
+                <td class="header-company">{{ $val($emp->company, '[COMPANY NAME, INC.]') }}</td>
+            </tr>
+            <tr>
+                <td class="header-address">{{ $val($emp->branch, '[Street, Barangay, City, Province, ZIP]') }}</td>
+            </tr>
+            <tr>
+                <td class="doc-title">EMPLOYEE 201 FILE (PERSONNEL RECORD)</td>
+            </tr>
+            <tr>
+                <td class="doc-subtitle">Confidential &ndash; For HR use only</td>
+            </tr>
+        </table>
+
+        <!-- TOP SUMMARY & PHOTO BLOCK -->
+        <table>
+            <tr>
+                <td class="lbl" style="width: 16%;">Employee No.</td>
+                <td class="val" style="width: 26%;">{{ $val($emp->employee_no) }}</td>
+                <td class="lbl" style="width: 18%;">Date Prepared</td>
+                <td class="val" style="width: 24%;">{{ date('Y-m-d') }}</td>
+                <td rowspan="4" class="photo-box" style="width: 16%;">
+                    @if (!empty($emp->photo) && $emp->photo !== 'N/A' && file_exists(public_path('images/employees/' . $emp->photo)))
+                        <img src="{{ public_path('images/employees/' . $emp->photo) }}" style="max-width: 85px; max-height: 85px;" />
+                    @else
+                        2" x 2"<br>PHOTO
+                    @endif
+                </td>
+            </tr>
+            <tr>
+                <td class="lbl">Position</td>
+                <td class="val">{{ $val($emp->position) }}</td>
+                <td class="lbl">Department</td>
+                <td class="val">{{ $val($emp->department) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Employment Status</td>
+                <td class="val">{{ $val($emp->employment_type) }}</td>
+                <td class="lbl">Date Hired</td>
+                <td class="val">{{ $val($emp->date_hired) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Immediate Supervisor</td>
+                <td class="val">{{ $val($emp->immediate_supervisor ?? '') }}</td>
+                <td class="lbl">Prepared by (HR)</td>
+                <td class="val">HR Department</td>
+            </tr>
+        </table>
+
+        <!-- A. PERSONAL INFORMATION -->
+        <table>
+            <tr>
+                <td colspan="4" class="section-bar">A. PERSONAL INFORMATION</td>
+            </tr>
+            <tr>
+                <td class="lbl">Last Name</td>
+                <td class="val">{{ $val($emp->last_name) }}</td>
+                <td class="lbl">First Name</td>
+                <td class="val">{{ $val($emp->first_name) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Middle Name</td>
+                <td class="val">{{ $val($emp->middle_name) }}</td>
+                <td class="lbl">Suffix / Nickname</td>
+                <td class="val">{{ $val($emp->suffix) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Date of Birth</td>
+                <td class="val">{{ $val($emp->birthdate) }}</td>
+                <td class="lbl">Age</td>
+                <td class="val">{{ $val($emp->age) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Place of Birth</td>
+                <td class="val">{{ $val($emp->birth_place) }}</td>
+                <td class="lbl">Gender</td>
+                <td class="val">{{ $val($emp->gender) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Civil Status</td>
+                <td class="val">{{ $val($emp->civil_status) }}</td>
+                <td class="lbl">Citizenship</td>
+                <td class="val">{{ $val($emp->citizenship) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Religion</td>
+                <td class="val">{{ $val($emp->religion) }}</td>
+                <td class="lbl">Blood Type</td>
+                <td class="val">{{ $val($emp->blood_type) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Height (cm)</td>
+                <td class="val">{{ $val($emp->height) }}</td>
+                <td class="lbl">Weight (kg)</td>
+                <td class="val">{{ $val($emp->weight) }}</td>
+            </tr>
+        </table>
+
+        <!-- B. CONTACT & ADDRESS -->
+        <table>
+            <tr>
+                <td colspan="4" class="section-bar">B. CONTACT &amp; ADDRESS</td>
+            </tr>
+            <tr>
+                <td class="lbl">Present Address</td>
+                <td colspan="3" class="val">{{ $presentAddress }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Permanent Address</td>
+                <td colspan="3" class="val">{{ $permanentAddress }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Mobile No.</td>
+                <td class="val">{{ $val($emp->mobile_no) }}</td>
+                <td class="lbl">Landline</td>
+                <td class="val">{{ $val($emp->telephone_no) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Personal Email</td>
+                <td class="val">{{ $val($emp->email) }}</td>
+                <td class="lbl">Company Email</td>
+                <td class="val">{{ $val($emp->company_email ?? $emp->email) }}</td>
+            </tr>
+        </table>
+
+        <!-- C. GOVERNMENT IDs & STATUTORY NUMBERS -->
+        <table>
+            <tr>
+                <td colspan="4" class="section-bar">C. GOVERNMENT IDs &amp; STATUTORY NUMBERS</td>
+            </tr>
+            <tr>
+                <td class="lbl">SSS No.</td>
+                <td class="val">{{ $val($emp->sss_no) }}</td>
+                <td class="lbl">PhilHealth PIN</td>
+                <td class="val">{{ $val($emp->philhealth_no) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Pag-IBIG (HDMF) MID No.</td>
+                <td class="val">{{ $val($emp->pagibig_no) }}</td>
+                <td class="lbl">TIN</td>
+                <td class="val">{{ $val($emp->tin_no) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Tax Status</td>
+                <td class="val">{{ $val($emp->tax_status ?? 'Regular (Taxable)') }}</td>
+                <td class="lbl">RDO Code</td>
+                <td class="val">{{ $val($emp->rdo_code ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">UMID / CRN</td>
+                <td class="val">{{ $val($emp->crn ?? $emp->crn_no ?? '') }}</td>
+                <td class="lbl">PhilSys National ID</td>
+                <td class="val">{{ $val($emp->philsys_no ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Passport No.</td>
+                <td class="val">{{ $val($emp->passport_no ?? '') }}</td>
+                <td class="lbl">Passport Expiry</td>
+                <td class="val">{{ $val($emp->passport_expiry ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Driver's License No.</td>
+                <td class="val">{{ $val($emp->drivers_license_no ?? '') }}</td>
+                <td class="lbl">License Expiry</td>
+                <td class="val">{{ $val($emp->drivers_license_expiry ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">PRC License No.</td>
+                <td class="val">{{ $val($examinations[0]->license_no ?? '') }}</td>
+                <td class="lbl">PRC Expiry</td>
+                <td class="val">{{ $val($examinations[0]->date_of_validity ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">NBI Clearance No.</td>
+                <td class="val">{{ $val($emp->nbi_clearance_no ?? '') }}</td>
+                <td class="lbl">Postal / Voter's ID</td>
+                <td class="val">{{ $val($emp->postal_voters_id ?? '') }}</td>
+            </tr>
+        </table>
+
+        <!-- D. EMPLOYMENT INFORMATION -->
+        <table>
+            <tr>
+                <td colspan="4" class="section-bar">D. EMPLOYMENT INFORMATION</td>
+            </tr>
+            <tr>
+                <td class="lbl">Company / Entity</td>
+                <td class="val">{{ $val($emp->company) }}</td>
+                <td class="lbl">Branch / Work Location</td>
+                <td class="val">{{ $val($emp->branch) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Position Title</td>
+                <td class="val">{{ $val($emp->position) }}</td>
+                <td class="lbl">Job Level / Grade</td>
+                <td class="val">{{ $val($emp->rank_level ?? $emp->grade) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Department</td>
+                <td class="val">{{ $val($emp->department) }}</td>
+                <td class="lbl">Division / Section</td>
+                <td class="val">{{ trim($val($emp->division) . ' ' . $val($emp->section)) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Immediate Supervisor</td>
+                <td class="val">{{ $val($emp->immediate_supervisor ?? '') }}</td>
+                <td class="lbl">Employment Status</td>
+                <td class="val">{{ $val($emp->employment_type) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Employment Type</td>
+                <td class="val">{{ $val($emp->employment_type) }}</td>
+                <td class="lbl">Work Schedule</td>
+                <td class="val">{{ $val($emp->work_schedule ?? 'Regular') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Date Hired</td>
+                <td class="val">{{ $val($emp->date_hired) }}</td>
+                <td class="lbl">Probationary End Date</td>
+                <td class="val">{{ $val($emp->probationary_end_date ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Regularization Date</td>
+                <td class="val">{{ $val($emp->date_regularized ?? '') }}</td>
+                <td class="lbl">Contract End Date</td>
+                <td class="val">{{ $val($emp->contract_end_date ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Payroll Group / Frequency</td>
+                <td class="val">{{ $val($emp->payroll_interval) }}</td>
+                <td class="lbl">Mode of Payment</td>
+                <td class="val">{{ $val($emp->payment_mode ?? 'Bank Transfer') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Monthly Basic Salary (PHP)</td>
+                <td class="val">{{ is_numeric($emp->salary) ? number_format((float)$emp->salary, 2) : $val($emp->salary) }}</td>
+                <td class="lbl">Monthly Allowances (PHP)</td>
+                <td class="val">{{ $val($emp->allowances ?? '0.00') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Bank Name</td>
+                <td class="val">{{ $val($emp->bank_name ?? '') }}</td>
+                <td class="lbl">Bank Account No.</td>
+                <td class="val">{{ $val($emp->bank_account_no ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">HMO / Insurance Provider</td>
+                <td class="val">{{ $val($emp->hmo_provider ?? '') }}</td>
+                <td class="lbl">HMO / Insurance Card No.</td>
+                <td class="val">{{ $val($emp->hmo_card_no ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Separation Date</td>
+                <td class="val">{{ $val($emp->date_separated ?? '') }}</td>
+                <td class="lbl">Separation Reason</td>
+                <td class="val">{{ $val($emp->separation_reason ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Clearance Status</td>
+                <td class="val">{{ $val($emp->clearance_status ?? '') }}</td>
+                <td class="lbl">Last Pay Release Date</td>
+                <td class="val">{{ $val($emp->last_pay_date ?? '') }}</td>
+            </tr>
+        </table>
+
+        <!-- D (Sub). Compensation & Movement History -->
+        <table>
+            <tr>
+                <td colspan="6" class="sub-bar">Compensation &amp; Movement History (hire, promotion, transfer, salary adjustment)</td>
+            </tr>
+            <tr class="tbl-header">
+                <th style="width: 14%;">Effective Date</th>
+                <th style="width: 16%;">Movement Type</th>
+                <th style="width: 20%;">Position</th>
+                <th style="width: 18%;">Department</th>
+                <th style="width: 14%;" class="text-right">Basic Salary (PHP)</th>
+                <th style="width: 18%;">Remarks / Memo No.</th>
+            </tr>
+            @php $movCount = max(4, count($movements)); @endphp
+            @for ($i = 0; $i < $movCount; $i++)
+                @php $m = $movements[$i] ?? null; @endphp
+                <tr>
+                    <td>{{ $m ? $val($m->start_date) : '' }}&nbsp;</td>
+                    <td>{{ $m ? $val($m->movement_type ?? $m->cause ?? $m->employment_type) : '' }}</td>
+                    <td>{{ $m ? $val($m->designation) : '' }}</td>
+                    <td>{{ $m ? $val($m->place_of_assignment ?? $m->branch) : '' }}</td>
+                    <td class="text-right">
+                        @if ($m && !empty($m->annual_salary))
+                            {{ number_format((float)$m->annual_salary / 12, 2) }}
                         @endif
-                        <tr>
-                            <td colspan="8" style="background-color: lightgray;color: red;padding: 0px;">
-                                <center><i>(Continue on separate sheet if necessary)</i></center>
-                            </td>
-                        </tr>
-                        <!-- Work Experiences -->
-                        <tr>
-                            <td colspan="8"
-                                style="background-color: gray;color: white; font-size: 7px; font-weight: bold; font-style: italic;">
-                                V. WORK EXPERIENCE
-                                <br> (Include private employment. Start from your recent work) Description of duties
-                                should be indicated in the attached Work Experience sheet.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" style="background-color: lightgray;color: black; padding: 8px 5px">
-                                <center>28. INCLUSIVE DATES <br> (mm/dd/yyyy)</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>POSITION TITLE <br> (Write in full/Do not abbreviate)</center>
-                            </td>
-                            <td colspan="3" style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>DEPARTMENT / AGENCY / OFFICE / COMPANY <br> (Write in full/Do not abbreviate)
-                                </center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>STATUS OF <br> APPOINTMENT</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>GOV'T SERVICE <br> (Y/ N)</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="background-color: lightgray;color: black;">
-                                <center>From</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black;">
-                                <center>To</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-top: none;"></td>
-                            <td colspan="3" style="background-color: lightgray;color: black; border-top: none;">
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-top: none;"></td>
-                            <td style="background-color: lightgray;color: black; border-top: none;"></td>
-                        </tr>
-                        @foreach ($employments as $employment)
-                            <tr>
-                                <td style="padding: 10px;">
-                                    <center>{{ date('m/d/Y', strtotime($employment->work_start_date)) }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ date('m/d/Y', strtotime($employment->work_end_date)) }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ $employment->position }}</center>
-                                </td>
-                                <td colspan="3" style="padding: 10px;">
-                                    <center>{{ $employment->work_company }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ $employment->status_of_appointment }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ $employment->government_service_id == 0 ? 'No' : 'Yes' }}</center>
-                                </td>
-                            </tr>
-                        @endforeach
-                        @if (count($employments) < 28)
-                            @for ($i = count($employments); $i < 28; $i++)
-                                <tr>
-                                    <td style="padding: 8px;">
-                                        <center>N/A</center>
-                                    </td>
-                                    <td>
-                                        <center>N/A</center>
-                                    </td>
-                                    <td>
-                                        <center>N/A</center>
-                                    </td>
-                                    <td colspan="3">
-                                        <center>N/A</center>
-                                    </td>
-                                    <td>
-                                        <center>N/A</center>
-                                    </td>
-                                    <td>
-                                        <center>N/A</center>
-                                    </td>
-                                </tr>
-                            @endfor
-                        @endif
-                        <tbody class="pds-page-end">
-                        <tr>
-                            <td colspan="8" style="background-color: lightgray;color: red;padding: 0px;">
-                                <center><i>(Continue on separate sheet if necessary)</i></center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="8" style="padding: 0; border: none;">
-                                <table class="pds-signature-row">
-                                    <tr>
-                                        <td class="sig-label"><b>SIGNATURE</b></td>
-                                        <td class="sig-field">(wet signature/e-signature/digital certificate)</td>
-                                        <td class="date-label"><b>Date</b></td>
-                                        <td class="date-field">&nbsp;</td>
-                                    </tr>
-                                </table>
-                                <p class="pds-page-number"><i>CS FORM 212 (Revised 2025), Page 2 of 4</i></p>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <!-- Page 3 -->
-        <div class="p-4 card page-break pds-page">
-            <div class="main" style="width: 100%;">
-                <div>
-                    <table style="width: 100%;padding:10px; border: none;">
-                        <!-- Organization -->
-                        <tr>
-                            <td colspan="9"
-                                style="background-color: gray;color: white; font-size: 7px; font-weight: bold; font-style: italic;">
-                                VI. VOLUNTARY WORK OR INVOLVEMENT IN CIVIC / NON-GOVERNMENT / PEOPLE / VOLUNTARY
-                                ORGANIZATION/S</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>29. NAME & ADDRESS OF ORGANIZATION <br> (Write in full)</center>
-                            </td>
-                            <td colspan="2" style="background-color: lightgray;color: black; padding: 8px 5px;">
-                                <center>INCLUSIVE DATES <br> (mm/dd/yyyy)</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black;  border-bottom: none;">
-                                <center>NUMBER OF <br> HOURS</center>
-                            </td>
-                            <td colspan="2" style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>POSITION / NATURE OF WORK</center>
-                            </td>
-                        </tr>
-                        <td colspan="4" style="background-color: lightgray;color: black; border-top: none;">
-                        </td>
-                        <td style="background-color: lightgray;color: black;">
-                            <center>From</center>
-                        </td>
-                        <td style="background-color: lightgray;color: black;">
-                            <center>To</center>
-                        </td>
-                        <td style="background-color: lightgray;color: black; border-top: none;">
-                        </td>
-                        <td colspan="2" style="background-color: lightgray;color: black; border-top: none;">
-                        </td>
-                        @foreach ($organizations as $organization)
-                            <tr>
-                                <td colspan="4" style="padding: 10px;">
-                                    <center>{{ $organization->organization }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ date('m/d/Y', strtotime($organization->org_from)) }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ date('m/d/Y', strtotime($organization->org_to)) }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ $organization->org_hours }}</center>
-                                </td>
-                                <td colspan="2" style="padding: 10px;">
-                                    <center>{{ $organization->org_position }}</center>
-                                </td>
-                            </tr>
-                        @endforeach
-                        @if (count($organizations) < 6)
-                            @for ($i = count($organizations); $i < 6; $i++)
-                                <tr>
-                                    <td colspan="4" style="padding: 8px;">
-                                        <center>N/A</center>
-                                    </td>
-                                    <td style="padding: 8px;">
-                                        <center>N/A </center>
-                                    </td>
-                                    <td style="padding: 8px;">
-                                        <center>N/A</center>
-                                    </td>
-                                    <td style="padding: 8px;">
-                                        <center>N/A</center>
-                                    </td>
-                                    <td colspan="2" style="padding: 8px;">
-                                        <center>N/A</center>
-                                    </td>
-                                </tr>
-                            @endfor
-                        @endif
-                        <tr>
-                            <td colspan="9" style="background-color: lightgray;color: red;padding: 0px;">
-                                <center><i>(Continue on separate sheet if necessary)</i></center>
-                            </td>
-                        </tr>
-                        <!-- Learning and Development -->
-                        <tr>
-                            <td colspan="9"
-                                style="background-color: gray;color: white; font-size: 7px; font-weight: bold; font-style: italic;">
-                                VII. LEARNING AND DEVELOPMENT
-                                (L&D) INTERVENTIONS/TRAINING PROGRAMS ATTENDED</td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>30. TITLE OF LEARNING AND DEVELOPMENT INTERVENTIONS/TRAINING PROGRAMS <br>
-                                    (Write in full)</center>
-                            </td>
-                            <td colspan="2" style="background-color: lightgray;color: black; padding: 8px 5px;">
-                                <center>INCLUSIVE DATES OF <br> ATTENDANCE <br> (mm/dd/yyyy)</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>NUMBER OF <br> HOURS</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>Type of LD <br> ( Managerial/ <br> Supervisory/ <br> Technical/etc)</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-bottom: none;">
-                                <center>CONDUCTED/ SPONSORED BY <br> (Write in full/Do not abbreviate)</center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="4" style="background-color: lightgray;color: black; border-top: none;">
-                            </td>
-                            <td style="background-color: lightgray;color: black;">
-                                <center>From</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black;">
-                                <center>To</center>
-                            </td>
-                            <td style="background-color: lightgray;color: black; border-top: none;"></td>
-                            <td style="background-color: lightgray;color: black; border-top: none;"></td>
-                            <td style="background-color: lightgray;color: black; border-top: none;"></td>
-                        </tr>
-                        @foreach ($trainings as $training)
-                            <tr>
-                                <td colspan="4" style="padding: 10px;">
-                                    <center>{{ $training->training }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ date('m/d/Y', strtotime($training->training_from)) }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ date('m/d/Y', strtotime($training->training_to)) }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ $training->hours }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ $training->learning }}</center>
-                                </td>
-                                <td style="padding: 10px;">
-                                    <center>{{ $training->sponsored_by }}</center>
-                                </td>
-                            </tr>
-                        @endforeach
-                        @if (count($trainings) < 17)
-                            @for ($i = count($trainings); $i < 17; $i++)
-                                <tr>
-                                    <td colspan="4" style="padding: 8px;">
-                                        <center>N/A</center>
-                                    </td>
-                                    <td style="padding: 8px;">
-                                        <center>N/A</center>
-                                    </td>
-                                    <td style="padding: 8px;">
-                                        <center>N/A</center>
-                                    </td>
-                                    <td style="padding: 8px;">
-                                        <center>N/A</center>
-                                    </td>
-                                    <td style="padding: 8px;">
-                                        <center>N/A</center>
-                                    </td>
-                                    <td style="padding: 8px;">
-                                        <center>N/A</center>
-                                    </td>
-                                </tr>
-                            @endfor
-                        @endif
-                        <tr>
-                            <td colspan="9" style="background-color: lightgray;color: red;padding: 0px;">
-                                <center><i>(Continue on separate sheet if necessary)</i></center>
-                            </td>
-                        </tr>
-                        <!-- Skills and Hobbies -->
-                        <tr>
-                            <td colspan="9"
-                                style="background-color: gray;color: white; font-size: 7px; font-weight: bold; font-style: italic;">
-                                VIII. OTHER INFORMATION
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" style="background-color: lightgray;color: black;">
-                                <center>31. SPECIAL SKILLS and HOBBIES</center>
-                            </td>
-                            <td colspan="5" style="background-color: lightgray;color: black; padding: 8px 5px;">
-                                <center>32. NON-ACADEMIC DISTINCTIONS / RECOGNITION <br> (Write in full)</center>
-                            </td>
-                            <td colspan="2" style="background-color: lightgray;color: black;">
-                                <center>33. MEMBERSHIP IN ASSOCIATION/ORGANIZATION <br> (Write in full)</center>
-                            </td>
-                        </tr>
+                    </td>
+                    <td>{{ $m ? $val($m->cause) : '' }}</td>
+                </tr>
+            @endfor
+        </table>
 
-                        @for ($i = 0; $i < 10; $i++)
-                            <tr>
-                                <td colspan="2" style="padding: 8px;">
-                                    <center>
-                                        {{ isset($skills[$i]) && $skills[$i]->row == $i + 1 ? $skills[$i]->skill : 'N/A' }}
-                                    </center>
-                                </td>
-                                <td colspan="5" style="padding: 8px;">
-                                    <center>
-                                        {{ isset($recognitions[$i]) && $recognitions[$i]->row == $i + 1 ? $recognitions[$i]->recognation : 'N/A' }}
-                                    </center>
-                                </td>
-                                <td colspan="2" style="padding: 8px;">
-                                    <center>
-                                        {{ isset($memberships[$i]) && $memberships[$i]->row == $i + 1 ? $memberships[$i]->membership : 'N/A' }}
-                                    </center>
-                                </td>
-                            </tr>
-                        @endfor
-                        <tbody class="pds-page-end">
-                        <tr>
-                            <td colspan="9" style="background-color: lightgray;color: red;padding: 0px;">
-                                <center><i>(Continue on separate sheet if necessary)</i></center>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="9" style="padding: 0; border: none;">
-                                <table class="pds-signature-row">
-                                    <tr>
-                                        <td class="sig-label"><b>SIGNATURE</b></td>
-                                        <td class="sig-field">(wet signature/e-signature/digital certificate)</td>
-                                        <td class="date-label"><b>Date</b></td>
-                                        <td class="date-field">&nbsp;</td>
-                                    </tr>
-                                </table>
-                                <p class="pds-page-number"><i>CS FORM 212 (Revised 2025), Page 3 of 4</i></p>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <!-- Page 4 -->
-        <div class="p-4 card page-break pds-page-last">
-            <div class="main" style="width: 100%;">
-                <div>
-                    <table style="width: 100%;padding:10px; border: none;">
-                        <!-- Quistionaire -->
-                        @php
-                            $q = collect($quesionaires)->keyBy('id');
+        <!-- E. FAMILY BACKGROUND -->
+        <table>
+            <tr>
+                <td colspan="4" class="section-bar">E. FAMILY BACKGROUND</td>
+            </tr>
+            <tr>
+                <td colspan="4" class="sub-bar">Spouse</td>
+            </tr>
+            <tr>
+                <td class="lbl">Spouse Name</td>
+                <td class="val">{{ $val($emp->spouse_name) }}</td>
+                <td class="lbl">Date of Birth</td>
+                <td class="val">{{ $val($emp->spouse_birthdate ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Occupation</td>
+                <td class="val">{{ $val($emp->spouse_occupation) }}</td>
+                <td class="lbl">Employer</td>
+                <td class="val">{{ $val($emp->spouse_employer) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Contact No.</td>
+                <td class="val">{{ $val($emp->spouse_mobile_no) }}</td>
+                <td class="lbl">Date of Marriage</td>
+                <td class="val">{{ $val($emp->marriage_date ?? '') }}</td>
+            </tr>
+            <tr>
+                <td colspan="4" class="sub-bar">Parents</td>
+            </tr>
+            <tr>
+                <td class="lbl">Father's Name</td>
+                <td class="val">{{ $val($emp->father_name) }}</td>
+                <td class="lbl">Date of Birth</td>
+                <td class="val">{{ $val($emp->father_birthdate ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Occupation</td>
+                <td class="val">{{ $val($emp->father_occupation ?? '') }}</td>
+                <td class="lbl">Living / Deceased</td>
+                <td class="val">{{ $val($emp->father_status ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Mother's Maiden Name</td>
+                <td class="val">{{ $val($emp->mother_name) }}</td>
+                <td class="lbl">Date of Birth</td>
+                <td class="val">{{ $val($emp->mother_birthdate ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Occupation</td>
+                <td class="val">{{ $val($emp->mother_occupation ?? '') }}</td>
+                <td class="lbl">Living / Deceased</td>
+                <td class="val">{{ $val($emp->mother_status ?? '') }}</td>
+            </tr>
+        </table>
 
-                            $q34a = $q->get('1');
-                            $q34b = $q->get('2');
-                            $q35a = $q->get('3');
-                            $q35b = $q->get('4');
-                            $q36 = $q->get('5');
-                            $q37 = $q->get('6');
-                            $q38a = $q->get('7');
-                            $q38b = $q->get('8');
-                            $q39 = $q->get('9');
-                            $q40a = $q->get('10');
-                            $q40b = $q->get('11');
-                            $q40c = $q->get('12');
-                        @endphp
-                        <tr>
-                            <td colspan="7" style="background-color: lightgray;color: black;">
-                                <p style="font-size: 8px;">
-                                    34. Are you related by consanguinity or affinity to the appointing or recommending
-                                    authority, or to the
-                                    chief of bureau or office or to the person who has immediate supervision over you in
-                                    the Office,
-                                    Bureau or Department where you will be appointed,
-                                    <br>a. within the third degree?
-                                    <br>b. within the fourth degree (for Local Government Unit - Career Employees)?
-                                </p>
-                            </td>
-                            <td colspan="2">
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q34a)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q34a)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q34b)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q34b)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <p>If YES, give details:</p>
-                                    <span
-                                        style="display:inline-block;width:100%;border-bottom:1px solid black;min-height:12px;">
-                                        {{ optional($q34a)->yes_details ?? (optional($q34b)->yes_details ?? '') }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
+        <!-- Children / Dependents -->
+        <table>
+            <tr>
+                <td colspan="5" class="sub-bar">Children / Dependents</td>
+            </tr>
+            <tr class="tbl-header">
+                <th style="width: 38%;">Full Name</th>
+                <th style="width: 18%;">Date of Birth</th>
+                <th style="width: 12%;">Age</th>
+                <th style="width: 16%;">Gender</th>
+                <th style="width: 16%;">Dependent?</th>
+            </tr>
+            @php $childRows = max(3, count($children)); @endphp
+            @for ($i = 0; $i < $childRows; $i++)
+                @php $ch = $children[$i] ?? null; @endphp
+                <tr>
+                    <td>{{ $ch ? $val($ch->name) : '' }}&nbsp;</td>
+                    <td>{{ $ch ? $val($ch->child_birthdate) : '' }}</td>
+                    <td>{{ $ch ? $val($ch->age ?? '') : '' }}</td>
+                    <td>{{ $ch ? $val($ch->gender ?? '') : '' }}</td>
+                    <td>{{ $ch ? 'Yes' : '' }}</td>
+                </tr>
+            @endfor
+        </table>
 
-                        <tr>
-                            <td colspan="7" style="background-color: lightgray;color: black;border-bottom: none;">
-                                <p style="font-size: 8px;">35. a. Have you ever been found guilty of any administrative
-                                    offense?</p>
-                            </td>
-                            <td colspan="2" style="border-bottom: none;">
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q35a)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q35a)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <p>If YES, give details:</p>
-                                    <span
-                                        style="display:inline-block;width:100%;border-bottom:1px solid black;min-height:12px;">
-                                        {{ optional($q35a)->yes_details ?? '' }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
+        <!-- Emergency Contact & Beneficiary -->
+        <table>
+            <tr>
+                <td colspan="4" class="sub-bar">Emergency Contact &amp; Beneficiary</td>
+            </tr>
+            <tr>
+                <td class="lbl">Contact Person</td>
+                <td class="val">{{ $val($emp->emergency_contact_name ?? $emp->spouse_name) }}</td>
+                <td class="lbl">Relationship</td>
+                <td class="val">{{ $val($emp->emergency_contact_relationship ?? '') }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Address</td>
+                <td colspan="3" class="val">{{ $val($emp->emergency_contact_address ?? $presentAddress) }}</td>
+            </tr>
+            <tr>
+                <td class="lbl">Contact No.</td>
+                <td class="val">{{ $val($emp->emergency_contact_no ?? $emp->spouse_mobile_no) }}</td>
+                <td class="lbl">Alternate No.</td>
+                <td class="val"></td>
+            </tr>
+            <tr>
+                <td class="lbl">Beneficiary (Insurance)</td>
+                <td class="val">{{ $val($emp->beneficiary_name ?? '') }}</td>
+                <td class="lbl">Relationship</td>
+                <td class="val">{{ $val($emp->beneficiary_relationship ?? '') }}</td>
+            </tr>
+        </table>
 
-                        <tr>
-                            <td colspan="7" style="background-color: lightgray;color: black;border-top: none;">
-                                <p style="font-size: 8px;">b. Have you been criminally charged before any court?</p>
-                            </td>
-                            <td colspan="2" style="border-top: none;">
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q35b)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q35b)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <p>If YES, give details:</p>
-                                    Date Filed:
-                                    <span style="display:inline-block;width:120px;border-bottom:1px solid black;">
-                                        {{ optional($q35b)->date_filed ?? '' }}
-                                    </span>
-                                    <br>
-                                    Status of Case/s:
-                                    <span style="display:inline-block;width:120px;border-bottom:1px solid black;">
-                                        {{ optional($q35b)->case_status ?? '' }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
+        <div class="page-break"></div>
 
-                        <tr>
-                            <td colspan="7" style="background-color: lightgray;color: black;">
-                                <p style="font-size: 8px;">
-                                    36. Have you ever been convicted of any crime or violation of any law, decree,
-                                    ordinance or regulation by any court or tribunal?
-                                </p>
-                            </td>
-                            <td colspan="2">
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q36)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q36)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <p>If YES, give details:</p>
-                                    <span
-                                        style="display:inline-block;width:100%;border-bottom:1px solid black;min-height:12px;">
-                                        {{ optional($q36)->yes_details ?? '' }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
+        <!-- F. EDUCATIONAL BACKGROUND -->
+        <table>
+            <tr>
+                <td colspan="5" class="section-bar">F. EDUCATIONAL BACKGROUND</td>
+            </tr>
+            <tr class="tbl-header">
+                <th style="width: 16%;">Level</th>
+                <th style="width: 34%;">School / University</th>
+                <th style="width: 24%;">Course / Degree</th>
+                <th style="width: 12%;">Year Graduated</th>
+                <th style="width: 14%;">Honors</th>
+            </tr>
+            @php
+                $eduLevels = [
+                    'Elementary' => $educations_elem[0] ?? null,
+                    'High School' => $educations_sec[0] ?? null,
+                    'Vocational' => $educations_voc[0] ?? null,
+                    'College' => $educations_col[0] ?? null,
+                    'Postgraduate' => $educations_grad[0] ?? null,
+                ];
+            @endphp
+            @foreach ($eduLevels as $lvlName => $ed)
+                <tr>
+                    <td style="font-weight: bold; background-color: #f9fafb;">{{ $lvlName }}</td>
+                    <td>{{ $ed ? $val($ed->school_name) : '' }}</td>
+                    <td>{{ $ed ? $val($ed->degree ?? $ed->program ?? '') : '' }}</td>
+                    <td>{{ $ed ? $val($ed->year_graduated ?? $ed->graduated_year ?? '') : '' }}</td>
+                    <td>{{ $ed ? $val($ed->scholarship ?? $ed->honors ?? '') : '' }}</td>
+                </tr>
+            @endforeach
+        </table>
 
-                        <tr>
-                            <td colspan="7" style="background-color: lightgray;color: black;">
-                                <p style="font-size: 8px;">
-                                    37. Have you ever been separated from the service in any of the following modes:
-                                    resignation, retirement, dropped from the rolls, dismissal, termination, end of
-                                    term,
-                                    finished contract or phased out (abolition) in the public or private sector?
-                                </p>
-                            </td>
-                            <td colspan="2">
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q37)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q37)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <p>If YES, give details:</p>
-                                    <span
-                                        style="display:inline-block;width:100%;border-bottom:1px solid black;min-height:12px;">
-                                        {{ optional($q37)->yes_details ?? '' }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
+        <!-- G. PREVIOUS EMPLOYMENT -->
+        <table>
+            <tr>
+                <td colspan="6" class="section-bar">G. PREVIOUS EMPLOYMENT</td>
+            </tr>
+            <tr class="tbl-header">
+                <th style="width: 24%;">Company</th>
+                <th style="width: 20%;">Position</th>
+                <th style="width: 12%;">From</th>
+                <th style="width: 12%;">To</th>
+                <th style="width: 14%;" class="text-right">Last Salary</th>
+                <th style="width: 18%;">Reason for Leaving</th>
+            </tr>
+            @php $empRows = max(4, count($employments)); @endphp
+            @for ($i = 0; $i < $empRows; $i++)
+                @php $ex = $employments[$i] ?? null; @endphp
+                <tr>
+                    <td>{{ $ex ? $val($ex->agency ?? $ex->department) : '' }}&nbsp;</td>
+                    <td>{{ $ex ? $val($ex->position_title) : '' }}</td>
+                    <td>{{ $ex ? $val($ex->period_from) : '' }}</td>
+                    <td>{{ $ex ? $val($ex->period_to) : '' }}</td>
+                    <td class="text-right">{{ $ex && is_numeric($ex->salary) ? number_format((float)$ex->salary, 2) : ($ex ? $val($ex->salary) : '') }}</td>
+                    <td>{{ $ex ? $val($ex->status) : '' }}</td>
+                </tr>
+            @endfor
+        </table>
 
-                        <tr>
-                            <td colspan="7" style="background-color: lightgray;color: black;">
-                                <p style="font-size: 8px;">
-                                    38. a. Have you ever been a candidate in a national or local election held within
-                                    the last year
-                                    (except Barangay election)?
-                                </p>
-                                 <p style="font-size: 8px;">
-                                    b. Have you resigned from the government service during the three (3)-month period
-                                    before the last election
-                                    to promote/actively campaign for a national or local candidate?
-                                </p>
-                            </td>
-                            <td colspan="2">
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q38a)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q38a)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <p>If YES, give details:</p>
-                                    <span
-                                        style="display:inline-block;width:100%;min-height:10px;">
-                                        {{ optional($q38a)->yes_details ?? '' }}
-                                    </span>
-                                </div>
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q38b)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q38b)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <p>If YES, give details:</p>
-                                    <span
-                                        style="display:inline-block;width:100%;min-height:10px;">
-                                        {{ optional($q38b)->yes_details ?? '' }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
+        <!-- H. TRAININGS, SEMINARS, LICENSES & CERTIFICATIONS -->
+        <table>
+            <tr>
+                <td colspan="5" class="section-bar">H. TRAININGS, SEMINARS, LICENSES &amp; CERTIFICATIONS</td>
+            </tr>
+            <tr class="tbl-header">
+                <th style="width: 34%;">Title</th>
+                <th style="width: 24%;">Provider</th>
+                <th style="width: 14%;">Date</th>
+                <th style="width: 10%;">Hours</th>
+                <th style="width: 18%;">Certificate / License No.</th>
+            </tr>
+            @php
+                $combinedTrainings = [];
+                foreach ($examinations as $exam) {
+                    $combinedTrainings[] = [
+                        'title' => $val($exam->eligibility),
+                        'provider' => $val($exam->place_of_examination),
+                        'date' => $val($exam->date_of_examination),
+                        'hours' => '-',
+                        'cert' => $val($exam->license_no),
+                    ];
+                }
+                foreach ($trainings as $tr) {
+                    $combinedTrainings[] = [
+                        'title' => $val($tr->learning),
+                        'provider' => $val($tr->conducted_by),
+                        'date' => $val($tr->inclusive_dates_from),
+                        'hours' => $val($tr->number_of_hours),
+                        'cert' => '',
+                    ];
+                }
+                $trRows = max(4, count($combinedTrainings));
+            @endphp
+            @for ($i = 0; $i < $trRows; $i++)
+                @php $ct = $combinedTrainings[$i] ?? null; @endphp
+                <tr>
+                    <td>{{ $ct['title'] ?? '' }}&nbsp;</td>
+                    <td>{{ $ct['provider'] ?? '' }}</td>
+                    <td>{{ $ct['date'] ?? '' }}</td>
+                    <td>{{ $ct['hours'] ?? '' }}</td>
+                    <td>{{ $ct['cert'] ?? '' }}</td>
+                </tr>
+            @endfor
+        </table>
 
-                        {{-- <tr>
-                            <td colspan="7" style="background-color: lightgray;color: black;">
-                                {{-- <p style="font-size: 8px;">
-                                    b. Have you resigned from the government service during the three (3)-month period
-                                    before the last election
-                                    to promote/actively campaign for a national or local candidate?
-                                </p> --}}
-                            {{-- </td>
-                            <td colspan="2">
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q38b)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q38b)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <p>If YES, give details:</p>
-                                    <span
-                                        style="display:inline-block;width:100%;border-bottom:1px solid black;min-height:12px;">
-                                        {{ optional($q38b)->yes_details ?? '' }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr> --}}
+        <!-- I. LEAVE ENTITLEMENT & BENEFITS -->
+        <table>
+            <tr>
+                <td colspan="6" class="section-bar">I. LEAVE ENTITLEMENT &amp; BENEFITS</td>
+            </tr>
+            <tr class="tbl-header">
+                <th style="width: 24%;">Leave Type</th>
+                <th style="width: 16%;">Annual Entitlement (days)</th>
+                <th style="width: 14%;">Carry-over (days)</th>
+                <th style="width: 14%;">Used YTD (days)</th>
+                <th style="width: 14%;">Balance (days)</th>
+                <th style="width: 18%;">Remarks</th>
+            </tr>
+            @php
+                $leaveTypes = [
+                    'Vacation Leave',
+                    'Sick Leave',
+                    'Emergency Leave',
+                    'Maternity / Paternity',
+                    'Solo Parent Leave',
+                    'Bereavement / Other',
+                ];
+            @endphp
+            @foreach ($leaveTypes as $lt)
+                <tr>
+                    <td style="font-weight: bold; background-color: #f9fafb;">{{ $lt }}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            @endforeach
+        </table>
 
-                        <tr>
-                            <td colspan="7" style="background-color: lightgray;color: black;">
-                                <p style="font-size: 8px;">
-                                    39. Have you acquired the status of an immigrant or permanent resident of another
-                                    country?
-                                </p>
-                            </td>
-                            <td colspan="2">
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q39)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q39)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <p>If YES, give details (country):</p>
-                                    <span
-                                        style="display:inline-block;width:100%;border-bottom:1px solid black;min-height:12px;">
-                                        {{ optional($q39)->yes_details ?? '' }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
+        <!-- J. DISCIPLINARY RECORD -->
+        <table>
+            <tr>
+                <td colspan="5" class="section-bar">J. DISCIPLINARY RECORD</td>
+            </tr>
+            <tr class="tbl-header">
+                <th style="width: 14%;">Date</th>
+                <th style="width: 28%;">Violation / Incident</th>
+                <th style="width: 26%;">Action Taken (Memo / Warning / Suspension)</th>
+                <th style="width: 16%;">Issued By</th>
+                <th style="width: 16%;">Status / Remarks</th>
+            </tr>
+            @for ($i = 0; $i < 3; $i++)
+                <tr>
+                    <td>&nbsp;</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            @endfor
+        </table>
 
-                        <tr>
-                            <td colspan="7" style="background-color: lightgray;color: black; border-bottom: none;">
-                                <p style="font-size: 8px;">
-                                    40. Pursuant to: (a) Indigenous People's Act (RA 8371); (b) Magna Carta for Disabled
-                                    Persons (RA 7277); and (c) Solo Parents Welfare Act of 2000 (RA 8972), please answer
-                                    the following items:
-                                    <br>a. Are you a member of any indigenous group?
-                                </p>
-                            </td>
-                            <td colspan="2" style="border-bottom: none;">
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q40a)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q40a)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <p>If YES, please specify:</p>
-                                    <span
-                                        style="display:inline-block;width:100%;border-bottom:1px solid black;min-height:12px;">
-                                        {{ optional($q40a)->yes_details ?? '' }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
+        <!-- K. PERFORMANCE EVALUATION HISTORY -->
+        <table>
+            <tr>
+                <td colspan="5" class="section-bar">K. PERFORMANCE EVALUATION HISTORY</td>
+            </tr>
+            <tr class="tbl-header">
+                <th style="width: 24%;">Evaluation Period</th>
+                <th style="width: 16%;">Rating</th>
+                <th style="width: 22%;">Evaluator</th>
+                <th style="width: 14%;">Date</th>
+                <th style="width: 24%;">Remarks</th>
+            </tr>
+            @php $evalRows = max(3, count($evals)); @endphp
+            @for ($i = 0; $i < $evalRows; $i++)
+                @php $ev = $evals[$i] ?? null; @endphp
+                <tr>
+                    <td>{{ $ev ? $val($ev->period ?? 'Performance Review') : '' }}&nbsp;</td>
+                    <td>{{ $ev ? $val($ev->rating) : '' }}</td>
+                    <td>{{ $ev ? $val($ev->evaluator ?? '') : '' }}</td>
+                    <td>{{ $ev ? $val($ev->created_at ?? '') : '' }}</td>
+                    <td>{{ $ev ? $val($ev->adjectival_rating ?? '') : '' }}</td>
+                </tr>
+            @endfor
+        </table>
 
-                        <tr>
-                            <td colspan="7"
-                                style="background-color: lightgray;color: black; border-bottom: none; border-top: none;">
-                                <p style="font-size: 8px;">b. Are you a person with disability?</p>
-                            </td>
-                            <td colspan="2" style="border-bottom: none; border-top: none;">
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q40b)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q40b)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <p>If YES, please specify ID No:</p>
-                                    <span
-                                        style="display:inline-block;width:100%;border-bottom:1px solid black;min-height:12px;">
-                                        {{ optional($q40b)->yes_details ?? '' }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
+        <!-- L. DOCUMENTARY REQUIREMENTS CHECKLIST -->
+        <table>
+            <tr>
+                <td colspan="4" class="section-bar">L. DOCUMENTARY REQUIREMENTS CHECKLIST</td>
+            </tr>
+            <tr class="tbl-header">
+                <th style="width: 44%;">Document</th>
+                <th style="width: 14%;" class="text-center">Submitted?</th>
+                <th style="width: 18%;">Date Submitted</th>
+                <th style="width: 24%;">Remarks</th>
+            </tr>
+            @php
+                $checklistDocs = [
+                    'Resume / Curriculum Vitae',
+                    'Application Form',
+                    'Employment Contract / Job Offer',
+                    'PSA Birth Certificate',
+                    'PSA Marriage Certificate (if married)',
+                    "Dependents' PSA Birth Certificates",
+                    'Diploma / Transcript of Records',
+                    'NBI Clearance',
+                    'Police Clearance',
+                    'Barangay Clearance',
+                    'Pre-employment Medical Exam',
+                    'Drug Test Result',
+                    '2×2 ID Photos',
+                    'SSS E-1 / SS Number Proof',
+                    'PhilHealth MDR / Proof of PIN',
+                    'Pag-IBIG MDF / Proof of MID',
+                    'TIN / BIR Form 1902 or 2305',
+                    'BIR Form 2316 from Previous Employer',
+                    'Certificate of Employment (Previous)',
+                    'Valid Government ID (photocopy)',
+                    'Data Privacy Consent Form',
+                    'Company Handbook Acknowledgment',
+                ];
+            @endphp
+            @foreach ($checklistDocs as $docName)
+                <tr>
+                    <td>{{ $docName }}</td>
+                    <td class="text-center">[ &nbsp; ]</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            @endforeach
+        </table>
 
-                        <tr>
-                            <td colspan="7" style="background-color: lightgray;color: black;border-top: none;">
-                                <p style="font-size: 8px;">c. Are you a solo parent?</p>
-                            </td>
-                            <td colspan="2" style="border-top: none;">
-                                <div>
-                                    <label><input type="checkbox" {{ optional($q40c)->is_yes ? 'checked' : '' }}>
-                                        Yes</label>
-                                    <label><input type="checkbox" {{ optional($q40c)->is_no ? 'checked' : '' }}>
-                                        No</label>
-                                </div>
-                                <div>
-                                    <p>If YES, please specify ID No:</p>
-                                    <span
-                                        style="display:inline-block;width:100%;border-bottom:1px solid black;min-height:12px;">
-                                        {{ optional($q40c)->yes_details ?? '' }}
-                                    </span>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- References -->
-                        <tr>
-                            <td colspan="7" style="background-color: lightgray;color: black;">
-                                <p style="font-size: 8px;">41. REFERENCES
-                                    <label style="color: black;">
-                                        <b>(Person not related by consanguinity or affinity to applicant /appointee)</b>
-                                    </label>
-                                </p>
-                            </td>
-                            <td colspan="2" rowspan="6" style="border-bottom: none;">
-                                <div
-                                    style="border: 1px solid black; width: 70px; height: 85px; margin: auto;padding: 4px; display: flex; align-items: center; justify-content: center;">
-                                    @if (!empty($info->photo))
-                                        <img src="data:image/jpeg;base64,{{ $info->photo }}" alt="Employee photo"
-                                            style="max-width: 100%; max-height: 100%; object-fit: cover; display: block;">
-                                    @else
-                                        <div style="text-align: center; font-size: 8px; line-height: 1.2;">
-                                            ID picture taken within<br>
-                                            the last 6 months<br>
-                                            4.5 cm. X 3.5 cm (passport size)<br>
-                                            {{-- <span style="color: red;">Computer generated or photocopied picture is not
-                                                acceptable</span> --}}
-                                        </div>
-                                    @endif
-                                </div>
-                                <p style="text-align: center; margin-top: 4px;">PHOTO</p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="3" style="background-color: lightgray;color: black;">
-                                <center>NAME</center>
-                            </td>
-                            <td colspan="2" style="background-color: lightgray;color: black;">
-                                <center>OFFICE / RESIDENTIAL ADDRESS</center>
-                            </td>
-                            <td colspan="2" style="background-color: lightgray;color: black;">
-                                <center>CONTACT NO. <br> AND/OR EMAIL</center>
-                            </td>
-                            <!-- <td colspan="2" style="border-bottom: none;border-top: none;"></td> -->
-                        </tr>
-                        @foreach ($references as $reference)
-                            <tr>
-                                <td colspan="3" style="padding: 5px;">
-                                    <center>{{ $reference->ref_name }}</center>
-                                </td>
-                                <td colspan="2" style="padding: 5px;">
-                                    <center>{{ $reference->ref_address }}</center>
-                                </td>
-                                <td colspan="2" style="padding: 5px;">
-                                    <center>{{ $reference->ref_contact_no }}</center>
-                                </td>
-                                <!-- <td colspan="2" style="border-bottom: none;border-top: none;"></td> -->
-                            </tr>
-                        @endforeach
-                        @if (count($references) < 3)
-                            @for ($i = count($references); $i < 3; $i++)
-                                <tr>
-                                    <td colspan="3" style="padding: 5px;"></td>
-                                    <td colspan="2" style="padding: 5px;"></td>
-                                    <td colspan="2" style="padding: 5px;"></td>
-                                    <!-- <td colspan="2" style="border-bottom: none;border-top: none;"></td> -->
-                                </tr>
-                            @endfor
-                        @endif
-                        <tbody class="pds-footer-group">
-                        <tr>
-                            <td colspan="7" style="background-color: lightgray;color: black;">
-                                <p style="font-size: 8px;">
-                                    42. I declare under oath that I have personally accomplished this Personal Data
-                                    Sheet which is a true, correct and
-                                    <br> complete statement pursuant to the provisions of pertinent laws, rules and
-                                    regulations of the Republic of the
-                                    <br> Philippines. I authorize the agency head/authorized representative to
-                                    verify/validate the contents stated herein.
-                                    <br> I agree that any misrepresentation made in this document and its
-                                    attachments
-                                    shall cause the filing of
-                                    <br> administrative/criminal case/s against me.
-                                </p>
-                            </td>
-                            <!-- <td colspan="2" style="border-top: none;"></td> -->
-                        </tr>
-                        <tr class="pds-signature-section">
-                            <td colspan="3" style="padding:3px; border-right:none;">
-                                <div style="width: 200px; height: 62px;margin: auto;">
-                                    <table style="height: 100%;">
-                                        <tr>
-                                            <td style="background-color: lightgray;color: black;">Government Issued ID
-                                                (i.e.Passport, GSIS, SSS, PRC, Driver's License, etc.) PLEASE INDICATE
-                                                ID Number and Date of Issuance</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding-bottom: 4px;">Government Issued ID:</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding-bottom: 4px;">ID/License/Passport No.: </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding-bottom: 4px;">Date/Place of Issuance:</td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </td>
-                            <td colspan="3" style="padding:3px; border-right:none;border-left: none;">
-                                <div style="width: 200px; height: 62px;margin: auto;">
-                                    <table style="width: 100%;height: 100%;">
-                                        <tr>
-                                            <td style="padding: 8px 4px; color: red;">
-                                                <center>(wet signature/e-signature/digital certificate)</center>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="background-color: lightgray;color: black;padding-bottom: 3px;">
-                                                <center>Signature (Sign inside the box)</center>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding-bottom: 2px;"></td>
-                                        </tr>
-                                        <tr>
-                                            <td style="background-color: lightgray;color: black;padding-bottom: 3px;">
-                                                <center>Date Accomplished</center>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </td>
-                            <td colspan="3" style="padding:3px; border-left: none;">
-                                <div style="width: 100px; height: 62px;margin: auto;">
-                                    <table style="width: 100%;height: 100%;">
-                                        <tr>
-                                            <td style="padding: 18px;"></td>
-                                        </tr>
-                                        <tr>
-                                            <td style="background-color: lightgray;color: black;padding-bottom: 3px;">
-                                                <center>Right Thumbmark</center>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr class="pds-final-section">
-                            <td colspan="9" style="border-top: none; padding: 3px 6px 2px 6px;">
-                                <p style="text-align: center; font-size: 6px; margin: 0 0 3px 0; line-height: 1.2;">
-                                    SUBSCRIBED AND SWORN to before me this ___________________________, affiant
-                                    exhibiting his/her validly issued government ID as indicated above.
-                                </p>
-                                <div style="margin: 0 auto; width: 320px; border: 1px solid black;">
-                                    <div style="min-height: 45px; padding: 6px 4px; color: red; text-align: center; font-size: 5px; line-height: 1.1;">
-                                        (wet signature/e-signature/digital certificate except for notary public)
-                                    </div>
-                                    <div style="background-color: lightgray; color: black; text-align: center; font-size: 6px; padding: 3px 4px;">
-                                        Person Administering Oath
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        </tbody>
-                        <tr>
-                            <td colspan="9" style="border: none; text-align: right; padding: 2px 0 0 0;">
-                                <i>CS FORM 212 (Revised 2025), Page 4 of 4</i>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <!-- M. CERTIFICATION -->
+        <table>
+            <tr>
+                <td colspan="3" class="section-bar">M. CERTIFICATION</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="padding: 6px; font-size: 8px; line-height: 1.4;">
+                    I hereby certify that the information provided above is true and correct to the best of my knowledge.
+                    I agree to notify HR of any change within a reasonable period and consent to the processing of my
+                    personal data for employment purposes in accordance with the Data Privacy Act of 2012.
+                </td>
+            </tr>
+            <tr>
+                <td style="width: 34%; padding-top: 24px; text-align: center;">
+                    <div class="sig-line">Employee Signature over Printed Name / Date</div>
+                </td>
+                <td style="width: 33%; padding-top: 24px; text-align: center;">
+                    <div class="sig-line">Prepared by (HR Staff) / Date</div>
+                </td>
+                <td style="width: 33%; padding-top: 24px; text-align: center;">
+                    <div class="sig-line">Verified by (HR Manager) / Date</div>
+                </td>
+            </tr>
+        </table>
     @endforeach
 </body>
 

@@ -24,6 +24,10 @@
               <span class="text-slate-500 font-medium">Telephone Number</span>
               <span class="text-slate-900 font-medium">{{ employee?.telephone_no || '-' }}</span>
             </div>
+            <div class="flex justify-between border-b border-slate-100 pb-2">
+              <span class="text-slate-500 font-medium">Company Email</span>
+              <span class="text-slate-900 font-medium">{{ employee?.company_email || '-' }}</span>
+            </div>
           </div>
         </el-card>
 
@@ -110,7 +114,10 @@
             </template>
             <div class="space-y-3">
               <el-form-item label="Email">
-                <el-input v-model="localFormData.email" @input="updateField('email', $event)" placeholder="Email Address" />
+                <el-input v-model="localFormData.email" @input="updateField('email', $event)" placeholder="Personal Email Address" />
+              </el-form-item>
+              <el-form-item label="Company Email">
+                <el-input v-model="localFormData.company_email" @input="updateField('company_email', $event)" placeholder="Company Email Address" />
               </el-form-item>
               <el-form-item label="Mobile No.">
                 <el-input v-model="localFormData.mobile_no" @input="updateField('mobile_no', $event)" placeholder="Mobile Number" />

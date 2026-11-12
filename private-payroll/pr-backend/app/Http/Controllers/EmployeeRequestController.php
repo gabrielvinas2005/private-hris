@@ -32,7 +32,6 @@ class EmployeeRequestController extends Controller
         try {
             $requests = DB::table('employee_requests as a')
             ->join('employees as b', 'a.employee_id', '=', 'b.id')
-            ->join('employees_temps as c','a.id','=','c.request_id')
             ->select(
                 'a.id',
                 'a.employee_id',
@@ -44,7 +43,6 @@ class EmployeeRequestController extends Controller
             ->get();
 
         $with_pending = DB::table('employee_requests as a')
-        ->join('employees_temps as c','a.id','=','c.request_id')
         ->where([
             'a.employee_id' => $id,
             'a.status_id' => 1
@@ -140,9 +138,9 @@ class EmployeeRequestController extends Controller
                 ->get();
         } else {
 
-            $employee_info = DB::table('employees_temps')
+            $employee_info = DB::table('employees')
                 ->where([
-                    'request_id' => $id
+                    'id' => $employee_id
                 ])
                 ->get();
 
@@ -318,12 +316,12 @@ class EmployeeRequestController extends Controller
 
                 $photo = base64_encode($image);
             } else {
-                $photo_data = DB::table('employees_temps')
+                $photo_data = DB::table('employees')
                     ->select('photo')
-                    ->where('employee_id', $id)
-                    ->get();
+                    ->where('id', $id)
+                    ->first();
 
-                $photo = $photo_data[0]->photo;
+                $photo = $photo_data ? $photo_data->photo : null;
             }
         }
 
@@ -438,8 +436,9 @@ class EmployeeRequestController extends Controller
         DB::table('employee_requests')->updateOrInsert(['id' => $request_id], $employee_requests_info);
         DB::unprepared('SET IDENTITY_INSERT employee_requests OFF');
 
-        // Save Employee Temp Info
-        DB::table('employees_temps')->updateOrInsert(['request_id' => $request_id], $employee_info);
+        // Save Employee Info directly to employees
+        unset($employee_info['employee_id']);
+        DB::table('employees')->where('id', $id)->update($employee_info);
 
         // Save Children Info.
         $data_child = $request->all();
@@ -841,7 +840,6 @@ class EmployeeRequestController extends Controller
         try {
             $requests = DB::table('employee_requests as a')
             ->join('employees as b', 'a.employee_id', '=', 'b.id')
-            ->join('employees_temps as c','a.id','=','c.request_id')
             ->select(
                 'a.id',
                 'a.employee_id',
@@ -888,13 +886,19 @@ class EmployeeRequestController extends Controller
         $eligibilities = DB::table('eligibilities')->where('active', true)->orderBy('name', 'asc')->get();
         $learnings = DB::table('learnings')->where('active', true)->orderBy('name', 'asc')->get();
 
-        $employee_info = DB::table('employees_temps')->where('request_id', $id)->get();
+        $employee_request = DB::table('employee_requests')->where('id', $id)->first();
+        $employee_id = $employee_request ? $employee_request->employee_id : $id;
+        $employee_info = DB::table('employees')->where('id', $employee_id)->get();
+        if ($employee_info->isNotEmpty()) {
+            $employee_info[0]->employee_id = $employee_info[0]->id;
+        }
 
-        $employee_info_original = DB::table('employees')->where('id', $employee_info[0]->employee_id)->get();
+        $employee_info_original = $employee_info;
 
+        $plantilla_id = ($employee_info->isNotEmpty() && isset($employee_info[0]->plantilla_id)) ? $employee_info[0]->plantilla_id : 0;
         $plantillas_selected = DB::table('plantillas')
             ->select('salary_grade_id', 'salary_step_id')
-            ->where('id', $employee_info[0]->plantilla_id)->get();
+            ->where('id', $plantilla_id)->get();
 
         $children = DB::table('employee_children_temps')->where('request_id', $id)->get();
         $educations = DB::table('employee_educations_temps')->where('request_id', $id)->get();
@@ -994,10 +998,15 @@ class EmployeeRequestController extends Controller
             DB::table('employee_requests')->where('id', $id)->update(['status_id' => 2]);
 
             // Update Employee Records
-            $employee_data = DB::table('employees_temps')->where('request_id', $id)->get();
+            $employee_request = DB::table('employee_requests')->where('id', $id)->first();
+            $employee_id = $employee_request ? $employee_request->employee_id : null;
+            if (!$employee_id) {
+                return $this->errorResponse('Employee request not found', 404);
+            }
 
             // Load Employee Current Data
-            $employee_current_data = DB::table('employees')->where('id', $employee_data[0]->employee_id)->get();
+            $employee_current_data = DB::table('employees')->where('id', $employee_id)->get();
+            $employee_data = $employee_current_data;
 
             // dd($request->all());
 
@@ -1069,7 +1078,7 @@ class EmployeeRequestController extends Controller
             );
 
             // Update Approved Request log
-            DB::table('employees')->where('id', $employee_data[0]->employee_id)->update($employee_info);
+            DB::table('employees')->where('id', $employee_id)->update($employee_info);
 
             // Save Children Info.
             $data_child = DB::table('employee_children_temps')->where('request_id', $id)->get();
@@ -1077,7 +1086,7 @@ class EmployeeRequestController extends Controller
             $arr_len_children = count($data_child);
             $children_data = [];
 
-            DB::table('employee_children')->where('employee_id', $employee_data[0]->employee_id)->delete();
+            DB::table('employee_children')->where('employee_id', $employee_id)->delete();
 
             for ($i = 0; $i < $arr_len_children; $i++) {
                 if ($data_child[$i]->child_name != NULL) {
@@ -1085,7 +1094,7 @@ class EmployeeRequestController extends Controller
                     $child_id = 1 + DB::table('employee_children')->max('children_id');
 
                     $children_data = [
-                        'employee_id' => $employee_data[0]->employee_id,
+                        'employee_id' => $employee_id,
                         'child_name' => $data_child[$i]->child_name,
                         'child_middlename' => $data_child[$i]->child_middlename,
                         'child_lastname' => $data_child[$i]->child_lastname,
@@ -1102,7 +1111,7 @@ class EmployeeRequestController extends Controller
             $arr_len_educ = count($data_educ);
             $educ_data = [];
 
-            DB::table('employee_educations')->where('employee_id', $employee_data[0]->employee_id)->delete();
+            DB::table('employee_educations')->where('employee_id', $employee_id)->delete();
 
             for ($i = 0; $i < $arr_len_educ; $i++) {
                 if ($data_educ[$i]->school_name != NULL) {
@@ -1110,7 +1119,7 @@ class EmployeeRequestController extends Controller
                     $educ_id = 1 + DB::table('employee_educations')->max('education_id');
 
                     $educ_data = [
-                        'employee_id' => $employee_data[0]->employee_id,
+                        'employee_id' => $employee_id,
                         'school_name' => $data_educ[$i]->school_name,
                         'academic_level_id' => $data_educ[$i]->academic_level_id,
                         'program' => $data_educ[$i]->program,
@@ -1131,7 +1140,7 @@ class EmployeeRequestController extends Controller
             $arr_len_serv = count($data_serv);
             $serv_data = [];
 
-            DB::table('service_records')->where('employee_id', $employee_data[0]->employee_id)->delete();
+            DB::table('service_records')->where('employee_id', $employee_id)->delete();
 
             for ($i = 0; $i < $arr_len_serv; $i++) {
                 if ($data_serv[$i]->designation != NULL) {
@@ -1139,7 +1148,7 @@ class EmployeeRequestController extends Controller
                     $serv_id = 1 + DB::table('service_records')->max('service_record_id');
 
                     $serv_data = [
-                        'employee_id' => $employee_data[0]->employee_id,
+                        'employee_id' => $employee_id,
                         'start_date' => $data_serv[$i]->start_date,
                         'end_date' => $data_serv[$i]->end_date,
                         'designation' => $data_serv[$i]->designation,
@@ -1162,7 +1171,7 @@ class EmployeeRequestController extends Controller
             $arr_len_emp = count($data_emp);
             $emp_data = [];
 
-            DB::table('employee_employment_records')->where('employee_id', $employee_data[0]->employee_id)->delete();
+            DB::table('employee_employment_records')->where('employee_id', $employee_id)->delete();
 
             for ($i = 0; $i < $arr_len_emp; $i++) {
                 if ($data_emp[$i]->work_company != NULL) {
@@ -1170,7 +1179,7 @@ class EmployeeRequestController extends Controller
                     $emp_id = 1 + DB::table('employee_employment_records')->max('employment_record_id');
 
                     $emp_data = [
-                        'employee_id' => $employee_data[0]->employee_id,
+                        'employee_id' => $employee_id,
                         'work_start_date' => $data_emp[$i]->work_start_date,
                         'work_end_date' => $data_emp[$i]->work_end_date,
                         'work_company' => $data_emp[$i]->work_company,
@@ -1191,7 +1200,7 @@ class EmployeeRequestController extends Controller
             $arr_len_exam = count($data_exam);
             $exam_data = [];
 
-            DB::table('employee_examinations')->where('employee_id', $employee_data[0]->employee_id)->delete();
+            DB::table('employee_examinations')->where('employee_id', $employee_id)->delete();
 
             for ($i = 0; $i < $arr_len_exam; $i++) {
                 if ($data_exam[$i]->place_of_exam != NULL) {
@@ -1199,7 +1208,7 @@ class EmployeeRequestController extends Controller
                     $exam_id = 1 + DB::table('employee_examinations')->max('examination_id');
 
                     $exam_data = [
-                        'employee_id' => $employee_data[0]->employee_id,
+                        'employee_id' => $employee_id,
                         'eligibility_id' => $data_exam[$i]->eligibility_id,
                         'exam_rating' => $data_exam[$i]->exam_rating,
                         'exam_date' => $data_exam[$i]->exam_date,
@@ -1218,7 +1227,7 @@ class EmployeeRequestController extends Controller
             $arr_len_training = count($data_training);
             $training_data = [];
 
-            DB::table('employee_trainings')->where('employee_id', $employee_data[0]->employee_id)->delete();
+            DB::table('employee_trainings')->where('employee_id', $employee_id)->delete();
 
             for ($i = 0; $i < $arr_len_training; $i++) {
                 if ($data_training[$i]->training != NULL) {
@@ -1226,7 +1235,7 @@ class EmployeeRequestController extends Controller
                     $training_id = 1 + DB::table('employee_trainings')->max('training_id');
 
                     $training_data = [
-                        'employee_id' => $employee_data[0]->employee_id,
+                        'employee_id' => $employee_id,
                         'training' => $data_training[$i]->training,
                         'training_from' => $data_training[$i]->training_from,
                         'training_to' => $data_training[$i]->training_to,
@@ -1245,7 +1254,7 @@ class EmployeeRequestController extends Controller
             $arr_len_org = count($data_org);
             $org_data = [];
 
-            DB::table('employee_organizations')->where('employee_id', $employee_data[0]->employee_id)->delete();
+            DB::table('employee_organizations')->where('employee_id', $employee_id)->delete();
 
             for ($i = 0; $i < $arr_len_org; $i++) {
                 if ($data_org[$i]->organization != NULL) {
@@ -1253,7 +1262,7 @@ class EmployeeRequestController extends Controller
                     $organization_id = 1 + DB::table('employee_organizations')->max('organization_id');
 
                     $org_data = [
-                        'employee_id' => $employee_data[0]->employee_id,
+                        'employee_id' => $employee_id,
                         'organization' => $data_org[$i]->organization,
                         'org_from' => $data_org[$i]->org_from,
                         'org_to' => $data_org[$i]->org_to,
@@ -1271,7 +1280,7 @@ class EmployeeRequestController extends Controller
             $arr_len_recog = count($data_recog);
             $recog_data = [];
 
-            DB::table('employee_recognations')->where('employee_id', $employee_data[0]->employee_id)->delete();
+            DB::table('employee_recognations')->where('employee_id', $employee_id)->delete();
 
             for ($i = 0; $i < $arr_len_recog; $i++) {
                 if ($data_recog[$i]->recognation != NULL) {
@@ -1279,7 +1288,7 @@ class EmployeeRequestController extends Controller
                     $recognation_id = 1 + DB::table('employee_recognations')->max('recognation_id');
 
                     $recog_data = [
-                        'employee_id' => $employee_data[0]->employee_id,
+                        'employee_id' => $employee_id,
                         'recognation' => $data_recog[$i]->recognation,
                     ];
 
@@ -1293,7 +1302,7 @@ class EmployeeRequestController extends Controller
             $arr_len_skill = count($data_skill);
             $skill_data = [];
 
-            DB::table('employee_skills')->where('employee_id', $employee_data[0]->employee_id)->delete();
+            DB::table('employee_skills')->where('employee_id', $employee_id)->delete();
 
             for ($i = 0; $i < $arr_len_skill; $i++) {
                 if ($data_skill[$i]->skill != NULL) {
@@ -1301,7 +1310,7 @@ class EmployeeRequestController extends Controller
                     $skill_id = 1 + DB::table('employee_skills')->max('skill_id');
 
                     $skill_data = [
-                        'employee_id' => $employee_data[0]->employee_id,
+                        'employee_id' => $employee_id,
                         'skill' => $data_skill[$i]->skill,
                     ];
 
@@ -1315,7 +1324,7 @@ class EmployeeRequestController extends Controller
             $arr_len_mem = count($data_mem);
             $mem_data = [];
 
-            DB::table('employee_memberships')->where('employee_id', $employee_data[0]->employee_id)->delete();
+            DB::table('employee_memberships')->where('employee_id', $employee_id)->delete();
 
             for ($i = 0; $i < $arr_len_mem; $i++) {
                 if (
@@ -1325,7 +1334,7 @@ class EmployeeRequestController extends Controller
                     $membership_id = 1 + DB::table('employee_memberships')->max('membership_id');
 
                     $mem_data = [
-                        'employee_id' => $employee_data[0]->employee_id,
+                        'employee_id' => $employee_id,
                         'membership' => $data_mem[$i]->membership,
                     ];
 
@@ -1339,7 +1348,7 @@ class EmployeeRequestController extends Controller
             $arr_len_ref = count($data_ref);
             $ref_data = [];
 
-            DB::table('employee_references')->where('employee_id', $employee_data[0]->employee_id)->delete();
+            DB::table('employee_references')->where('employee_id', $employee_id)->delete();
 
             for ($i = 0; $i < $arr_len_ref; $i++) {
                 if (
@@ -1349,7 +1358,7 @@ class EmployeeRequestController extends Controller
                     $reference_id = 1 + DB::table('employee_references')->max('reference_id');
 
                     $ref_data = [
-                        'employee_id' => $employee_data[0]->employee_id,
+                        'employee_id' => $employee_id,
                         'ref_name' => $data_ref[$i]->ref_name,
                         'ref_address' => $data_ref[$i]->ref_address,
                         'ref_occupation' => $data_ref[$i]->ref_occupation,

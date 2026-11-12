@@ -698,6 +698,7 @@
 <script>
 import Breadcrumb from '../components/Breadcrumb.vue'
 import { fetchCompanyPublic, getCompanyLogo } from '../services/companyPublic.js'
+import { swrCache } from '../composables/useCachedApi.js'
 
 export default {
   name: 'MainLayout',
@@ -1050,6 +1051,7 @@ export default {
         localStorage.removeItem('user_data')
         localStorage.removeItem('user_tab_access')
         localStorage.removeItem('session_start_time')
+        swrCache.clearCache()
         this.$router.push(`/login?reason=${reason}`)
       }
     },
