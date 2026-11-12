@@ -258,6 +258,7 @@ import AssetsSection from '../../components/SALN/AssetsSection.vue'
 import BusinessInterests from '../../components/SALN/BusinessInterests.vue'
 import RelativesSection from '../../components/SALN/RelativesSection.vue'
 import ApiService from '../../services/api.js'
+import { swrCache } from '../../composables/useCachedApi.js'
 import { useToast } from 'vue-toastification'
 
 export default {
@@ -330,29 +331,55 @@ export default {
       const raw = localStorage.getItem('user_data')
       try { return raw ? JSON.parse(raw).id : null } catch { return null }
     },
-    async loadSALNData() {
+    async loadSALNData(forceRefresh = false) {
       try {
         const userId = this.getCurrentUserId()
         if (!userId) throw new Error('No authenticated user')
-        // Resolve employee id first using 201 file API
-        const empRes = await ApiService.getEmployee201File(userId)
-        const employeeId = empRes?.success && empRes?.data?.info && empRes.data.info.length > 0
-          ? empRes.data.info[0].id
-          : null
+
+        // Resolve employee id from cache or 201 file
+        let employeeId = null
+        const cached201 = swrCache.getCached(`201_file_${userId}`)
+        if (cached201?.data?.info && cached201.data.info.length > 0) {
+          employeeId = cached201.data.info[0].id
+        } else {
+          const empRes = await ApiService.getEmployee201File(userId)
+          employeeId = empRes?.success && empRes?.data?.info && empRes.data.info.length > 0
+            ? empRes.data.info[0].id
+            : null
+        }
         const targetId = employeeId || userId
-        const res = await ApiService.getSALN(targetId)
-        if (!res.success) throw new Error(res.message || 'Failed to load SALN')
-        const d = res.data
-        // Map data from controller payload
-        const employeeInfo = (d.info && d.info[0]) || {}
-        this.employeeData = employeeInfo
-        this.addressData = d.address || {}
-        this.childrenData = d.children || []
-        this.realProperties = d.realProperties || []
-        this.personalProperties = d.personalProperties || []
-        this.liabilities = d.liabilities || []
-        this.businessInterests = d.business || []
-        this.relatives = d.relatives || []
+
+        const cacheKey = `saln_data_${targetId}`
+        if (forceRefresh) {
+          swrCache.mutate(cacheKey)
+        }
+
+        await swrCache.swrExecute({
+          key: cacheKey,
+          ttlMs: 10 * 60 * 1000, // 10 minutes cache
+          fetcher: async () => {
+            const res = await ApiService.getSALN(targetId)
+            if (!res.success) throw new Error(res.message || 'Failed to load SALN')
+            return res.data
+          },
+          onData: (d) => {
+            if (d) {
+              const employeeInfo = (d.info && d.info[0]) || {}
+              this.employeeData = employeeInfo
+              this.addressData = d.address || {}
+              this.childrenData = d.children || []
+              this.realProperties = d.realProperties || []
+              this.personalProperties = d.personalProperties || []
+              this.liabilities = d.liabilities || []
+              this.businessInterests = d.business || []
+              this.relatives = d.relatives || []
+            }
+          },
+          onError: (error) => {
+            console.error('Error loading SALN data:', error)
+            this.toast.error('Failed to load SALN data')
+          }
+        })
       } catch (error) {
         console.error('Error loading SALN data:', error)
         this.toast.error('Failed to load SALN data')
@@ -427,7 +454,7 @@ export default {
             const response = await ApiService.saveSALNRealProperties(properties)
             if (response.success) {
               this.toast.success('Real property saved successfully')
-              await this.loadSALNData()
+              await this.loadSALNData(true)
             } else {
               throw new Error(response.message || 'Failed to save real property')
             }
@@ -491,7 +518,7 @@ export default {
             const response = await ApiService.saveSALNPersonalProperties(personal_properties)
             if (response.success) {
               this.toast.success('Personal property saved successfully')
-              await this.loadSALNData()
+              await this.loadSALNData(true)
             } else {
               throw new Error(response.message || 'Failed to save personal property')
             }
@@ -555,7 +582,7 @@ export default {
             const response = await ApiService.saveSALNLiabilities(liabilities)
             if (response.success) {
               this.toast.success('Liability saved successfully')
-              await this.loadSALNData()
+              await this.loadSALNData(true)
             } else {
               throw new Error(response.message || 'Failed to save liability')
             }
@@ -620,7 +647,7 @@ export default {
              const response = await ApiService.saveSALNBusinessInterests(business_interests)
              if (response.success) {
                this.toast.success('Business interest saved successfully')
-               await this.loadSALNData()
+               await this.loadSALNData(true)
              } else {
                throw new Error(response.message || 'Failed to save business interest')
              }
@@ -685,7 +712,7 @@ export default {
              const response = await ApiService.saveSALNRelatives(relatives)
              if (response.success) {
                this.toast.success('Relative saved successfully')
-               await this.loadSALNData()
+               await this.loadSALNData(true)
              } else {
                throw new Error(response.message || 'Failed to save relative')
              }
@@ -704,23 +731,23 @@ export default {
         else if (type === 'realProperties') {
           await ApiService.saveSALNRealProperties(data)
           this.toast.success('SALN data updated successfully')
-          await this.loadSALNData()
+          await this.loadSALNData(true)
         } else if (type === 'personalProperties') {
           await ApiService.saveSALNPersonalProperties(data)
           this.toast.success('SALN data updated successfully')
-          await this.loadSALNData()
+          await this.loadSALNData(true)
         } else if (type === 'liabilities') {
           await ApiService.saveSALNLiabilities(data)
           this.toast.success('SALN data updated successfully')
-          await this.loadSALNData()
+          await this.loadSALNData(true)
         } else if (type === 'businessInterests') {
           await ApiService.saveSALNBusinessInterests(data)
           this.toast.success('SALN data updated successfully')
-          await this.loadSALNData()
+          await this.loadSALNData(true)
         } else if (type === 'relatives') {
           await ApiService.saveSALNRelatives(data)
           this.toast.success('SALN data updated successfully')
-          await this.loadSALNData()
+          await this.loadSALNData(true)
         }
       } catch (error) {
         console.error('Error updating SALN data:', error)

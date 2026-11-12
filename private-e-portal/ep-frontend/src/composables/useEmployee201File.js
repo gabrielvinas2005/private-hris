@@ -1,5 +1,6 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { swrCache } from './useCachedApi.js'
 import regionData from '../assets/refregion.json'
 import provinceData from '../assets/refprovince.json'
 import cityData from '../assets/refcitymun.json'
@@ -67,16 +68,17 @@ export function useEmployee201File() {
 
     const tabs = computed(() => [
         { id: 'personal', name: 'Personal & Contact' },
-        { id: 'work', name: 'Work Information' },
+        { id: 'statutory', name: 'Government IDs' },
+        { id: 'work', name: 'Employment Info' },
+        { id: 'movements', name: 'Movements' },
         { id: 'family', name: 'Family' },
         { id: 'education', name: 'Education' },
-        { id: 'service', name: 'Service Record' },
-        { id: 'experience', name: 'Work Experience' },
-        { id: 'eligibility', name: 'Eligibility' },
-        { id: 'training', name: 'Training' },
-        { id: 'voluntary', name: 'Voluntary Work' },
-        { id: 'ipcr', name: 'IPCR Result' },
-        { id: 'other', name: 'Other' }
+        { id: 'experience', name: 'Previous Work' },
+        { id: 'training', name: 'Trainings & Licenses' },
+        { id: 'leaves', name: 'Leaves' },
+        { id: 'disciplinary', name: 'Disciplinary' },
+        { id: 'performance', name: 'Performance' },
+        { id: 'checklist', name: 'Checklist' }
     ])
 
     // Methods
@@ -99,12 +101,91 @@ export function useEmployee201File() {
 
     const retry = () => {
         error.value = null
-        loadEmployeeData()
+        loadEmployeeData(true)
     }
 
-    const loadEmployeeData = async () => {
+    const applyEmployeeData = (data) => {
+        if (!data) return
+        const employeeInfo = data.info && data.info.length > 0 ? data.info[0] : {}
+        const cleanName = employeeInfo.name ? employeeInfo.name.replace(/\\\.\\.?\\s\*\\.?\\s\*\\./g, '.').trim() : ''
+
+        // Spread ALL fields from employeeInfo first, then override/set specific ones
+        Object.assign(employeeData, employeeInfo, {
+            name: cleanName || employeeInfo.name || 'Name not available'
+        })
+
+        Object.assign(addressData, data.address || {})
+
+        // Reference dropdowns from backend (genders, blood types, etc.)
+        genderOptions.value = data.genders || []
+        bloodTypeOptions.value = data.blood_types || []
+        civilStatusOptions.value = data.civil_statuses || []
+        religionOptions.value = data.religions || []
+        employmentTypeOptions.value = data.employment_types || []
+
+        Object.assign(workInfo, {
+            company: employeeInfo.company || '',
+            branch: employeeInfo.branch || '',
+            department: employeeInfo.department || '',
+            division: employeeInfo.division || '',
+            employment_type: employeeInfo.employment_type || '',
+            position: employeeInfo.position || '',
+            plantilla: employeeInfo.plantilla || '',
+            grade: employeeInfo.grade || '',
+            step: employeeInfo.step || '',
+            section: employeeInfo.section || ''
+        })
+
+        Object.assign(payrollInfo, {
+            interval: employeeInfo.payroll_interval || '',
+            gsis_no: employeeInfo.gsis_no || '',
+            sss_no: employeeInfo.sss_no || '',
+            pagibig_no: employeeInfo.pagibig_no || '',
+            philhealth_no: employeeInfo.philhealth_no || '',
+            tin_no: employeeInfo.tin_no || '',
+            salary: Number(employeeInfo.salary) || 0,
+            tax_amount: Number(employeeInfo.tax_amount) || 0,
+            gsis_amount: Number(employeeInfo.gsis_amount) || 0,
+            sss_amount: Number(employeeInfo.sss_amount) || 0,
+            pagibig_amount: Number(employeeInfo.pagibig_amount) || 0,
+            philhealth_amount: Number(employeeInfo.philhealth_amount) || 0
+        })
+
+        Object.assign(familyInfo, {
+            spouse_name: employeeInfo.spouse_name || '',
+            spouse_occupation: employeeInfo.spouse_occupation || '',
+            spouse_employer: employeeInfo.spouse_employer || '',
+            spouse_business_address: employeeInfo.spouse_business_address || '',
+            father_name: employeeInfo.father_name || '',
+            father_occupation: employeeInfo.father_occupation || '',
+            mother_name: employeeInfo.mother_name || '',
+            mother_occupation: employeeInfo.mother_occupation || ''
+        })
+
+        // Set arrays
+        incomes.value = data.incomes || []
+        loans.value = data.loans || []
+        children.value = data.children || []
+        educations.value = data.educations || []
+        serviceRecords.value = data.service_records || []
+        workExperiences.value = data.work_experiences || []
+        eligibilities.value = data.eligibilities || []
+        trainings.value = data.trainings || []
+        voluntaryWorks.value = data.voluntary_works || []
+        ipcrResults.value = data.ipcr_results || []
+        recognitions.value = data.recognitions || []
+        skills.value = data.skills || []
+        memberships.value = data.memberships || []
+        references.value = data.references || []
+
+        // Set update permissions
+        canUpdate.value = data.can_update || false
+        daysRemaining.value = data.days_remaining || 0
+        lastUpdateDate.value = data.last_update_date || 'Original Date Created'
+    }
+
+    const loadEmployeeData = async (forceRefresh = false) => {
         try {
-            loading.value = true
             error.value = null
 
             // Use the user ID from route params or localStorage
@@ -116,100 +197,35 @@ export function useEmployee201File() {
                 return
             }
 
-            const ApiService = (await import('../services/api.js')).default
-            const response = await ApiService.getEmployee201File(userId)
-
-            if (response.success) {
-                const data = response.data
-                // Defensive mapping
-                const employeeInfo = data.info && data.info.length > 0 ? data.info[0] : {}
-                const cleanName = employeeInfo.name ? employeeInfo.name.replace(/\\\.\\.?\\s\*\\.?\\s\*\\./g, '.').trim() : ''
-
-                // Spread ALL fields from employeeInfo first, then override/set specific ones
-                Object.assign(employeeData, employeeInfo, {
-                    name: cleanName || employeeInfo.name || 'Name not available'
-                })
-
-                Object.assign(addressData, data.address || {})
-
-                // Reference dropdowns from backend (genders, blood types, etc.)
-                genderOptions.value = data.genders || []
-                bloodTypeOptions.value = data.blood_types || []
-                civilStatusOptions.value = data.civil_statuses || []
-                religionOptions.value = data.religions || []
-                employmentTypeOptions.value = data.employment_types || []
-                console.log('Employment types from API:', data.employment_types, 'Stored:', employmentTypeOptions.value)
-
-                // Address dropdowns are already initialized from frontend assets
-                // No need to reload them from backend
-
-                Object.assign(workInfo, {
-                    company: employeeInfo.company || '',
-                    branch: employeeInfo.branch || '',
-                    department: employeeInfo.department || '',
-                    division: employeeInfo.division || '',
-                    employment_type: employeeInfo.employment_type || '',
-                    position: employeeInfo.position || '',
-                    plantilla: employeeInfo.plantilla || '',
-                    grade: employeeInfo.grade || '',
-                    step: employeeInfo.step || '',
-                    section: employeeInfo.section || ''
-                })
-
-                Object.assign(payrollInfo, {
-                    interval: employeeInfo.payroll_interval || '',
-                    gsis_no: employeeInfo.gsis_no || '',
-                    sss_no: employeeInfo.sss_no || '',
-                    pagibig_no: employeeInfo.pagibig_no || '',
-                    philhealth_no: employeeInfo.philhealth_no || '',
-                    tin_no: employeeInfo.tin_no || '',
-                    salary: Number(employeeInfo.salary) || 0,
-                    tax_amount: Number(employeeInfo.tax_amount) || 0,
-                    gsis_amount: Number(employeeInfo.gsis_amount) || 0,
-                    sss_amount: Number(employeeInfo.sss_amount) || 0,
-                    pagibig_amount: Number(employeeInfo.pagibig_amount) || 0,
-                    philhealth_amount: Number(employeeInfo.philhealth_amount) || 0
-                })
-
-                Object.assign(familyInfo, {
-                    spouse_name: employeeInfo.spouse_name || '',
-                    spouse_occupation: employeeInfo.spouse_occupation || '',
-                    spouse_employer: employeeInfo.spouse_employer || '',
-                    spouse_business_address: employeeInfo.spouse_business_address || '',
-                    father_name: employeeInfo.father_name || '',
-                    father_occupation: employeeInfo.father_occupation || '',
-                    mother_name: employeeInfo.mother_name || '',
-                    mother_occupation: employeeInfo.mother_occupation || ''
-                })
-
-                // Set arrays
-                incomes.value = data.incomes || []
-                loans.value = data.loans || []
-                children.value = data.children || []
-                educations.value = data.educations || []
-                serviceRecords.value = data.service_records || []
-                workExperiences.value = data.work_experiences || []
-                eligibilities.value = data.eligibilities || []
-                trainings.value = data.trainings || []
-                voluntaryWorks.value = data.voluntary_works || []
-                ipcrResults.value = data.ipcr_results || []
-                recognitions.value = data.recognitions || []
-                skills.value = data.skills || []
-                memberships.value = data.memberships || []
-                references.value = data.references || []
-
-                // Set update permissions
-                canUpdate.value = data.can_update || false
-                daysRemaining.value = data.days_remaining || 0
-                lastUpdateDate.value = data.last_update_date || 'Original Date Created'
-            } else {
-                error.value = response.message || 'Failed to load employee data'
+            const cacheKey = `201_file_${userId}`
+            if (forceRefresh) {
+                swrCache.mutate(cacheKey)
             }
+
+            await swrCache.swrExecute({
+                key: cacheKey,
+                ttlMs: 10 * 60 * 1000, // 10 minutes cache TTL for 201 profile
+                fetcher: async () => {
+                    const ApiService = (await import('../services/api.js')).default
+                    const response = await ApiService.getEmployee201File(userId)
+                    if (!response.success) {
+                        throw new Error(response.message || 'Failed to load employee data')
+                    }
+                    return response.data
+                },
+                onLoading: (isLoading) => {
+                    loading.value = isLoading
+                },
+                onData: (data) => {
+                    applyEmployeeData(data)
+                },
+                onError: (err) => {
+                    console.error('Error loading employee data:', err)
+                    error.value = err.message || 'An error occurred while loading employee data'
+                }
+            })
         } catch (err) {
-            console.error('Error loading employee data:', err)
-            error.value = 'An error occurred while loading employee data'
-        } finally {
-            loading.value = false
+            // Handled in onError
         }
     }
 

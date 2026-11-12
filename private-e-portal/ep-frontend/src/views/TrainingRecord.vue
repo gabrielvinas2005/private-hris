@@ -82,6 +82,7 @@
 <script>
 import MainLayout from '@/layout/MainLayout.vue'
 import { trainingRecordApiService } from '@/services/apiService.js'
+import { swrCache } from '@/composables/useCachedApi.js'
 import { ElMessage } from 'element-plus'
 import { Check } from '@element-plus/icons-vue'
 
@@ -120,15 +121,32 @@ export default {
     await this.loadRecords()
   },
   methods: {
-    async loadRecords() {
-      this.loading = true
+    async loadRecords(forceRefresh = false) {
       try {
-        const response = await trainingRecordApiService.getRecords()
-        this.records = response.data?.records || []
+        const cacheKey = 'training_records_my'
+        if (forceRefresh) {
+          swrCache.mutate(cacheKey)
+        }
+
+        await swrCache.swrExecute({
+          key: cacheKey,
+          ttlMs: 5 * 60 * 1000, // 5 minutes cache
+          fetcher: async () => {
+            const response = await trainingRecordApiService.getRecords()
+            return response.data?.records || []
+          },
+          onLoading: (isLoading) => {
+            this.loading = isLoading
+          },
+          onData: (data) => {
+            this.records = data || []
+          },
+          onError: () => {
+            ElMessage.error('Failed to load training records')
+          }
+        })
       } catch (error) {
-        ElMessage.error('Failed to load training records')
-      } finally {
-        this.loading = false
+        // Handled in onError
       }
     },
     openAddModal() {
@@ -146,7 +164,7 @@ export default {
         await trainingRecordApiService.createRecord(this.form)
         ElMessage.success('Training record added')
         this.formVisible = false
-        await this.loadRecords()
+        await this.loadRecords(true)
       } catch (error) {
         ElMessage.error('Failed to save training record')
       } finally {

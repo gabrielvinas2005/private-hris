@@ -27,6 +27,7 @@ export function usePDSEdit(employeeId) {
       // Basic info
       employee_no: employeeData.employee_no || '',
       email: employeeData.email || '',
+      company_email: employeeData.company_email || '',
       mobile_no: employeeData.mobile_no || '',
       telephone_no: employeeData.telephone_no || '',
       name_prefix_id: employeeData.name_prefix_id || 0,

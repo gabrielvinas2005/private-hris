@@ -65,6 +65,7 @@ class EmployeeFileController extends Controller
                         'weight' => null,
                         'blood_type' => '',
                         'email' => '',
+                        'company_email' => '',
                         'mobile_no' => '',
                         'telephone_no' => '',
                         'citizenship' => '',
@@ -150,149 +151,71 @@ class EmployeeFileController extends Controller
                     ->leftJoin('civil_status as g', 'g.id', '=', 'b.civil_status_id')
                     ->leftJoin('religions as h', 'h.id', '=', 'b.religion_id')
                     ->leftJoin('blood_types as i', 'i.id', '=', 'b.blood_type_id')
-                    ->leftJoin('name_prefixes as cf', 'cf.id', '=', 'b.father_name_prefix_id')
-                    ->leftJoin('name_suffixes as df', 'df.id', '=', 'b.father_name_suffix_id')
-                    ->leftJoin('name_prefixes as cm', 'cm.id', '=', 'b.mother_name_prefix_id')
-                    ->leftJoin('name_suffixes as dm', 'dm.id', '=', 'b.mother_name_suffix_id')
-                    ->leftJoin('name_prefixes as cs', 'cs.id', '=', 'b.spouse_name_prefix_id')
-                    ->leftJoin('name_suffixes as ds', 'ds.id', '=', 'b.spouse_name_suffix_id')
                     ->leftJoin('companies as j', 'j.id', '=', 'b.company_id')
                     ->leftJoin('branches as k', 'k.id', '=', 'b.branch_id')
                     ->leftJoin('departments as l', 'l.id', '=', 'b.department_id')
                     ->leftJoin('employment_types as m', 'm.id', '=', 'b.employment_type_id')
                     ->leftJoin('positions as n', 'n.id', '=', 'b.position_id')
-                    ->leftJoin('plantillas as o', 'o.id', '=', 'b.plantilla_id')
                     ->leftJoin('payroll_intervals as p', 'p.id', '=', 'b.payroll_interval_id')
-                    ->leftJoin('salary_grades as r', 'r.id', '=', 'b.salary_grade_id')
-                    ->leftJoin('salary_steps as q', 'q.id', '=', 'b.salary_step_id')
-                    ->leftJoin('divisions as t', 't.id', '=', 'b.division_id')
-                    ->leftJoin('sections as u', 'u.id', '=', 'b.section_id')
                     ->select(
                         'b.id',
                         'b.employee_no',
-                        'b.access_no',
                         'b.photo',
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN
-                                   CONCAT(c.name,' ',b.first_name,' ',substring(b.middle_name,1,1),'. ',b.last_name,' ',d.name)
-                                ELSE
-                                   RTRIM(c.name)+' '+RTRIM([dbo].[ufn_DecryptString](b.first_name,'$app_key'))+' '+UPPER(substring([dbo].[ufn_DecryptString](b.middle_name,'$app_key'),1,1))+'. '+RTRIM([dbo].[ufn_DecryptString](b.last_name,'$app_key')) 
-                                END as name"),
-                        'b.name_prefix_id',
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.first_name ELSE dbo.ufn_DecryptString(b.first_name,'$app_key') END as first_name"),
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.middle_name ELSE dbo.ufn_DecryptString(b.middle_name,'$app_key') END as middle_name"),
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.last_name ELSE dbo.ufn_DecryptString(b.last_name,'$app_key') END as last_name"),
-                        'b.name_suffix_id',
+                        DB::raw("CONCAT(COALESCE(c.name, ''), ' ', b.first_name, ' ', SUBSTRING(COALESCE(b.middle_name, ''), 1, 1), '. ', b.last_name, ' ', COALESCE(d.name, '')) as name"),
+                        'b.first_name',
+                        'b.middle_name',
+                        'b.last_name',
                         'b.birth_place',
                         'b.birthdate',
                         'b.age',
                         'b.gender_id',
                         'e.name as gender',
-                        'b.height',
-                        'b.weight',
-                        'b.blood_type_id',
-                        'i.name as blood_type',
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.email ELSE dbo.ufn_DecryptString(b.email,'$app_key') END as email"),
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.mobile_no ELSE dbo.ufn_DecryptString(b.mobile_no,'$app_key') END as mobile_no"),
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.telephone_no ELSE dbo.ufn_DecryptString(b.telephone_no,'$app_key') END as telephone_no"),
-                        'b.citizenship_id',
-                        'f.name as citizenship',
                         'b.civil_status_id',
                         'g.name as civil_status',
-                        'b.religion_id',
-                        'h.name as religion',
-                        'b.is_dual_citizent',
-                        'b.by_birth',
-                        'b.by_naturalization',
-                        'b.indicate_country',
-                        'b.ra_region',
-                        'b.ra_province',
-                        'b.ra_city',
-                        'b.ra_house_no',
-                        'b.ra_barangay',
-                        'b.ra_street',
-                        'b.ra_village',
-                        'b.pa_house_no',
-                        'b.pa_barangay',
-                        'b.pa_street',
-                        'b.pa_village',
-                        'b.pa_region',
-                        'b.pa_province',
-                        'b.pa_city',
-                        'b.father_name_prefix_id',
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.father_first_name ELSE dbo.ufn_DecryptString(b.father_first_name,'$app_key') END as father_first_name"),
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.father_middle_name ELSE dbo.ufn_DecryptString(b.father_middle_name,'$app_key') END as father_middle_name"),
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.father_last_name ELSE dbo.ufn_DecryptString(b.father_last_name,'$app_key') END as father_last_name"),
-                        'b.father_name_suffix_id',
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN
-                                    CONCAT(cf.name,' ',b.father_first_name,' ',substring(b.father_middle_name,1,1),'. ',b.father_last_name,' ',df.name)
-                                ELSE
-                                    RTRIM(ISNULL(cf.name,''))+' '+RTRIM([dbo].[ufn_DecryptString](b.father_first_name,'$app_key'))+' '+UPPER(substring([dbo].[ufn_DecryptString](b.father_middle_name,'$app_key'),1,1))+'. '+RTRIM([dbo].[ufn_DecryptString](b.father_last_name,'$app_key')+' '+RTRIM(ISNULL(df.name,''))) 
-                                END as father_name"),
-                        'b.mother_name_prefix_id',
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.mother_first_name ELSE dbo.ufn_DecryptString(b.mother_first_name,'$app_key') END as mother_first_name"),
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.mother_middle_name ELSE dbo.ufn_DecryptString(b.mother_middle_name,'$app_key') END as mother_middle_name"),
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.mother_last_name ELSE dbo.ufn_DecryptString(b.mother_last_name,'$app_key') END as mother_last_name"),
-                        'b.mother_name_suffix_id',
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN
-                                    CONCAT(cm.name,' ',b.mother_first_name,' ',substring(b.mother_middle_name,1,1),'. ',b.mother_last_name,' ',df.name)
-                                ELSE
-                                    RTRIM(ISNULL(cm.name,''))+' '+RTRIM([dbo].[ufn_DecryptString](b.mother_first_name,'$app_key'))+' '+UPPER(substring([dbo].[ufn_DecryptString](b.mother_middle_name,'$app_key'),1,1))+'. '+RTRIM([dbo].[ufn_DecryptString](b.mother_last_name,'$app_key')+' '+RTRIM(ISNULL(dm.name,''))) 
-                                END as mother_name"),
-                        'b.spouse_name_prefix_id',
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.spouse_first_name ELSE dbo.ufn_DecryptString(b.spouse_first_name,'$app_key') END as spouse_first_name"),
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.spouse_middle_name ELSE dbo.ufn_DecryptString(b.spouse_middle_name,'$app_key') END as spouse_middle_name"),
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.spouse_last_name ELSE dbo.ufn_DecryptString(b.spouse_last_name,'$app_key') END as spouse_last_name"),
-                        'b.spouse_name_suffix_id',
-                        DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN
-                                    CONCAT(cs.name,' ',b.spouse_first_name,' ',substring(b.spouse_middle_name,1,1),'. ',b.spouse_last_name,' ',df.name)
-                                ELSE
-                                    RTRIM(ISNULL(cs.name,''))+' '+RTRIM([dbo].[ufn_DecryptString](b.spouse_first_name,'$app_key'))+' '+UPPER(substring([dbo].[ufn_DecryptString](b.spouse_middle_name,'$app_key'),1,1))+'. '+RTRIM([dbo].[ufn_DecryptString](b.spouse_last_name,'$app_key')+' '+RTRIM(ISNULL(ds.name,''))) 
-                                END as spouse_name"),
-                        'b.spouse_occupation',
-                        'b.spouse_employer',
-                        'b.spouse_business_address',
-                        'b.company_id',
+                        'b.blood_type_id',
+                        'i.name as blood_type',
+                        'b.email',
+                        'b.company_email',
+                        'b.mobile_no',
+                        'b.telephone_no',
+                        // Addresses
+                        'b.ra_house_no', 'b.ra_street', 'b.ra_village', 'b.ra_barangay', 'b.ra_city', 'b.ra_province', 'b.ra_region',
+                        'b.pa_house_no', 'b.pa_street', 'b.pa_village', 'b.pa_barangay', 'b.pa_city', 'b.pa_province', 'b.pa_region',
+                        // Emergency Contact
+                        'b.emergency_contact_name',
+                        'b.emergency_contact_relationship',
+                        'b.emergency_contact_no',
+                        'b.emergency_contact_address',
+                        // Private Employment Details
                         'j.name as company',
-                        'b.branch_id',
                         'k.name as branch',
-                        'b.department_id',
                         'l.name as department',
-                        'b.division_id',
-                        't.name as division',
-                        'b.section_id',
-                        'u.name as section',
-                        'b.work_schedule_id',
-                        'b.employment_type_id',
                         'm.name as employment_type',
-                        'b.position_id',
+                        'm.id as employment_type_id',
                         'n.name as position',
-                        'b.plantilla_id',
-                        'o.code as plantilla',
-                        'b.salary_grade_id',
-                        'r.name as grade',
-                        'b.salary_step_id',
-                        'q.name as step',
-                        'b.is_shifting',
-                        'b.is_plantilla',
-                        'b.is_employee',
-                        'b.is_teaching',
+                        'b.rank_level',
                         'b.date_hired',
-                        'b.tin_no',
-                        'b.gsis_no',
+                        'b.probationary_end_date',
+                        'b.date_regularized',
+                        'b.contract_end_date',
+                        // Statutory (DOLE & BIR)
                         'b.sss_no',
                         'b.pagibig_no',
                         'b.philhealth_no',
+                        'b.tin_no',
+                        // Payroll
                         'b.salary',
+                        'b.rate_type',
+                        'b.daily_rate',
+                        'b.is_mwe',
                         'b.tax_amount',
-                        'b.gsis_amount',
                         'b.sss_amount',
                         'b.pagibig_amount',
                         'b.philhealth_amount',
                         'p.name as payroll_interval',
-                        'b.updated_at',
-                        'is_hold'
+                        'b.updated_at'
                     )
-                    ->where(['b.is_employee' => true, 'b.active' => true, 'b.id' => $emp_id_data[0]->id])
+                    ->where(['b.active' => true, 'b.id' => $emp_id_data[0]->id])
                     ->get();
 
                 $emp_id = isset($info[0]->id) ? $info[0]->id : 0;
@@ -579,6 +502,7 @@ class EmployeeFileController extends Controller
                         'b.weight',
                         'i.name as blood_type',
                         DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.email ELSE dbo.ufn_DecryptString(b.email,'$app_key') END as email"),
+                        'b.company_email',
                         DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.mobile_no ELSE dbo.ufn_DecryptString(b.mobile_no,'$app_key') END as mobile_no"),
                         DB::raw("CASE WHEN ISNULL(b.is_encrypted,0) = 0 THEN b.telephone_no ELSE dbo.ufn_DecryptString(b.telephone_no,'$app_key') END as telephone_no"),
                         'f.name as citizenship',
@@ -700,6 +624,7 @@ class EmployeeFileController extends Controller
                         'b.weight',
                         'i.name as blood_type',
                         'b.email',
+                        'b.company_email',
                         'b.mobile_no',
                         'b.telephone_no',
                         'f.name as citizenship',
@@ -1022,7 +947,10 @@ class EmployeeFileController extends Controller
 
             $children = DB::table('employee_children')->where('employee_id', $id)->get();
             $educations = DB::table('employee_educations')->where('employee_id', $id)->orderBy('employee_educations.graduated_year', 'desc')->get();
-            $service_records = DB::table('service_records')->where('employee_id', $id)->get();
+            $service_records = DB::table('service_records')
+                ->where('employee_id', $emp_id)
+                ->orderBy('start_date', 'desc')
+                ->get();            
             $employments = DB::table('employee_employment_records')->where('employee_id', $id)->get();
             $examinations = DB::table('employee_examinations')->where('employee_id', $id)->get();
             $trainings = DB::table('employee_trainings')->where('employee_id', $id)->get();

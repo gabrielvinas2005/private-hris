@@ -153,7 +153,10 @@ class GlobalController extends Controller
 
     public function getAddress_temp($request_id)
     {
-        $data = DB::table('employees_temps')
+        $req = DB::table('employee_requests')->where('id', $request_id)->first();
+        $employee_id = $req ? $req->employee_id : $request_id;
+
+        $data = DB::table('employees')
             ->select(
                 'ra_region',
                 'ra_province',
@@ -165,7 +168,7 @@ class GlobalController extends Controller
                 'pa_barangay',
                 'indicate_country'
             )
-            ->where('id', $request_id)
+            ->where('id', $employee_id)
             ->get();
 
         return json_encode($data);

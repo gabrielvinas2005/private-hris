@@ -41,6 +41,7 @@
 import MainLayout from '../../layout/MainLayout.vue'
 import EmployeeCompetencyDetails from '../../components/Competencies/EmployeeCompetencyDetails.vue'
 import ApiService from '../../services/api.js'
+import { swrCache } from '../../composables/useCachedApi.js'
 
 export default {
   name: 'MyCompetenciesView',
@@ -62,8 +63,7 @@ export default {
     await this.loadMyCompetencies()
   },
   methods: {
-    async loadMyCompetencies() {
-      this.loading = true
+    async loadMyCompetencies(forceRefresh = false) {
       try {
         const userData = JSON.parse(localStorage.getItem('user_data') || '{}')
         const employeeId = userData.employee_id || userData.id
@@ -72,17 +72,34 @@ export default {
           return
         }
 
-        const response = await ApiService.getEmployeeCompetencyDetails(employeeId)
-        const d = response?.data || response
-        if (d) {
-          this.employee = d.employee || userData
-          this.competencies = Array.isArray(d.competencies) ? d.competencies : (Array.isArray(d) ? d : [])
-          this.subCompetencies = Array.isArray(d.subCompetencies) ? d.subCompetencies : []
+        const cacheKey = `my_competencies_${employeeId}`
+        if (forceRefresh) {
+          swrCache.mutate(cacheKey)
         }
+
+        await swrCache.swrExecute({
+          key: cacheKey,
+          ttlMs: 10 * 60 * 1000, // 10 minutes cache
+          fetcher: async () => {
+            const response = await ApiService.getEmployeeCompetencyDetails(employeeId)
+            return response?.data || response
+          },
+          onLoading: (isLoading) => {
+            this.loading = isLoading
+          },
+          onData: (d) => {
+            if (d) {
+              this.employee = d.employee || userData
+              this.competencies = Array.isArray(d.competencies) ? d.competencies : (Array.isArray(d) ? d : [])
+              this.subCompetencies = Array.isArray(d.subCompetencies) ? d.subCompetencies : []
+            }
+          },
+          onError: (error) => {
+            console.error('Error loading competencies:', error)
+          }
+        })
       } catch (error) {
         console.error('Error loading competencies:', error)
-      } finally {
-        this.loading = false
       }
     }
   }

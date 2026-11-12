@@ -637,6 +637,13 @@ class PersonalDataSheetController extends Controller
                 $quesionaires = DB::table('pds_questionaires')->orderBy('id', 'asc')->get();
             }
 
+            $service_records = \Illuminate\Support\Facades\Schema::hasTable('service_records')
+                ? DB::table('service_records')->where('employee_id', $emp_id)->orderBy('start_date', 'desc')->get()
+                : collect();
+            $ipcr_details = (\Illuminate\Support\Facades\Schema::hasTable('ipcr_details') && \Illuminate\Support\Facades\Schema::hasColumn('ipcr_details', 'employee_id'))
+                ? DB::table('ipcr_details')->where('employee_id', $emp_id)->get()
+                : collect();
+
             $pdf = PDF::loadView('pds.pds_print_2025', compact(
                 'info',
                 'children',
@@ -645,6 +652,8 @@ class PersonalDataSheetController extends Controller
                 'educations_voc',
                 'educations_col',
                 'educations_grad',
+                'service_records',
+                'ipcr_details',
                 'employments',
                 'examinations',
                 'trainings',
@@ -1053,6 +1062,13 @@ class PersonalDataSheetController extends Controller
                 $quesionaires = DB::table('pds_questionaires')->orderBy('id', 'asc')->get();
             }
 
+            $service_records = \Illuminate\Support\Facades\Schema::hasTable('service_records')
+                ? DB::table('service_records')->where('employee_id', $emp_id)->orderBy('start_date', 'desc')->get()
+                : collect();
+            $ipcr_details = (\Illuminate\Support\Facades\Schema::hasTable('ipcr_details') && \Illuminate\Support\Facades\Schema::hasColumn('ipcr_details', 'employee_id'))
+                ? DB::table('ipcr_details')->where('employee_id', $emp_id)->get()
+                : collect();
+
             $pdf = PDF::loadView('pds.pds_print_2025', compact(
                 'info',
                 'children',
@@ -1061,6 +1077,8 @@ class PersonalDataSheetController extends Controller
                 'educations_voc',
                 'educations_col',
                 'educations_grad',
+                'service_records',
+                'ipcr_details',
                 'employments',
                 'examinations',
                 'trainings',

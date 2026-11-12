@@ -89,7 +89,7 @@
                 type="primary"
                 @click="enterEditMode">
                 <el-icon class="mr-2"><Edit /></el-icon>
-                Edit PDS
+                Edit 201 File
               </el-button>
               <el-button
                 v-if="isEditMode"
@@ -109,7 +109,7 @@
                 type="warning"
                 @click="showPDSPrintPreview">
                 <el-icon class="mr-2"><Download /></el-icon>
-                Download PDS
+                Download 201 File
               </el-button>
             </div>
           </div>
@@ -133,7 +133,7 @@
           <!-- Embedded Print Preview -->
           <div v-if="showPrint" class="mb-6 pb-4 border-b border-slate-200">
             <div class="flex items-center justify-between mb-3">
-              <div class="text-base font-semibold text-slate-900">PDS Print Preview</div>
+              <div class="text-base font-semibold text-slate-900">Employee 201 File Print Preview</div>
               <div class="flex items-center gap-2">
                 <el-button size="small" type="primary" :disabled="!previewUrl" @click="downloadFromPreview">
                   Download
@@ -150,12 +150,12 @@
           <!-- Main Content Tabs -->
           <el-tabs v-model="activeTab" type="border-card" class="employee-tabs">
             <el-tab-pane
-                v-for="tab in tabs"
-                :key="tab.id"
+              v-for="tab in tabs"
+              :key="tab.id"
               :label="tab.name"
               :name="tab.id">
               
-              <!-- Personal & Contact Information Tab -->
+              <!-- Tab A-B: Personal & Contact Information -->
               <PersonalInformation 
                 v-if="activeTab === 'personal'" 
                 :employee="employeeData"
@@ -173,7 +173,17 @@
                 :barangay-options="barangayOptions"
                 @update:form-data="updateFormData" />
 
-              <!-- Work Information Tab -->
+              <!-- Tab C: Government IDs & Statutory Numbers -->
+              <StatutoryInformation
+                v-if="activeTab === 'statutory'"
+                :employee="employeeData"
+                :payroll-info="payrollInfo"
+                :is-edit-mode="isEditMode"
+                :can-update="canUpdate"
+                :form-data="editFormData"
+                @update:form-data="updateFormData" />
+
+              <!-- Tab D: Employment Information -->
               <WorkInformation 
                 v-if="activeTab === 'work'" 
                 :work-info="workInfo" 
@@ -184,8 +194,18 @@
                 :can-update="canUpdate"
                 :form-data="editFormData"
                 @update:form-data="updateFormData" />
+
+              <!-- Tab D (Sub): Compensation & Movement History -->
+              <ServiceRecord 
+                v-if="activeTab === 'movements'" 
+                :service-records="serviceRecords"
+                :is-edit-mode="isEditMode"
+                :can-update="canUpdate"
+                :form-data="editFormData"
+                :employment-type-options="employmentTypeOptions || []"
+                @update:form-data="updateFormData" />
               
-              <!-- Family Information Tab -->
+              <!-- Tab E: Family Background, Children & Emergency Contact -->
               <FamilyInformation 
                 v-if="activeTab === 'family'" 
                 :family-info="familyInfo" 
@@ -195,7 +215,7 @@
                 :form-data="editFormData"
                 @update:form-data="updateFormData" />
               
-              <!-- Education Information Tab -->
+              <!-- Tab F: Educational Background -->
               <EducationInformation 
                 v-if="activeTab === 'education'" 
                 :educations="educations"
@@ -204,17 +224,7 @@
                 :form-data="editFormData"
                 @update:form-data="updateFormData" />
               
-              <!-- Service Record Tab -->
-              <ServiceRecord 
-                v-if="activeTab === 'service'" 
-                :service-records="serviceRecords"
-                :is-edit-mode="isEditMode"
-                :can-update="canUpdate"
-                :form-data="editFormData"
-                :employment-type-options="employmentTypeOptions || []"
-                @update:form-data="updateFormData" />
-              
-              <!-- Work Experience Tab -->
+              <!-- Tab G: Previous Employment -->
               <WorkExperience 
                 v-if="activeTab === 'experience'" 
                 :work-experiences="workExperiences"
@@ -223,16 +233,7 @@
                 :form-data="editFormData"
                 @update:form-data="updateFormData" />
               
-              <!-- Eligibility Information Tab -->
-              <EligibilityInformation 
-                v-if="activeTab === 'eligibility'" 
-                :eligibilities="eligibilities"
-                :is-edit-mode="isEditMode"
-                :can-update="canUpdate"
-                :form-data="editFormData"
-                @update:form-data="updateFormData" />
-              
-              <!-- Training Information Tab -->
+              <!-- Tab H: Trainings, Seminars, Licenses & Certifications -->
               <TrainingInformation 
                 v-if="activeTab === 'training'" 
                 :trainings="trainings"
@@ -240,26 +241,44 @@
                 :can-update="canUpdate"
                 :form-data="editFormData"
                 @update:form-data="updateFormData" />
-              
-              <!-- Voluntary Work Tab -->
-              <VoluntaryWork 
-                v-if="activeTab === 'voluntary'" 
-                :voluntary-works="voluntaryWorks"
+
+              <!-- Tab I: Leave Entitlement & Benefits -->
+              <LeaveEntitlements
+                v-if="activeTab === 'leaves'"
+                :employee="employeeData"
+                :is-edit-mode="isEditMode"
+                :can-update="canUpdate"
+                :form-data="editFormData"
+                @update:form-data="updateFormData" />
+
+              <!-- Tab J: Disciplinary Records -->
+              <DisciplinaryRecords
+                v-if="activeTab === 'disciplinary'"
+                :employee="employeeData"
                 :is-edit-mode="isEditMode"
                 :can-update="canUpdate"
                 :form-data="editFormData"
                 @update:form-data="updateFormData" />
               
-              <!-- IPCR Results Tab -->
+              <!-- Tab K: Performance Evaluation History -->
               <IPCRResults 
-                v-if="activeTab === 'ipcr'" 
+                v-if="activeTab === 'performance'" 
                 :ipcr-results="ipcrResults"
                 :is-edit-mode="isEditMode"
                 :can-update="canUpdate"
                 :form-data="editFormData"
                 @update:form-data="updateFormData" />
-              
-              <!-- Other Information Tab -->
+
+              <!-- Tab L: Documentary Requirements Checklist -->
+              <DocumentChecklist
+                v-if="activeTab === 'checklist'"
+                :employee="employeeData"
+                :is-edit-mode="isEditMode"
+                :can-update="canUpdate"
+                :form-data="editFormData"
+                @update:form-data="updateFormData" />
+
+              <!-- Tab M: Other Information -->
               <OtherInformation 
                 v-if="activeTab === 'other'" 
                 :recognitions="recognitions" 
@@ -302,15 +321,17 @@ import { onMounted, onUnmounted, computed, ref } from 'vue'
 import MainLayout from '../../layout/MainLayout.vue'
 import EmployeeProfileCard from '../../components/201/EmployeeProfileCard.vue'
 import PersonalInformation from '../../components/201/PersonalInformation.vue'
+import StatutoryInformation from '../../components/201/StatutoryInformation.vue'
 import WorkInformation from '../../components/201/WorkInformation.vue'
+import ServiceRecord from '../../components/201/ServiceRecord.vue'
 import FamilyInformation from '../../components/201/FamilyInformation.vue'
 import EducationInformation from '../../components/201/EducationInformation.vue'
-import ServiceRecord from '../../components/201/ServiceRecord.vue'
 import WorkExperience from '../../components/201/WorkExperience.vue'
-import EligibilityInformation from '../../components/201/EligibilityInformation.vue'
 import TrainingInformation from '../../components/201/TrainingInformation.vue'
-import VoluntaryWork from '../../components/201/VoluntaryWork.vue'
+import LeaveEntitlements from '../../components/201/LeaveEntitlements.vue'
+import DisciplinaryRecords from '../../components/201/DisciplinaryRecords.vue'
 import IPCRResults from '../../components/201/IPCRResults.vue'
+import DocumentChecklist from '../../components/201/DocumentChecklist.vue'
 import OtherInformation from '../../components/201/OtherInformation.vue'
 import { useEmployee201File } from '../../composables/useEmployee201File.js'
 import { usePDSEdit } from '../../composables/usePDSEdit.js'
@@ -323,15 +344,17 @@ export default {
     MainLayout,
     EmployeeProfileCard,
     PersonalInformation,
+    StatutoryInformation,
     WorkInformation,
+    ServiceRecord,
     FamilyInformation,
     EducationInformation,
-    ServiceRecord,
     WorkExperience,
-    EligibilityInformation,
     TrainingInformation,
-    VoluntaryWork,
+    LeaveEntitlements,
+    DisciplinaryRecords,
     IPCRResults,
+    DocumentChecklist,
     OtherInformation,
     Edit,
     Check,
@@ -420,7 +443,7 @@ export default {
       if (!previewUrl.value) return
       const a = document.createElement('a')
       a.href = previewUrl.value
-      a.download = previewFileName.value || `PDS_${employeeId.value}.pdf`
+      a.download = previewFileName.value || `201_File_${employeeId.value}.pdf`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -431,7 +454,7 @@ export default {
       try {
         showPrint.value = true
         previewLoading.value = true
-        previewFileName.value = `PDS_${employeeId.value}.pdf`
+        previewFileName.value = `201_File_${employeeId.value}.pdf`
 
         if (previewUrl.value) {
           URL.revokeObjectURL(previewUrl.value)
@@ -458,7 +481,8 @@ export default {
           const text = await res.text().catch(() => '')
           throw new Error(`HTTP error! status: ${res.status}${text ? ` - ${text}` : ''}`)
         }
-        const blob = await res.blob()
+        const buffer = await res.arrayBuffer()
+        const blob = new Blob([buffer], { type: 'application/pdf' })
         previewUrl.value = URL.createObjectURL(blob)
       } catch (e) {
         console.error('PDS print preview failed:', e)
@@ -503,7 +527,7 @@ export default {
     const exitEditMode = (save = false) => {
       exitEdit(save).then(() => {
         if (save) {
-          loadEmployeeData() // Reload data after saving
+          loadEmployeeData(true) // Reload data after saving with forceRefresh
         }
       })
     }
@@ -615,23 +639,33 @@ export default {
 
 .employee-tabs :deep(.el-tabs__header) {
   margin: 0;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #f8fafc;
 }
 
 .employee-tabs :deep(.el-tabs__nav-wrap) {
-  padding: 0 20px;
+  padding: 0 12px;
 }
 
 .employee-tabs :deep(.el-tabs__item) {
-  padding: 0 20px;
-  height: 50px;
-  line-height: 50px;
+  padding: 0 14px;
+  height: 40px;
+  line-height: 40px;
+  font-size: 0.8125rem;
   font-weight: 500;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.employee-tabs :deep(.el-tabs__item:hover) {
+  color: #0284c7;
 }
 
 .employee-tabs :deep(.el-tabs__item.is-active) {
-  color: #409eff;
-  border-bottom-color: #409eff;
+  color: #0284c7;
+  font-weight: 600;
+  background-color: #ffffff;
+  border-bottom-color: #0284c7;
 }
 
 .employee-tabs :deep(.el-tabs__content) {
